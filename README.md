@@ -298,3 +298,72 @@ default on those providers — keep it.
 **Also change from the Homebrew default:** local installs ship `pg_hba.conf`
 with `trust`, meaning any local user can connect as any role without a
 password. Production must use `scram-sha-256` and require TLS.
+
+---
+
+## Operating the app
+
+### Seeing the data
+
+Two ways, depending on what you need.
+
+**A browser over the schema** — every table, editable:
+
+```bash
+npm run db:studio          # opens Prisma Studio on localhost:5555
+```
+
+**SQL**, when you want to ask a real question:
+
+```bash
+psql "$(grep -E '^DATABASE_URL=' .env | cut -d= -f2- | tr -d '\"')"
+```
+
+That connects as `carfix_app`, which can read and write rows but cannot drop
+or alter anything — see the role split above. For schema work, use
+`MIGRATE_DATABASE_URL` instead.
+
+### Granting and revoking administrator rights
+
+Deliberately a command-line tool, not a page. Granting admin is the one action
+that would turn any other bug into a total compromise if it were reachable
+over HTTP, so there is no self-service path to it anywhere in the product.
+
+```bash
+npm run admin -- list                    # every admin, and whether they have 2FA
+npm run admin -- grant you@example.com   # promote an existing account
+npm run admin -- revoke them@example.com # demote
+npm run admin -- whoami you@example.com  # what one account is and owns
+```
+
+The person must have signed up first — this promotes an existing account
+rather than creating one. The change takes effect on their next request,
+because the session re-reads the role from the database every time; revoking
+is equally immediate.
+
+Administrators must have a second factor. `list` flags any who do not, and the
+app refuses to let an admin turn theirs off.
+
+### What an administrator can see
+
+- The verification queue, and each receipt through a 120-second signed link
+- The shop claim queue, and each business document the same way
+- Reports, and the moderation actions on them
+
+Every one of those views is written to `AuditLog` with the admin's id, so
+privileged reads are attributable after the fact.
+
+### What nobody can see, including you
+
+**Receipts and business documents are destroyed when a decision is made.**
+Approve or reject, the file is deleted from storage and its key nulled in the
+same transaction that records the outcome. What survives is the verification
+status, the method, the timestamp, and the audit entry.
+
+This is deliberate. Those documents carry names, addresses, VINs, plates, and
+card fragments; keeping them would mean a breach exposes all of it, for no
+benefit once the decision is made. It also means there is no retrieval path —
+if you need to retain them for a dispute or a legal obligation, that is a
+policy change with real consequences, not a missing feature.
+
+The same applies to LLC and trading documents on shop claims.
