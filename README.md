@@ -198,3 +198,49 @@ six rating dimensions, receipt verification, pricing analytics, reporting, and a
 **Deliberately not built, but designed for:** maintenance and modification history ("enthusiast
 Carfax"), a marketplace, community discussions, and premium analytics. The schema keeps vehicle
 taxonomy normalized and relationships explicit so these can be added without redesigning the core.
+
+---
+
+## Database security
+
+The database is PostgreSQL. On a Homebrew macOS install the cluster lives at
+`/opt/homebrew/var/postgresql@18`, listens on `localhost:5432` only, and each
+environment is a separate database (`carfix_dev`, `carfix_test`).
+
+### Two roles, deliberately
+
+| Role | Used by | Can |
+|---|---|---|
+| `carfix_migrate` | migrations only | own the schema, DDL |
+| `carfix_app` | the running app | `SELECT` / `INSERT` / `UPDATE` / `DELETE` |
+
+`carfix_app` cannot `DROP`, `TRUNCATE`, `ALTER`, `CREATE`, or escalate itself.
+`TRUNCATE` is withheld specifically: it is a separate privilege from `DELETE`,
+it bypasses row triggers, and the app never needs it.
+
+Apply with `psql -d <db> -f prisma/roles.sql`, then verify:
+
+```bash
+./scripts/db-security-check.sh
+```
+
+That script is the regression test for the privilege model — re-run it after any
+migration that adds tables, since new tables inherit grants through
+`ALTER DEFAULT PRIVILEGES` and this proves it actually happened.
+
+### Injection
+
+Every query is parameterised, including the raw-SQL search and pricing
+aggregates, which use tagged `Prisma.sql` templates. Verified at the wire
+protocol by logging what Postgres receives: a payload of
+`'; DROP TABLE "Mechanic"; --` arrives as a single bound value in `$1`, never as
+SQL, and no destructive statement executes. Injection is prevented
+structurally, not by filtering.
+
+### Known local-development weakness
+
+Homebrew ships `pg_hba.conf` with `trust` authentication, so any local user can
+connect as any role without a password. That is fine for a laptop on
+`localhost`, but a production cluster must use `scram-sha-256` and require TLS
+(`?sslmode=require` on both connection strings). Managed Postgres such as Neon
+does both by default.
