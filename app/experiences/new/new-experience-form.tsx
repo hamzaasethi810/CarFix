@@ -27,6 +27,9 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
   // State updates are async; this flips immediately so a double click cannot
   // fire a second request before the button re-renders as disabled.
   const submitting = useRef(false);
+  const [priceWarning, setPriceWarning] = useState<string | null>(null);
+  const [warningAccepted, setWarningAccepted] = useState(false);
+  const [workPhotos, setWorkPhotos] = useState<File[]>([]);
 
   async function onSubmit(formData: FormData) {
     if (submitting.current) return;
@@ -58,6 +61,24 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
     if (review) payload.reviewText = String(review);
     for (const [key] of RATINGS) payload[key] = num(key);
 
+    /*
+      Sanity-check the figure before saving. This never blocks — if they have
+      already seen the warning and stand by the number, it goes through.
+    */
+    if (!warningAccepted && serviceId && payload.totalPrice) {
+      const check = await fetch(
+        `/api/price-check?serviceId=${encodeURIComponent(serviceId)}&totalPrice=${payload.totalPrice}`,
+      );
+      const verdict = await check.json().catch(() => null);
+      if (check.ok && verdict?.unusual) {
+        setPriceWarning(verdict.message);
+        setWarningAccepted(true);
+        setPending(false);
+        submitting.current = false;
+        return;
+      }
+    }
+
     const res = await fetch("/api/experiences", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -79,6 +100,14 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
       const form = new FormData();
       form.set("file", receipt);
       await fetch(`/api/experiences/${created.id}/receipt`, { method: "POST", body: form });
+    }
+
+    // Photos of the work, uploaded after the report exists so a failed upload
+    // never costs them what they wrote.
+    for (const photo of workPhotos) {
+      const form = new FormData();
+      form.set("file", photo);
+      await fetch(`/api/experiences/${created.id}/photos`, { method: "POST", body: form });
     }
 
     setPending(false);
@@ -255,9 +284,42 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
         </label>
       </Card>
 
+      <Card>
+        <Field
+          label="Photos of the work (optional)"
+          hint="The wrap, the brake kit, the exhaust — up to four. Not the whole car."
+        >
+          {() => (
+            <label className="flex items-center justify-center min-h-11 rounded-control bg-fill text-accent text-subhead font-medium cursor-pointer hover:opacity-80 transition-opacity duration-150">
+              {workPhotos.length > 0 ? `${workPhotos.length} selected` : "Choose photos"}
+              <input
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                multiple
+                className="sr-only"
+                onChange={(e) => setWorkPhotos(Array.from(e.target.files ?? []).slice(0, 4))}
+              />
+            </label>
+          )}
+        </Field>
+      </Card>
+
+      {priceWarning && (
+        <Card className="border-l-2 border-warning">
+          <p className="text-subhead">
+            <span className="font-semibold">Does that look right?</span> {priceWarning}
+          </p>
+          <p className="text-footnote text-secondary mt-2">
+            Submit again to save it as entered.
+          </p>
+        </Card>
+      )}
+
       {error && <ErrorText>{error}</ErrorText>}
 
-      <SubmitButton pending={pending}>Submit experience</SubmitButton>
+      <SubmitButton pending={pending}>
+        {priceWarning ? "Yes, submit it" : "Submit experience"}
+      </SubmitButton>
     </form>
   );
 }

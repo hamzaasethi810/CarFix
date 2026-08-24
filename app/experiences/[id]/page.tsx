@@ -5,6 +5,8 @@ import { currentUser } from "@/lib/auth/guards";
 import { getExperience } from "@/lib/services/experiences";
 import { AppError } from "@/lib/errors";
 import { OwnerActions } from "./owner-actions";
+import { Engagement } from "./engagement";
+import { canReplyAsShop, getHelpful, getReply, getWorkPhotos } from "@/lib/services/engagement";
 
 const RATING_LABELS = [
   ["quality", "Work quality"],
@@ -22,6 +24,13 @@ export default async function ExperiencePage({ params }: { params: Promise<{ id:
     if (err instanceof AppError && err.code === "NOT_FOUND") notFound();
     throw err;
   });
+
+  const [helpful, reply, photos, canReply] = await Promise.all([
+    getHelpful(e.id, user?.id),
+    getReply(e.id),
+    getWorkPhotos(e.id),
+    canReplyAsShop(e.id, user?.id),
+  ]);
 
   return (
     <div className="max-w-2xl">
@@ -84,6 +93,15 @@ export default async function ExperiencePage({ params }: { params: Promise<{ id:
           </p>
         )}
       </Card>
+
+      <Engagement
+        experienceId={e.id}
+        helpful={helpful}
+        reply={reply}
+        canReply={canReply}
+        isOwn={e.isOwn}
+        photos={photos}
+      />
 
       {e.isOwn && (
         <OwnerActions

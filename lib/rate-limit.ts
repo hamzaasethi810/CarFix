@@ -19,7 +19,8 @@ export type LimitName =
   | "mfa"
   | "read"
   | "mutation"
-  | "accountDelete";
+  | "accountDelete"
+  | "workPhoto";
 
 const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m" | "h"}` }> = {
   login: { tokens: 8, window: "5 m" },
@@ -45,6 +46,7 @@ const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m
   mutation: { tokens: 60, window: "1 h" },
   // Irreversible, so deliberately tiny.
   accountDelete: { tokens: 3, window: "24 h" },
+  workPhoto: { tokens: 20, window: "1 h" },
 };
 
 const redis =
