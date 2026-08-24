@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { Field, SubmitButton, TextInput } from "@/components/form";
-import { ErrorText } from "@/components/ui";
+import { Card, ErrorText } from "@/components/ui";
 
 export function LoginForm() {
   const router = useRouter();
@@ -32,18 +32,44 @@ export function LoginForm() {
   }
 
   return (
-    <form action={onSubmit} className="space-y-4">
-      <Field label="Email">
-        <TextInput name="email" type="email" required autoComplete="email" />
-      </Field>
-      <Field label="Password">
-        <TextInput name="password" type="password" required autoComplete="current-password" />
-      </Field>
+    <form action={onSubmit} className="space-y-5">
+      <Card className="space-y-4">
+        <Field label="Email">
+          {({ id, describedBy }) => (
+            <TextInput
+              id={id}
+              aria-describedby={describedBy}
+              name="email"
+              type="email"
+              required
+              autoComplete="email"
+              inputMode="email"
+              autoCapitalize="none"
+            />
+          )}
+        </Field>
+
+        <Field label="Password">
+          {({ id, describedBy }) => (
+            <TextInput
+              id={id}
+              aria-describedby={describedBy}
+              name="password"
+              type="password"
+              required
+              autoComplete="current-password"
+            />
+          )}
+        </Field>
+      </Card>
+
       {error && <ErrorText>{error}</ErrorText>}
+
       <SubmitButton pending={pending}>Sign in</SubmitButton>
-      <p className="text-sm text-muted text-center">
+
+      <p className="text-subhead text-secondary text-center">
         No account?{" "}
-        <Link href="/register" className="text-foreground underline">
+        <Link href="/register" className="text-accent font-medium">
           Create one
         </Link>
       </p>

@@ -17,18 +17,27 @@ export default async function AdminPage() {
 
   return (
     <>
-      <PageTitle title="Admin" />
-      <div className="grid gap-4 sm:grid-cols-2">
-        <Link href="/admin/verifications">
-          <Card className="hover:border-accent transition-colors">
-            <p className="text-muted text-sm">Verification queue</p>
-            <p className="text-2xl font-semibold">{pending.length}</p>
-            <p className="text-muted text-xs mt-1">receipts awaiting review</p>
+      <PageTitle title="Admin" subtitle="Verification and moderation queues." />
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        <Link href="/admin/verifications" className="block group">
+          <Card className="group-hover:bg-tertiary transition-colors duration-150">
+            <p className="text-footnote text-secondary uppercase tracking-wide">
+              Verification queue
+            </p>
+            <p className="text-large-title font-bold mt-1 tabular-nums">{pending.length}</p>
+            <p className="text-subhead text-secondary mt-1">
+              {pending.length === 1 ? "receipt awaiting" : "receipts awaiting"} review
+            </p>
           </Card>
         </Link>
+
         <Card>
-          <p className="text-muted text-sm">Open reports</p>
-          <p className="text-2xl font-semibold">{reports.length}</p>
+          <p className="text-footnote text-secondary uppercase tracking-wide">Open reports</p>
+          <p className="text-large-title font-bold mt-1 tabular-nums">{reports.length}</p>
+          <p className="text-subhead text-secondary mt-1">
+            {reports.length === 1 ? "report" : "reports"} needing attention
+          </p>
         </Card>
       </div>
     </>

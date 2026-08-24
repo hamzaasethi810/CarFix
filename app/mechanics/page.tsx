@@ -25,7 +25,12 @@ export default async function MechanicsPage({
       <>
         <PageTitle title="Find a mechanic" />
         <SearchFilters services={services} />
-        <EmptyState title="Those filters weren't valid" hint="Try adjusting your search." />
+        <div className="mt-6">
+          <EmptyState
+            title="Those filters weren't valid"
+            hint="Try adjusting your search and running it again."
+          />
+        </div>
       </>
     );
   }
@@ -40,43 +45,62 @@ export default async function MechanicsPage({
       />
       <SearchFilters services={services} />
 
-      {results.items.length === 0 ? (
-        <EmptyState
-          title="No mechanics matched"
-          hint="Try widening your radius or clearing the verified-only filter."
-        />
-      ) : (
-        <ul className="space-y-3 mt-6">
-          {results.items.map((m) => (
-            <li key={m.id}>
-              <Link href={`/mechanics/${m.id}`}>
-                <Card className="hover:border-accent transition-colors">
-                  <div className="flex flex-wrap items-baseline justify-between gap-2">
-                    <h2 className="font-medium">{m.name}</h2>
-                    <span className="text-sm text-muted">
-                      {m.city}, {m.state}
-                      {m.distanceMiles !== null && ` · ${m.distanceMiles} mi`}
-                    </span>
-                  </div>
-                  <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-sm text-muted">
-                    <span>
-                      {m.avgRating === null ? "No ratings yet" : `${m.avgRating} / 5 average`}
-                    </span>
-                    <span>
-                      {m.experienceCount} experience{m.experienceCount === 1 ? "" : "s"}
-                      {m.verifiedCount > 0 && ` · ${m.verifiedCount} verified`}
-                    </span>
-                    {m.medianPrice !== null && (
-                      <span>Owner-reported median: {money(m.medianPrice)}</span>
-                    )}
-                    {m.wouldReturnPct !== null && <span>{m.wouldReturnPct}% would return</span>}
-                  </div>
-                </Card>
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div aria-live="polite" className="mt-6">
+        {results.items.length === 0 ? (
+          <EmptyState
+            title="No mechanics matched"
+            hint="Try widening your radius, or clearing the verified-only filter."
+          />
+        ) : (
+          <ul className="space-y-3">
+            {results.items.map((m) => (
+              <li key={m.id}>
+                <Link href={`/mechanics/${m.id}`} className="block group">
+                  <Card className="group-hover:bg-tertiary transition-colors duration-150">
+                    <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+                      <h2 className="text-headline font-semibold">{m.name}</h2>
+                      <span className="text-subhead text-secondary">
+                        {m.city}, {m.state}
+                        {m.distanceMiles !== null && ` · ${m.distanceMiles} mi`}
+                      </span>
+                    </div>
+
+                    <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-2 text-subhead">
+                      <div className="flex gap-1.5">
+                        <dt className="text-secondary">Rating</dt>
+                        <dd className="font-medium">
+                          {m.avgRating === null ? "None yet" : `${m.avgRating} / 5`}
+                        </dd>
+                      </div>
+                      <div className="flex gap-1.5">
+                        <dt className="text-secondary">Experiences</dt>
+                        <dd className="font-medium">
+                          {m.experienceCount}
+                          {m.verifiedCount > 0 && (
+                            <span className="text-success"> · {m.verifiedCount} verified</span>
+                          )}
+                        </dd>
+                      </div>
+                      {m.medianPrice !== null && (
+                        <div className="flex gap-1.5">
+                          <dt className="text-secondary">Median</dt>
+                          <dd className="font-medium">{money(m.medianPrice)}</dd>
+                        </div>
+                      )}
+                      {m.wouldReturnPct !== null && (
+                        <div className="flex gap-1.5">
+                          <dt className="text-secondary">Would return</dt>
+                          <dd className="font-medium">{m.wouldReturnPct}%</dd>
+                        </div>
+                      )}
+                    </dl>
+                  </Card>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </>
   );
 }

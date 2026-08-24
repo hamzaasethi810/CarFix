@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Field, Select, SubmitButton, TextArea, TextInput } from "@/components/form";
+import { CheckboxRow, Field, Select, SubmitButton, TextArea, TextInput } from "@/components/form";
 import { Card, ErrorText } from "@/components/ui";
 
 type Option = { id: string; label?: string; name?: string };
@@ -86,106 +86,184 @@ export function NewExperienceForm({
   }
 
   return (
-    <form action={onSubmit} className="space-y-6">
-      <Card className="space-y-3">
+    <form action={onSubmit} className="space-y-5">
+      <Card className="space-y-4">
+        <h2 className="text-headline font-semibold">What was done</h2>
+
         <Field label="Which car?">
-          <Select name="vehicleId" required>
-            {vehicles.map((v) => (
-              <option key={v.id} value={v.id}>
-                {v.label}
-              </option>
-            ))}
-          </Select>
+          {({ id }) => (
+            <Select id={id} name="vehicleId" required>
+              {vehicles.map((v) => (
+                <option key={v.id} value={v.id}>
+                  {v.label}
+                </option>
+              ))}
+            </Select>
+          )}
         </Field>
 
         <Field label="Which mechanic?">
-          <Select name="mechanicId" required>
-            <option value="">Select a mechanic</option>
-            {mechanics.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.label}
-              </option>
-            ))}
-          </Select>
+          {({ id }) => (
+            <Select id={id} name="mechanicId" required>
+              <option value="">Select a mechanic</option>
+              {mechanics.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.label}
+                </option>
+              ))}
+            </Select>
+          )}
         </Field>
 
-        <Field label="What was done?">
-          <Select name="serviceId" required>
-            <option value="">Select a service</option>
-            {services.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </Select>
+        <Field label="Service">
+          {({ id }) => (
+            <Select id={id} name="serviceId" required>
+              <option value="">Select a service</option>
+              {services.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </Select>
+          )}
         </Field>
       </Card>
 
-      <Card className="grid gap-3 sm:grid-cols-2">
-        <Field label="Total price">
-          <TextInput name="totalPrice" type="number" min={0} step="0.01" required />
-        </Field>
-        <Field label="Service date">
-          <TextInput name="serviceDate" type="date" required />
-        </Field>
-        <Field label="Parts cost">
-          <TextInput name="partsCost" type="number" min={0} step="0.01" placeholder="Optional" />
-        </Field>
-        <Field label="Labor cost">
-          <TextInput name="laborCost" type="number" min={0} step="0.01" placeholder="Optional" />
-        </Field>
-        <Field label="Mileage at service">
-          <TextInput name="mileageAtService" type="number" min={0} required />
-        </Field>
+      <Card className="space-y-4">
+        <h2 className="text-headline font-semibold">Cost and date</h2>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Total price">
+            {({ id, describedBy }) => (
+              <TextInput
+                id={id}
+                aria-describedby={describedBy}
+                name="totalPrice"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="0.01"
+                required
+              />
+            )}
+          </Field>
+
+          <Field label="Service date">
+            {({ id, describedBy }) => (
+              <TextInput
+                id={id}
+                aria-describedby={describedBy}
+                name="serviceDate"
+                type="date"
+                required
+                max={new Date().toISOString().slice(0, 10)}
+              />
+            )}
+          </Field>
+
+          <Field label="Parts cost">
+            {({ id, describedBy }) => (
+              <TextInput
+                id={id}
+                aria-describedby={describedBy}
+                name="partsCost"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="0.01"
+                placeholder="Optional"
+              />
+            )}
+          </Field>
+
+          <Field label="Labor cost">
+            {({ id, describedBy }) => (
+              <TextInput
+                id={id}
+                aria-describedby={describedBy}
+                name="laborCost"
+                type="number"
+                inputMode="decimal"
+                min={0}
+                step="0.01"
+                placeholder="Optional"
+              />
+            )}
+          </Field>
+
+          <Field label="Mileage at service">
+            {({ id, describedBy }) => (
+              <TextInput
+                id={id}
+                aria-describedby={describedBy}
+                name="mileageAtService"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                required
+              />
+            )}
+          </Field>
+        </div>
       </Card>
 
-      <Card className="space-y-3">
-        <p className="text-sm font-medium">How was it?</p>
-        <div className="grid gap-3 sm:grid-cols-2">
+      <Card className="space-y-4">
+        <h2 className="text-headline font-semibold">How was it?</h2>
+
+        <div className="grid gap-4 sm:grid-cols-2">
           {RATINGS.map(([name, label]) => (
             <Field key={name} label={label}>
-              <Select name={name} defaultValue="5" required>
-                {[5, 4, 3, 2, 1].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </Select>
+              {({ id }) => (
+                <Select id={id} name={name} defaultValue="5" required>
+                  {[5, 4, 3, 2, 1].map((n) => (
+                    <option key={n} value={n}>
+                      {n} — {["Poor", "Fair", "Good", "Great", "Excellent"][n - 1]}
+                    </option>
+                  ))}
+                </Select>
+              )}
             </Field>
           ))}
         </div>
 
-        <div className="flex gap-6 text-sm">
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="wouldRecommend" defaultChecked />
-            Would recommend
-          </label>
-          <label className="flex items-center gap-2">
-            <input type="checkbox" name="wouldReturn" defaultChecked />
-            Would return
-          </label>
+        <div className="flex flex-col sm:flex-row sm:gap-8">
+          <CheckboxRow name="wouldRecommend" label="Would recommend" defaultChecked />
+          <CheckboxRow name="wouldReturn" label="Would return" defaultChecked />
         </div>
 
         <Field label="Review">
-          <TextArea name="reviewText" rows={4} maxLength={5000} placeholder="Optional" />
+          {({ id, describedBy }) => (
+            <TextArea
+              id={id}
+              aria-describedby={describedBy}
+              name="reviewText"
+              rows={4}
+              maxLength={5000}
+              placeholder="Optional — what stood out?"
+            />
+          )}
         </Field>
       </Card>
 
       <Card>
-        <Field
-          label="Receipt (optional)"
-          hint="We check it to verify your pricing, then delete it. It is never shown publicly."
-        >
+        <h2 className="text-headline font-semibold mb-1">Receipt</h2>
+        <p className="text-subhead text-secondary mb-4">
+          Optional. We check it to verify your pricing, then delete it. It is never shown publicly.
+        </p>
+
+        <label className="flex items-center justify-center min-h-11 rounded-control bg-fill text-accent text-subhead font-medium cursor-pointer hover:opacity-80 transition-opacity duration-150">
+          {receipt ? `Selected: ${receipt.name}` : "Choose a receipt"}
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp,application/pdf"
-            className="block w-full text-sm"
+            className="sr-only"
             onChange={(e) => setReceipt(e.target.files?.[0] ?? null)}
           />
-        </Field>
+        </label>
       </Card>
 
       {error && <ErrorText>{error}</ErrorText>}
+
       <SubmitButton pending={pending}>Submit experience</SubmitButton>
     </form>
   );

@@ -42,34 +42,42 @@ export function VehiclePhotos({
   }
 
   return (
-    <section>
-      <h2 className="text-lg font-medium mb-3">Photos</h2>
-      <div className="grid gap-4 sm:grid-cols-3">
+    <section aria-label="Photos">
+      <h2 className="text-title3 font-semibold mt-10 mb-3">Photos</h2>
+
+      <div className="grid gap-3 sm:grid-cols-3">
         {SLOTS.map(({ key, label }) => {
           const has = slots.includes(key);
+          const uploading = busy === key;
+
           return (
             <Card key={key}>
-              <p className="text-sm font-medium mb-2">{label}</p>
+              <p className="text-subhead font-medium mb-2">{label}</p>
+
               {has ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={`/api/media/vehicle/${vehicleId}/${key.toLowerCase()}`}
-                  alt={`${label} view`}
-                  className="w-full aspect-4/3 object-cover rounded-md"
+                  alt={`${label} view of this car`}
+                  className="w-full aspect-[4/3] object-cover rounded-md bg-fill"
                 />
               ) : (
-                <div className="w-full aspect-4/3 rounded-md border border-dashed border-border grid place-items-center text-muted text-sm">
+                <div className="w-full aspect-[4/3] rounded-md bg-fill grid place-items-center text-subhead text-secondary">
                   No photo
                 </div>
               )}
 
               {editable && (
-                <label className="mt-3 block text-sm text-muted">
-                  {busy === key ? "Uploading…" : has ? "Replace" : "Upload"}
+                <label
+                  className={`mt-3 flex items-center justify-center min-h-11 rounded-control text-subhead font-medium cursor-pointer transition-colors duration-150 ${
+                    uploading ? "bg-fill text-secondary" : "bg-fill text-accent hover:opacity-80"
+                  }`}
+                >
+                  {uploading ? "Uploading…" : has ? "Replace photo" : "Upload photo"}
                   <input
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
-                    className="mt-1 block w-full text-xs"
+                    className="sr-only"
                     disabled={busy !== null}
                     onChange={(e) => {
                       const file = e.target.files?.[0];
@@ -82,8 +90,9 @@ export function VehiclePhotos({
           );
         })}
       </div>
+
       {error && (
-        <div className="mt-2">
+        <div className="mt-3">
           <ErrorText>{error}</ErrorText>
         </div>
       )}

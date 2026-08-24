@@ -18,45 +18,59 @@ export type ExperienceView = {
   author: { username: string; displayName: string } | null;
 };
 
-export function ExperienceCard({ e, showMechanic = false }: { e: ExperienceView; showMechanic?: boolean }) {
+export function ExperienceCard({
+  e,
+  showMechanic = false,
+}: {
+  e: ExperienceView;
+  showMechanic?: boolean;
+}) {
   return (
     <Card>
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="font-medium">
+      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+        <h3 className="text-headline font-semibold">
           {e.vehicle.year} {e.vehicle.make} {e.vehicle.model}{" "}
-          <span className="text-muted font-normal">{e.vehicle.generation}</span>
-          {e.vehicle.trim && <span className="text-muted font-normal"> · {e.vehicle.trim}</span>}
+          <span className="text-secondary font-normal">{e.vehicle.generation}</span>
+          {e.vehicle.trim && <span className="text-secondary font-normal"> · {e.vehicle.trim}</span>}
         </h3>
         <VerifiedBadge verified={e.verified} />
       </div>
 
-      <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
-        <span className="font-medium">{e.service.name}</span>
-        <span className="font-medium">{money(e.totalPrice)}</span>
-        {(e.partsCost !== null || e.laborCost !== null) && (
-          <span className="text-muted">
-            {e.partsCost !== null && `parts ${money(e.partsCost)}`}
-            {e.partsCost !== null && e.laborCost !== null && " · "}
-            {e.laborCost !== null && `labor ${money(e.laborCost)}`}
-          </span>
-        )}
+      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <span className="text-subhead font-medium rounded-full bg-fill px-2.5 py-1">
+          {e.service.name}
+        </span>
+        <span className="text-title3 font-semibold tabular-nums">{money(e.totalPrice)}</span>
         <Stars value={e.ratings.overall} />
       </div>
 
+      {(e.partsCost !== null || e.laborCost !== null) && (
+        <p className="mt-2 text-footnote text-secondary tabular-nums">
+          {e.partsCost !== null && `Parts ${money(e.partsCost)}`}
+          {e.partsCost !== null && e.laborCost !== null && " · "}
+          {e.laborCost !== null && `Labor ${money(e.laborCost)}`}
+        </p>
+      )}
+
       {showMechanic && (
-        <p className="text-sm text-muted mt-1">
+        <p className="text-subhead text-secondary mt-2">
           at{" "}
-          <Link href={`/mechanics/${e.mechanic.id}`} className="underline text-foreground">
+          <Link href={`/mechanics/${e.mechanic.id}`} className="text-accent font-medium">
             {e.mechanic.name}
           </Link>
         </p>
       )}
 
-      {e.reviewText && <p className="mt-3 text-sm">{e.reviewText}</p>}
+      {e.reviewText && <p className="mt-3 text-body text-pretty">{e.reviewText}</p>}
 
-      <p className="mt-3 text-xs text-muted">
-        {new Date(e.serviceDate).toLocaleDateString("en-US", { year: "numeric", month: "short" })} ·{" "}
-        {e.mileageAtService.toLocaleString()} mi
+      <p className="mt-4 pt-3 border-t border-separator text-footnote text-secondary">
+        <time dateTime={e.serviceDate}>
+          {new Date(e.serviceDate).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+          })}
+        </time>{" "}
+        · {e.mileageAtService.toLocaleString()} mi
         {e.author && ` · ${e.author.displayName}`}
         {e.wouldReturn && " · would return"}
       </p>

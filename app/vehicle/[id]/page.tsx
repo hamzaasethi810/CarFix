@@ -1,11 +1,20 @@
 import { notFound } from "next/navigation";
-import { Card, EmptyState, PageTitle, money } from "@/components/ui";
+import { Card, EmptyState, PageTitle, SectionTitle, money } from "@/components/ui";
 import { ExperienceCard } from "@/components/experience-card";
 import { currentUser } from "@/lib/auth/guards";
 import { getVehicle } from "@/lib/services/vehicles";
 import { browseExperiences, getPricing } from "@/lib/services/experiences";
 import { AppError } from "@/lib/errors";
 import { VehiclePhotos } from "./vehicle-photos";
+
+function Detail({ label, value }: { label: string; value: string }) {
+  return (
+    <Card>
+      <p className="text-footnote text-secondary uppercase tracking-wide">{label}</p>
+      <p className="text-headline font-semibold mt-1">{value}</p>
+    </Card>
+  );
+}
 
 export default async function VehiclePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,30 +38,28 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
         subtitle={[vehicle.generation, vehicle.platform].filter(Boolean).join(" · ")}
       />
 
-      <div className="grid gap-4 sm:grid-cols-3 mb-8">
-        <Card>
-          <p className="text-muted text-sm">Owner</p>
-          <p className="font-medium">{vehicle.owner?.displayName ?? "Unknown"}</p>
-        </Card>
-        <Card>
-          <p className="text-muted text-sm">Mileage</p>
-          <p className="font-medium">
-            {vehicle.mileage === null ? "Not reported" : `${vehicle.mileage.toLocaleString()} mi`}
-          </p>
-        </Card>
-        <Card>
-          <p className="text-muted text-sm">Engine / drivetrain</p>
-          <p className="font-medium">
-            {[vehicle.engine, vehicle.drivetrain].filter(Boolean).join(" · ") || "Not reported"}
-          </p>
-        </Card>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Detail label="Owner" value={vehicle.owner?.displayName ?? "Unknown"} />
+        <Detail
+          label="Mileage"
+          value={
+            vehicle.mileage === null ? "Not reported" : `${vehicle.mileage.toLocaleString()} mi`
+          }
+        />
+        <Detail
+          label="Engine / drivetrain"
+          value={[vehicle.engine, vehicle.drivetrain].filter(Boolean).join(" · ") || "Not reported"}
+        />
       </div>
 
       <VehiclePhotos vehicleId={vehicle.id} slots={vehicle.photoSlots} editable={vehicle.isOwn} />
 
-      <h2 className="text-lg font-medium mt-10 mb-3">Service history for this car</h2>
+      <SectionTitle>Service history for this car</SectionTitle>
       {own.items.length === 0 ? (
-        <EmptyState title="Nothing logged yet" hint="Log a service to start building the history." />
+        <EmptyState
+          title="Nothing logged yet"
+          hint="Log a service to start building this car's history."
+        />
       ) : (
         <ul className="space-y-3">
           {own.items.map((e) => (
@@ -63,11 +70,16 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
         </ul>
       )}
 
-      <h2 className="text-lg font-medium mt-10 mb-1">{vehicle.generation} data</h2>
-      <p className="text-muted text-sm mb-3">
-        {generationPricing.label}
-        {generationPricing.median !== null && ` · median ${money(generationPricing.median)}`}
-      </p>
+      <SectionTitle
+        hint={`${generationPricing.label}${
+          generationPricing.median !== null
+            ? ` · median ${money(generationPricing.median)}`
+            : ""
+        }`}
+      >
+        {vehicle.generation} data
+      </SectionTitle>
+
       {generation.items.length === 0 ? (
         <EmptyState title={`No ${vehicle.generation} experiences yet`} />
       ) : (

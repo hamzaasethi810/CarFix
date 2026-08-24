@@ -65,39 +65,78 @@ export function AddVehicleForm({ makes }: { makes: Option[] }) {
   }
 
   return (
-    <form action={onSubmit} className="space-y-3">
+    <form action={onSubmit} className="space-y-4">
       <Field label="Make">
-        <Select name="makeId" required value={makeId} onChange={(e) => setMakeId(e.target.value)}>
-          <option value="">Select a make</option>
-          {makes.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-        </Select>
+        {({ id }) => (
+          <Select
+            id={id}
+            name="makeId"
+            required
+            value={makeId}
+            onChange={(e) => setMakeId(e.target.value)}
+          >
+            <option value="">Select a make</option>
+            {makes.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </Select>
+        )}
       </Field>
 
       <Field label="Model">
-        <Select name="modelId" required disabled={models.length === 0}>
-          <option value="">{makeId ? "Select a model" : "Pick a make first"}</option>
-          {models.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.name}
-            </option>
-          ))}
-        </Select>
+        {({ id }) => (
+          <Select id={id} name="modelId" required disabled={models.length === 0}>
+            <option value="">{makeId ? "Select a model" : "Pick a make first"}</option>
+            {models.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.name}
+              </option>
+            ))}
+          </Select>
+        )}
       </Field>
 
       <Field label="Year" hint="We work out the generation from the model year.">
-        <TextInput name="year" type="number" required min={1900} max={new Date().getFullYear() + 2} />
+        {({ id, describedBy }) => (
+          <TextInput
+            id={id}
+            aria-describedby={describedBy}
+            name="year"
+            type="number"
+            inputMode="numeric"
+            required
+            min={1900}
+            max={new Date().getFullYear() + 2}
+          />
+        )}
       </Field>
 
       <Field label="Mileage">
-        <TextInput name="mileage" type="number" min={0} placeholder="Optional" />
+        {({ id, describedBy }) => (
+          <TextInput
+            id={id}
+            aria-describedby={describedBy}
+            name="mileage"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            placeholder="Optional"
+          />
+        )}
       </Field>
 
       <Field label="Nickname">
-        <TextInput name="nickname" maxLength={60} placeholder="Optional" />
+        {({ id, describedBy }) => (
+          <TextInput
+            id={id}
+            aria-describedby={describedBy}
+            name="nickname"
+            maxLength={60}
+            placeholder="Optional"
+          />
+        )}
       </Field>
 
       {error && <ErrorText>{error}</ErrorText>}

@@ -30,60 +30,66 @@ export default async function ExperiencePage({ params }: { params: Promise<{ id:
       />
 
       <Card className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <Stars value={e.ratings.overall} />
           <VerifiedBadge verified={e.verified} />
         </div>
 
-        <div className="text-sm text-muted">
+        <p className="text-subhead text-secondary">
           at{" "}
-          <Link href={`/mechanics/${e.mechanic.id}`} className="underline text-foreground">
+          <Link href={`/mechanics/${e.mechanic.id}`} className="text-accent font-medium">
             {e.mechanic.name}
           </Link>{" "}
-          · {new Date(e.serviceDate).toLocaleDateString()} ·{" "}
+          ·{" "}
+          <time dateTime={e.serviceDate}>{new Date(e.serviceDate).toLocaleDateString()}</time> ·{" "}
           {e.mileageAtService.toLocaleString()} mi
-        </div>
+        </p>
 
         {(e.partsCost !== null || e.laborCost !== null) && (
-          <div className="text-sm">
+          <p className="text-subhead tabular-nums">
             {e.partsCost !== null && <>Parts {money(e.partsCost)} </>}
             {e.laborCost !== null && <>· Labor {money(e.laborCost)}</>}
-          </div>
+          </p>
         )}
 
-        {e.reviewText && <p className="text-sm">{e.reviewText}</p>}
+        {e.reviewText && <p className="text-body text-pretty">{e.reviewText}</p>}
 
-        <dl className="grid grid-cols-2 gap-2 text-sm border-t border-border pt-4">
+        <dl className="grid sm:grid-cols-2 gap-x-8 border-t border-separator pt-4">
           {RATING_LABELS.map(([key, label]) => (
-            <div key={key} className="flex justify-between">
-              <dt className="text-muted">{label}</dt>
-              <dd>{e.ratings[key]} / 5</dd>
+            <div
+              key={key}
+              className="flex justify-between items-center py-2 border-b border-separator last:border-0 sm:last:border-b"
+            >
+              <dt className="text-subhead text-secondary">{label}</dt>
+              <dd className="text-subhead font-medium tabular-nums">{e.ratings[key]} / 5</dd>
             </div>
           ))}
-          <div className="flex justify-between">
-            <dt className="text-muted">Would return</dt>
-            <dd>{e.wouldReturn ? "Yes" : "No"}</dd>
+          <div className="flex justify-between items-center py-2 border-b border-separator sm:border-0">
+            <dt className="text-subhead text-secondary">Would return</dt>
+            <dd className="text-subhead font-medium">{e.wouldReturn ? "Yes" : "No"}</dd>
           </div>
-          <div className="flex justify-between">
-            <dt className="text-muted">Would recommend</dt>
-            <dd>{e.wouldRecommend ? "Yes" : "No"}</dd>
+          <div className="flex justify-between items-center py-2">
+            <dt className="text-subhead text-secondary">Would recommend</dt>
+            <dd className="text-subhead font-medium">{e.wouldRecommend ? "Yes" : "No"}</dd>
           </div>
         </dl>
 
         {e.author && (
-          <p className="text-xs text-muted">
+          <p className="text-footnote text-secondary">
             Reported by{" "}
-            <Link href={`/profile/${e.author.username}`} className="underline">
+            <Link href={`/profile/${e.author.username}`} className="text-accent font-medium">
               {e.author.displayName}
             </Link>
           </p>
         )}
       </Card>
 
-      {!e.verified && e.verificationStatus === "PENDING" && (
-        <p className="text-sm text-muted mt-4">
-          A receipt has been submitted and is awaiting review.
-        </p>
+      {e.verificationStatus === "PENDING" && (
+        <Card className="mt-4">
+          <p className="text-subhead text-secondary">
+            A receipt has been submitted and is awaiting review.
+          </p>
+        </Card>
       )}
     </div>
   );

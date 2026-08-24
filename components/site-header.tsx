@@ -1,36 +1,49 @@
 import Link from "next/link";
 import { signOut } from "@/lib/auth";
 
+const navLink =
+  "inline-flex items-center min-h-11 px-3 -mx-1 rounded-control text-subhead text-secondary hover:text-label hover:bg-fill transition-colors duration-150";
+
 export function SiteHeader({ isAuthed, isAdmin }: { isAuthed: boolean; isAdmin: boolean }) {
   return (
-    <header className="border-b border-border bg-surface">
-      <nav className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-6 text-sm">
-        <Link href="/" className="font-semibold tracking-tight text-base">
-          Car<span className="text-accent">Fix</span>
+    /*
+      The bar is a translucent material on its own plane above the content,
+      rather than an opaque block sharing the content's plane.
+    */
+    <header className="sticky top-0 z-50 border-b border-separator bg-[color-mix(in_srgb,var(--bg-elevated)_78%,transparent)] backdrop-blur-xl backdrop-saturate-150">
+      <nav
+        aria-label="Primary"
+        className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-1 sm:gap-2"
+      >
+        <Link
+          href="/"
+          className="inline-flex items-center min-h-11 pr-3 text-title3 font-bold tracking-tight"
+        >
+          Car<span className="text-brand">Fix</span>
         </Link>
 
-        <Link href="/mechanics" className="text-muted hover:text-foreground">
-          Find a mechanic
+        <Link href="/mechanics" className={navLink}>
+          Mechanics
         </Link>
 
         {isAuthed && (
           <>
-            <Link href="/garage" className="text-muted hover:text-foreground">
+            <Link href="/garage" className={navLink}>
               Garage
             </Link>
-            <Link href="/experiences/new" className="text-muted hover:text-foreground">
+            <Link href="/experiences/new" className={`${navLink} hidden sm:inline-flex`}>
               Log a service
             </Link>
           </>
         )}
 
         {isAdmin && (
-          <Link href="/admin" className="text-muted hover:text-foreground">
+          <Link href="/admin" className={navLink}>
             Admin
           </Link>
         )}
 
-        <div className="ml-auto flex items-center gap-4">
+        <div className="ml-auto flex items-center gap-1 sm:gap-2">
           {isAuthed ? (
             <form
               action={async () => {
@@ -38,18 +51,18 @@ export function SiteHeader({ isAuthed, isAdmin }: { isAuthed: boolean; isAdmin: 
                 await signOut({ redirectTo: "/" });
               }}
             >
-              <button type="submit" className="text-muted hover:text-foreground">
+              <button type="submit" className={navLink}>
                 Sign out
               </button>
             </form>
           ) : (
             <>
-              <Link href="/login" className="text-muted hover:text-foreground">
+              <Link href="/login" className={navLink}>
                 Sign in
               </Link>
               <Link
                 href="/register"
-                className="rounded-md bg-accent text-accent-fg px-3 py-1.5 font-medium"
+                className="inline-flex items-center min-h-11 px-4 rounded-control bg-accent text-on-accent text-subhead font-semibold hover:bg-accent-hover transition-colors duration-150"
               >
                 Join
               </Link>

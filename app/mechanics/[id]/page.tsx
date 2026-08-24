@@ -1,10 +1,20 @@
 import { notFound } from "next/navigation";
-import { Card, EmptyState, PageTitle, money } from "@/components/ui";
+import { Card, EmptyState, PageTitle, SectionTitle, money } from "@/components/ui";
 import { ExperienceCard } from "@/components/experience-card";
 import { currentUser } from "@/lib/auth/guards";
 import { getMechanic } from "@/lib/services/mechanics";
 import { browseExperiences, getPricing } from "@/lib/services/experiences";
 import { AppError } from "@/lib/errors";
+
+function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
+  return (
+    <Card>
+      <p className="text-footnote text-secondary uppercase tracking-wide">{label}</p>
+      <p className="text-title1 font-semibold mt-1 tabular-nums">{value}</p>
+      {hint && <p className="text-footnote text-secondary mt-1">{hint}</p>}
+    </Card>
+  );
+}
 
 export default async function MechanicPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -24,20 +34,16 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
     <>
       <PageTitle title={mechanic.name} subtitle={`${mechanic.city}, ${mechanic.state}`} />
 
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Stat
+          label="Experiences"
+          value={String(mechanic.experienceCount)}
+          hint={`${mechanic.verifiedCount} verified`}
+        />
+        <Stat label="Owner-reported median" value={money(pricing.median)} hint={pricing.label} />
         <Card>
-          <p className="text-muted text-sm">Experiences</p>
-          <p className="text-2xl font-semibold">{mechanic.experienceCount}</p>
-          <p className="text-muted text-xs mt-1">{mechanic.verifiedCount} verified</p>
-        </Card>
-        <Card>
-          <p className="text-muted text-sm">Owner-reported median</p>
-          <p className="text-2xl font-semibold">{money(pricing.median)}</p>
-          <p className="text-muted text-xs mt-1">{pricing.label}</p>
-        </Card>
-        <Card>
-          <p className="text-muted text-sm">Specialties</p>
-          <p className="text-sm mt-1">
+          <p className="text-footnote text-secondary uppercase tracking-wide">Specialties</p>
+          <p className="text-subhead mt-2">
             {mechanic.specialties.length
               ? mechanic.specialties.map((s) => s.name).join(", ")
               : "Not listed"}
@@ -45,28 +51,41 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
         </Card>
       </div>
 
-      {mechanic.description && <p className="mt-6 text-sm">{mechanic.description}</p>}
+      {mechanic.description && <p className="mt-6 text-body text-pretty">{mechanic.description}</p>}
 
-      <div className="mt-4 text-sm text-muted space-y-1">
-        <p>
-          {mechanic.address}, {mechanic.city}, {mechanic.state} {mechanic.zip}
-        </p>
-        {mechanic.phone && <p>{mechanic.phone}</p>}
-        {mechanic.website && (
+      <Card className="mt-6">
+        <h2 className="text-headline font-semibold mb-3">Contact</h2>
+        <address className="not-italic text-subhead text-secondary space-y-2">
           <p>
-            <a
-              href={mechanic.website}
-              rel="noopener noreferrer nofollow"
-              target="_blank"
-              className="underline text-foreground"
-            >
-              Website
-            </a>
+            {mechanic.address}, {mechanic.city}, {mechanic.state} {mechanic.zip}
           </p>
-        )}
-      </div>
+          {mechanic.phone && (
+            <p>
+              <a href={`tel:${mechanic.phone}`} className="text-accent font-medium">
+                {mechanic.phone}
+              </a>
+            </p>
+          )}
+          {mechanic.website && (
+            <p>
+              <a
+                href={mechanic.website}
+                rel="noopener noreferrer nofollow"
+                target="_blank"
+                className="text-accent font-medium"
+              >
+                Visit website
+                <span className="sr-only"> (opens in a new tab)</span>
+              </a>
+            </p>
+          )}
+        </address>
+      </Card>
 
-      <h2 className="text-lg font-medium mt-10 mb-3">Owner experiences</h2>
+      <SectionTitle hint="Reported by owners who had work done here.">
+        Owner experiences
+      </SectionTitle>
+
       {experiences.items.length === 0 ? (
         <EmptyState
           title="No experiences logged yet"
