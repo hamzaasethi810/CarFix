@@ -2,14 +2,13 @@ import { redirect } from "next/navigation";
 import { EmptyState, PageTitle } from "@/components/ui";
 import { currentUser } from "@/lib/auth/guards";
 import { getGarage } from "@/lib/services/vehicles";
-import { getServices } from "@/lib/services/taxonomy";
 import { NewExperienceForm } from "./new-experience-form";
 
 export default async function NewExperiencePage() {
   const user = await currentUser();
   if (!user) redirect("/login");
 
-  const [vehicles, services] = await Promise.all([getGarage(user.id), getServices()]);
+  const vehicles = await getGarage(user.id);
 
   if (vehicles.length === 0) {
     return (
@@ -34,7 +33,6 @@ export default async function NewExperiencePage() {
           id: v.id,
           label: v.nickname ?? `${v.year} ${v.make} ${v.model}`,
         }))}
-        services={services}
       />
     </div>
   );

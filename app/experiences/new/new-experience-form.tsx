@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { CheckboxRow, Field, Select, SubmitButton, TextArea, TextInput } from "@/components/form";
 import { Card, ErrorText } from "@/components/ui";
 import { MechanicPicker } from "@/components/mechanic-picker";
+import { ServicePicker } from "@/components/service-picker";
 
 type Option = { id: string; label?: string; name?: string };
 
@@ -17,17 +18,12 @@ const RATINGS = [
   ["knowledgeRating", "Enthusiast knowledge"],
 ] as const;
 
-export function NewExperienceForm({
-  vehicles,
-  services,
-}: {
-  vehicles: Option[];
-  services: Option[];
-}) {
+export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
+  const [serviceId, setServiceId] = useState("");
   // State updates are async; this flips immediately so a double click cannot
   // fire a second request before the button re-renders as disabled.
   const submitting = useRef(false);
@@ -114,18 +110,16 @@ export function NewExperienceForm({
           {() => <MechanicPicker name="mechanicId" required />}
         </Field>
 
-        <Field label="Service">
-          {({ id }) => (
-            <Select id={id} name="serviceId" required>
-              <option value="">Select a service</option>
-              {services.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </Select>
-          )}
-        </Field>
+        {/* Searchable: 62 services is too many to scan in a dropdown. */}
+        <div>
+          <ServicePicker
+            value={serviceId}
+            onChange={setServiceId}
+            label="Service"
+            anyLabel="Search services…"
+          />
+          <input type="hidden" name="serviceId" value={serviceId} />
+        </div>
       </Card>
 
       <Card className="space-y-4">

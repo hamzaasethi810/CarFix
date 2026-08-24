@@ -7,6 +7,7 @@ import type { MapMechanic } from "@/components/mechanic-map";
 import { distance, money, num } from "@/components/ui";
 import { AreaPicker, type Area } from "@/components/area-picker";
 import { GoldCar } from "@/app/shops/[id]/subscription-panel";
+import { ServicePicker } from "@/components/service-picker";
 
 // Leaflet needs `window`, so the map never renders on the server.
 const MechanicMap = dynamic(
@@ -39,11 +40,9 @@ const placeLabel = (city: string, state: string) =>
 
 export function Discover({
   makes,
-  services,
   initial,
 }: {
   makes: Option[];
-  services: Option[];
   initial: Result[];
 }) {
   const [makeId, setMakeId] = useState("");
@@ -279,7 +278,7 @@ export function Discover({
                 </select>
               </label>
 
-              <Picker label="Service" value={serviceId} onChange={setServiceId} options={services} anyLabel="Any service" />
+              <ServicePicker value={serviceId} onChange={setServiceId} />
 
               <label className="block">
                 <span className="block text-footnote font-medium mb-1">
