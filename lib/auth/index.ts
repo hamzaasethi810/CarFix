@@ -1,14 +1,18 @@
 import "server-only";
-import NextAuth from "next-auth";
+import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { z } from "zod";
 import { env, isProd } from "../env";
 import { findUserByEmail, findActiveUserById } from "../repositories/user";
 import { verifyPassword } from "./password";
+import { hasMfaEnabled } from "../repositories/mfa";
+import { verifySecondFactor } from "../services/mfa";
 
 const credentialsSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+  // A TOTP code or a backup code, required only when the account has MFA on.
+  totp: z.string().max(20).optional(),
 });
 
 // The Credentials provider requires the JWT session strategy, so the token is
@@ -41,6 +45,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const ok = await verifyPassword(parsed.data.password, user.passwordHash);
         if (!ok) return null;
+
+        /*
+          Second factor. The password alone is never enough once MFA is on,
+          and the check runs here rather than after sign-in so no session is
+          ever issued to someone holding only the password.
+        */
+        if (await hasMfaEnabled(user.id)) {
+          if (!parsed.data.totp) throw new CredentialsSignin("MFA_REQUIRED");
+          const valid = await verifySecondFactor(user.id, parsed.data.totp);
+          if (!valid) throw new CredentialsSignin("MFA_INVALID");
+        }
 
         return { id: user.id, email: user.email, role: user.role };
       },

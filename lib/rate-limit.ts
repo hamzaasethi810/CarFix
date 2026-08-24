@@ -15,7 +15,8 @@ export type LimitName =
   | "mechanicIngest"
   | "geocode"
   | "billing"
-  | "shopClaim";
+  | "shopClaim"
+  | "mfa";
 
 const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m" | "h"}` }> = {
   login: { tokens: 8, window: "5 m" },
@@ -33,6 +34,8 @@ const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m
   geocode: { tokens: 20, window: "5 m" },
   billing: { tokens: 10, window: "10 m" },
   shopClaim: { tokens: 5, window: "1 h" },
+  // A six-digit code has a million possibilities; this makes guessing hopeless.
+  mfa: { tokens: 10, window: "15 m" },
 };
 
 const redis =

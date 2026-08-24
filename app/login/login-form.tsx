@@ -11,24 +11,112 @@ export function LoginForm() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  // Held so the second-factor step does not make them retype them.
+  const [pendingCredentials, setPendingCredentials] = useState<{
+    email: string;
+    password: string;
+  } | null>(null);
 
-  async function onSubmit(formData: FormData) {
-    setPending(true);
-    setError(null);
-
+  async function attempt(email: string, password: string, totp?: string) {
     const result = await signIn("credentials", {
-      email: String(formData.get("email") ?? ""),
-      password: String(formData.get("password") ?? ""),
+      email,
+      password,
+      ...(totp ? { totp } : {}),
       redirect: false,
     });
 
     setPending(false);
 
-    // Deliberately generic: never reveal whether the account exists.
-    if (result?.error) return setError("That email and password combination did not work.");
+    if (!result?.error) {
+      router.push("/garage");
+      router.refresh();
+      return;
+    }
 
-    router.push("/garage");
-    router.refresh();
+    /*
+      The provider distinguishes "this account needs a code" from "that code
+      was wrong", but only ever after the password has already been accepted —
+      so neither message tells an attacker anything about an account they
+      cannot already open.
+    */
+    const reason = String(result.code ?? result.error);
+
+    if (reason.includes("MFA_REQUIRED")) {
+      setPendingCredentials({ email, password });
+      setError(null);
+      return;
+    }
+
+    if (reason.includes("MFA_INVALID")) {
+      setError("That code was not correct. Try the next one your app shows.");
+      return;
+    }
+
+    setPendingCredentials(null);
+    setError("That email and password combination did not work.");
+  }
+
+  async function onSubmit(formData: FormData) {
+    setPending(true);
+    setError(null);
+
+    if (pendingCredentials) {
+      await attempt(
+        pendingCredentials.email,
+        pendingCredentials.password,
+        String(formData.get("totp") ?? ""),
+      );
+      return;
+    }
+
+    await attempt(
+      String(formData.get("email") ?? ""),
+      String(formData.get("password") ?? ""),
+    );
+  }
+
+  if (pendingCredentials) {
+    return (
+      <form action={onSubmit} className="space-y-5">
+        <Card className="space-y-4">
+          <div>
+            <h2 className="text-headline font-semibold">Enter your code</h2>
+            <p className="text-subhead text-secondary mt-1">
+              Open your authenticator app, or use one of your backup codes.
+            </p>
+          </div>
+
+          <Field label="Six-digit code">
+            {({ id, describedBy }) => (
+              <TextInput
+                id={id}
+                aria-describedby={describedBy}
+                name="totp"
+                required
+                autoFocus
+                autoComplete="one-time-code"
+                inputMode="numeric"
+                placeholder="123456"
+              />
+            )}
+          </Field>
+        </Card>
+
+        {error && <ErrorText>{error}</ErrorText>}
+        <SubmitButton pending={pending}>Verify</SubmitButton>
+
+        <button
+          type="button"
+          onClick={() => {
+            setPendingCredentials(null);
+            setError(null);
+          }}
+          className="w-full min-h-11 text-subhead text-secondary"
+        >
+          Back
+        </button>
+      </form>
+    );
   }
 
   return (

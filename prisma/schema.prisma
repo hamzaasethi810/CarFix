@@ -78,6 +78,16 @@ model User {
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
 
+  /*
+    Second factor. The secret is encrypted at rest with AES-256-GCM, so a
+    database dump alone cannot be used to generate valid codes.
+  */
+  totpSecret     String?
+  totpEnabledAt  DateTime?
+  /// Rejects a code that has already been used, closing the replay window.
+  totpLastUsedAt DateTime?
+
+  backupCodes         BackupCode[]
   profile             Profile?
   vehicles            Vehicle[]
   experiences         MechanicExperience[]
@@ -121,6 +131,22 @@ model Session {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+}
+
+/*
+  Single-use recovery codes for someone who loses their authenticator. Stored
+  as hashes: a database dump reveals nothing usable, exactly like a password.
+*/
+model BackupCode {
+  id        String    @id @default(cuid())
+  userId    String
+  codeHash  String
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt])
 }
 
 model VerificationToken {
