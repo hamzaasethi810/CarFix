@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ok, parseQuery, route } from "@/lib/api/handler";
+import { clientIdentifier, enforceRateLimit } from "@/lib/rate-limit";
 import {
   getDrivetrains,
   getEngines,
@@ -21,6 +22,7 @@ const querySchema = z
 
 export async function GET(req: Request) {
   return route(async () => {
+    await enforceRateLimit("read", clientIdentifier(req));
     const q = parseQuery(req, querySchema);
 
     switch (q.resource) {

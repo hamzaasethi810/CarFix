@@ -5,6 +5,7 @@ import { z } from "zod";
 import { env, isProd } from "../env";
 import { findUserByEmail, findActiveUserById } from "../repositories/user";
 import { verifyPassword } from "./password";
+import { clientIdentifier, enforceRateLimit } from "../rate-limit";
 import { hasMfaEnabled } from "../repositories/mfa";
 import { verifySecondFactor } from "../services/mfa";
 
@@ -32,9 +33,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
       credentials: { email: {}, password: {} },
-      async authorize(raw) {
+      async authorize(raw, request) {
         const parsed = credentialsSchema.safeParse(raw);
         if (!parsed.success) return null;
+
+        /*
+          Brute-force protection. NextAuth owns this route, so the limit is
+          applied here rather than in a handler. Keyed on the email being
+          attempted AND the source address, so one attacker cannot lock out a
+          victim by hammering their address from elsewhere.
+        */
+        const ip = clientIdentifier(request as unknown as Request);
+        await enforceRateLimit("login", `${ip}:${parsed.data.email.toLowerCase()}`);
 
         const user = await findUserByEmail(parsed.data.email);
         if (!user) {

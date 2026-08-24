@@ -2,6 +2,7 @@ import { z } from "zod";
 import { ok, parseQuery, route } from "@/lib/api/handler";
 import { requireAdmin } from "@/lib/auth/guards";
 import { getReports } from "@/lib/services/moderation";
+import { clientIdentifier, enforceRateLimit } from "@/lib/rate-limit";
 
 const querySchema = z
   .object({
@@ -13,7 +14,8 @@ const querySchema = z
 
 export async function GET(req: Request) {
   return route(async () => {
-    await requireAdmin();
+    const admin = await requireAdmin();
+    await enforceRateLimit("read", clientIdentifier(req, admin.id));
     const { status, limit, offset } = parseQuery(req, querySchema);
     return ok(await getReports(status, limit, offset));
   });

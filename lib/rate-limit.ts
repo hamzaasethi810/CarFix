@@ -1,7 +1,7 @@
 import "server-only";
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
-import { env } from "./env";
+import { env, isProd } from "./env";
 import { rateLimited } from "./errors";
 
 export type LimitName =
@@ -16,7 +16,10 @@ export type LimitName =
   | "geocode"
   | "billing"
   | "shopClaim"
-  | "mfa";
+  | "mfa"
+  | "read"
+  | "mutation"
+  | "accountDelete";
 
 const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m" | "h"}` }> = {
   login: { tokens: 8, window: "5 m" },
@@ -36,12 +39,62 @@ const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m
   shopClaim: { tokens: 5, window: "1 h" },
   // A six-digit code has a million possibilities; this makes guessing hopeless.
   mfa: { tokens: 10, window: "15 m" },
+  // Generous, but enough to stop wholesale scraping of public endpoints.
+  read: { tokens: 300, window: "1 m" },
+  // Ordinary edits: nobody legitimately changes their garage 200 times an hour.
+  mutation: { tokens: 60, window: "1 h" },
+  // Irreversible, so deliberately tiny.
+  accountDelete: { tokens: 3, window: "24 h" },
 };
 
 const redis =
   env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN
     ? new Redis({ url: env.UPSTASH_REDIS_REST_URL, token: env.UPSTASH_REDIS_REST_TOKEN })
     : null;
+
+if (!redis && isProd) {
+  // Loud, because the alternative is a production deployment that silently
+  // accepts unlimited login attempts.
+  console.error(
+    "[rate-limit] No Redis configured. Falling back to per-instance limiting, " +
+      "which does NOT hold across multiple instances. Set UPSTASH_REDIS_REST_URL.",
+  );
+}
+
+/*
+  In-memory fallback for when Redis is absent.
+
+  It only counts within one process, so it is not a substitute for the real
+  thing behind several instances — but the previous behaviour was to skip
+  limiting entirely, which meant a misconfigured deployment had no brute-force
+  protection at all. Something local is strictly better than nothing.
+*/
+const memory = new Map<string, { count: number; resetAt: number }>();
+
+function windowMs(window: string): number {
+  const [amount, unit] = window.split(" ");
+  const n = Number(amount);
+  return unit === "s" ? n * 1000 : unit === "m" ? n * 60_000 : n * 3_600_000;
+}
+
+function memoryAllow(name: LimitName, identifier: string): boolean {
+  const { tokens, window } = WINDOWS[name];
+  const key = `${name}:${identifier}`;
+  const now = Date.now();
+
+  const entry = memory.get(key);
+  if (!entry || entry.resetAt <= now) {
+    memory.set(key, { count: 1, resetAt: now + windowMs(window) });
+    // Opportunistic sweep so the map cannot grow without bound.
+    if (memory.size > 10_000) {
+      for (const [k, v] of memory) if (v.resetAt <= now) memory.delete(k);
+    }
+    return true;
+  }
+
+  entry.count += 1;
+  return entry.count <= tokens;
+}
 
 const limiters = new Map<LimitName, Ratelimit>();
 
@@ -61,11 +114,20 @@ function limiterFor(name: LimitName) {
   return limiter;
 }
 
-// Throws AppError("RATE_LIMITED") when the caller is over budget. Without Redis
-// configured (local dev) it is a no-op, so the app still runs offline.
+/**
+ * Throws AppError("RATE_LIMITED") when the caller is over budget.
+ *
+ * Uses Redis when configured so the count is shared across instances, and an
+ * in-process counter otherwise.
+ */
 export async function enforceRateLimit(name: LimitName, identifier: string) {
   const limiter = limiterFor(name);
-  if (!limiter) return;
+
+  if (!limiter) {
+    if (!memoryAllow(name, identifier)) throw rateLimited();
+    return;
+  }
+
   const { success } = await limiter.limit(identifier);
   if (!success) throw rateLimited();
 }
