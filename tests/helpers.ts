@@ -2,6 +2,8 @@ import { prisma } from "../lib/db";
 import { hashPassword } from "../lib/auth/password";
 
 export async function resetData() {
+  await prisma.passwordResetToken.deleteMany();
+  await prisma.backupCode.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.report.deleteMany();
   await prisma.receipt.deleteMany();

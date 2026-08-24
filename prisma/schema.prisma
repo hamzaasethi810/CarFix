@@ -123,6 +123,7 @@ model User {
   sessionsValidFrom DateTime?
 
   backupCodes         BackupCode[]
+  passwordResets      PasswordResetToken[]
   profile             Profile?
   vehicles            Vehicle[]
   experiences         MechanicExperience[]
@@ -176,6 +177,29 @@ model Session {
   Single-use recovery codes for someone who loses their authenticator. Stored
   as hashes: a database dump reveals nothing usable, exactly like a password.
 */
+/*
+  A single-use password reset token.
+
+  Stored hashed, exactly like a password: whoever holds the raw token can take
+  over the account, so a database dump must not hand that over. The row is kept
+  after use so a replayed link fails loudly rather than looking untouched.
+*/
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  /// Recorded to make abuse investigable, not to identify anyone.
+  requestIp String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt])
+  @@index([expiresAt])
+}
+
 model BackupCode {
   id        String    @id @default(cuid())
   userId    String

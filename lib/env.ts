@@ -28,6 +28,13 @@ const serverEnvSchema = z.object({
   /** Absolute origin used to build Stripe return URLs. */
   APP_URL: blankAsUndefined(z.string().url()),
 
+  /*
+    Email. Optional so the app runs without a mail provider; password reset
+    links are written to the server log instead of being sent.
+  */
+  RESEND_API_KEY: blankAsUndefined(z.string().startsWith("re_")),
+  EMAIL_FROM: blankAsUndefined(z.string().min(3)),
+
   UPSTASH_REDIS_REST_URL: blankAsUndefined(z.string().url()),
   UPSTASH_REDIS_REST_TOKEN: blankAsUndefined(z.string().min(1)),
 

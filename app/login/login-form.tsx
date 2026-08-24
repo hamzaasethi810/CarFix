@@ -155,6 +155,12 @@ export function LoginForm() {
 
       <SubmitButton pending={pending}>Sign in</SubmitButton>
 
+      <p className="text-subhead text-center">
+        <Link href="/forgot-password" className="text-accent font-medium">
+          Forgot your password?
+        </Link>
+      </p>
+
       <p className="text-subhead text-secondary text-center">
         No account?{" "}
         <Link href="/register" className="text-accent font-medium">

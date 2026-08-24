@@ -21,7 +21,8 @@ export type LimitName =
   | "mutation"
   | "accountDelete"
   | "workPhoto"
-  | "shopSubmit";
+  | "shopSubmit"
+  | "passwordReset";
 
 const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m" | "h"}` }> = {
   login: { tokens: 8, window: "5 m" },
@@ -50,6 +51,8 @@ const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m
   workPhoto: { tokens: 20, window: "1 h" },
   // Each submission geocodes, so this shares Nominatim's conservative budget.
   shopSubmit: { tokens: 8, window: "1 h" },
+  // Tight: this endpoint sends mail and is reachable without signing in.
+  passwordReset: { tokens: 6, window: "1 h" },
 };
 
 const redis =
