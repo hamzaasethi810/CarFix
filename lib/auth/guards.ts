@@ -4,12 +4,16 @@ import { AppError, forbidden, unauthenticated } from "../errors";
 import { hasMfaEnabled } from "../repositories/mfa";
 
 export type Role = "USER" | "REVIEWER" | "ADMIN";
-export type AuthedUser = { id: string; role: Role };
+export type AuthedUser = { id: string; role: Role; mfaEnabled: boolean };
 
 export async function currentUser(): Promise<AuthedUser | null> {
   const session = await auth();
   if (!session?.user?.id) return null;
-  return { id: session.user.id, role: session.user.role };
+  return {
+    id: session.user.id,
+    role: session.user.role,
+    mfaEnabled: session.user.mfaEnabled,
+  };
 }
 
 export async function requireUser(): Promise<AuthedUser> {

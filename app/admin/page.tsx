@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Card, PageTitle, num } from "@/components/ui";
 import { currentUser, isPrivileged } from "@/lib/auth/guards";
 import { getVerificationQueue } from "@/lib/services/experiences";
@@ -9,7 +9,8 @@ import { getClaimQueue } from "@/lib/services/shops";
 export default async function AdminPage() {
   const user = await currentUser();
   if (!user) redirect("/login");
-  if (!isPrivileged(user.role)) redirect("/");
+  // 404 rather than 403: a 403 would confirm the page exists.
+  if (!isPrivileged(user.role)) notFound();
 
   const isAdmin = user.role === "ADMIN";
 

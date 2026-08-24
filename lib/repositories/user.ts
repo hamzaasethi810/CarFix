@@ -11,7 +11,13 @@ export const findUserByEmail = (email: string) =>
 export const findActiveUserById = (id: string) =>
   prisma.user.findFirst({
     where: { id, deletedAt: null },
-    select: { id: true, email: true, role: true },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      sessionsValidFrom: true,
+      totpEnabledAt: true,
+    },
   });
 
 export const createUserWithProfile = (data: {
@@ -78,8 +84,18 @@ export const updateProfile = (
     },
   });
 
+/*
+  Changing a role signs the account out everywhere. A promotion must arrive as
+  a fresh login, both so the new rights are never quietly attached to a tab
+  that was already open, and so a privileged account is forced through
+  enrolment before it can do anything.
+*/
 export const setUserRole = (userId: string, role: Role) =>
-  prisma.user.update({ where: { id: userId }, data: { role }, select: { id: true, role: true } });
+  prisma.user.update({
+    where: { id: userId },
+    data: { role, sessionsValidFrom: new Date() },
+    select: { id: true, role: true },
+  });
 
 export const softDeleteUser = (userId: string) =>
   prisma.$transaction(async (tx) => {

@@ -96,6 +96,16 @@ model User {
   /// Rejects a code that has already been used, closing the replay window.
   totpLastUsedAt DateTime?
 
+  /*
+    Any session issued before this moment is refused.
+
+    Granting a role bumps it, which signs the account out everywhere. That is
+    what makes the promotion take effect as a fresh login rather than silently
+    upgrading a tab someone already had open — and it is the point at which we
+    can insist on a second factor.
+  */
+  sessionsValidFrom DateTime?
+
   backupCodes         BackupCode[]
   profile             Profile?
   vehicles            Vehicle[]

@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { EmptyState, PageTitle } from "@/components/ui";
 import { currentUser, isPrivileged } from "@/lib/auth/guards";
 import { getClaimQueue } from "@/lib/services/shops";
@@ -7,7 +7,8 @@ import { ClaimRow } from "./claim-row";
 export default async function ClaimsPage() {
   const user = await currentUser();
   if (!user) redirect("/login");
-  if (!isPrivileged(user.role)) redirect("/");
+  // 404 rather than 403: a 403 would confirm the page exists.
+  if (!isPrivileged(user.role)) notFound();
 
   const queue = await getClaimQueue(50, 0);
 

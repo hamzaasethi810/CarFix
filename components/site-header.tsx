@@ -41,10 +41,15 @@ export function SiteHeader({
           </>
         )}
 
-        {/* Reviewers see the queues; only administrators see the rest. */}
+        {/* Only shown to those who hold the role; the page itself 404s otherwise. */}
         {isReviewer && (
+          <Link href="/review" className={navLink}>
+            Review
+          </Link>
+        )}
+        {isAdmin && (
           <Link href="/admin" className={navLink}>
-            {isAdmin ? "Admin" : "Review"}
+            Admin
           </Link>
         )}
 

@@ -68,7 +68,15 @@ async function setRole(email: string, role: "ADMIN" | "REVIEWER" | "USER") {
     return;
   }
 
-  await prisma.user.update({ where: { id: user.id }, data: { role } });
+  /*
+    sessionsValidFrom is bumped with the role, which is what actually signs the
+    account out everywhere — with a JWT strategy there is no session row to
+    delete, so every token issued before this instant is refused instead.
+  */
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { role, sessionsValidFrom: new Date() },
+  });
 
   /*
     Role changes are audited like any other privileged action. The actor is
@@ -86,13 +94,13 @@ async function setRole(email: string, role: "ADMIN" | "REVIEWER" | "USER") {
   });
 
   console.log(`${user.email} is now ${role}.`);
-  console.log("The change takes effect on their next request — the session re-reads the role.");
+  console.log("They have been signed out everywhere; the new role applies on their next login.");
 
   if (role !== "USER" && !user.totpEnabledAt) {
     console.log(
-      "\n!! This account has no second factor, so it is BLOCKED from the review\n" +
-        "   queues until it has one. Have them set it up at /settings/security —\n" +
-        "   Duo Mobile, Google Authenticator, Authy, and 1Password all work.",
+      "\nWhen they sign back in they will be sent straight to /setup-2fa and kept\n" +
+        "there until an authenticator is enrolled. Duo Mobile: Add account, then\n" +
+        "Use QR code. The review desk is at /review once that is done.",
     );
   }
 }

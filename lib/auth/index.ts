@@ -79,14 +79,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       const current = await findActiveUserById(token.sub);
       if (!current) return {};
 
+      /*
+        A role change bumps sessionsValidFrom, so any token minted before it is
+        discarded here. This is what actually signs someone out everywhere —
+        with a JWT strategy there is no server-side session row to delete.
+      */
+      if (current.sessionsValidFrom && token.iat) {
+        const issuedAt = new Date(token.iat * 1000);
+        if (issuedAt < current.sessionsValidFrom) return {};
+      }
+
       token.role = current.role;
       token.email = current.email;
+      // Lets the layout push a privileged account into enrolment without a
+      // database read on every render.
+      token.mfaEnabled = Boolean(current.totpEnabledAt);
       return token;
     },
     async session({ session, token }) {
       if (token.sub) {
         session.user.id = token.sub;
         session.user.role = (token.role as "USER" | "REVIEWER" | "ADMIN") ?? "USER";
+        session.user.mfaEnabled = Boolean(token.mfaEnabled);
       }
       return session;
     },
