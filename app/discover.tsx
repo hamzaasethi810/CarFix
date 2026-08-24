@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { MapMechanic } from "@/components/mechanic-map";
 
@@ -28,6 +28,10 @@ type Result = MapMechanic & {
   wouldReturnPct: number | null;
 };
 
+/** OSM records often lack city or state, so never render a bare comma. */
+const placeLabel = (city: string, state: string) =>
+  [city, state].filter((p) => p && p.trim()).join(", ");
+
 const money = (n: number | null) =>
   n === null ? null : n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
@@ -53,6 +57,13 @@ export function Discover({
   const [loading, setLoading] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
   const listRef = useRef<HTMLUListElement>(null);
+
+  // Anchor point for the radius. Null until the reader shares a location or
+  // the map settles, in which case results are simply unbounded by distance.
+  const [center, setCenter] = useState<{ lat: number; lng: number } | null>(null);
+  const [radiusMiles, setRadiusMiles] = useState(20);
+  const [locating, setLocating] = useState(false);
+  const [locationNote, setLocationNote] = useState<string | null>(null);
 
   /*
     Dependent selections are cleared in the change handler, not in an effect,
@@ -125,24 +136,73 @@ export function Discover({
     };
   }, [generations]);
 
-  async function runSearch() {
-    setLoading(true);
-    const params = new URLSearchParams();
-    if (serviceId) params.set("serviceId", serviceId);
-    if (makeId) params.set("makeId", makeId);
-    if (modelId) params.set("modelId", modelId);
-    if (genValue.startsWith("p:")) params.set("platformId", genValue.slice(2));
-    else if (genValue.startsWith("g:")) params.set("generationId", genValue.slice(2));
-    if (verifiedOnly) params.set("verifiedOnly", "true");
-    params.set("limit", "50");
+  const runSearch = useCallback(
+    async (override?: { lat: number; lng: number; radiusMiles?: number }) => {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (serviceId) params.set("serviceId", serviceId);
+      if (makeId) params.set("makeId", makeId);
+      if (modelId) params.set("modelId", modelId);
+      if (genValue.startsWith("p:")) params.set("platformId", genValue.slice(2));
+      else if (genValue.startsWith("g:")) params.set("generationId", genValue.slice(2));
+      if (verifiedOnly) params.set("verifiedOnly", "true");
 
-    const res = await fetch(`/api/mechanics?${params.toString()}`);
-    const body = await res.json().catch(() => null);
-    setLoading(false);
-    if (!res.ok) return;
-    setResults(body.items ?? []);
-    setSelectedId(null);
-    setPanelOpen(true);
+      const anchor = override ?? center;
+      if (anchor) {
+        params.set("lat", String(anchor.lat));
+        params.set("lng", String(anchor.lng));
+        params.set("radiusMiles", String(override?.radiusMiles ?? radiusMiles));
+      }
+      params.set("limit", "50");
+
+      const res = await fetch(`/api/mechanics?${params.toString()}`);
+      const body = await res.json().catch(() => null);
+      setLoading(false);
+      if (!res.ok) return;
+      setResults(body.items ?? []);
+      setSelectedId(null);
+      setPanelOpen(true);
+    },
+    [serviceId, makeId, modelId, genValue, verifiedOnly, center, radiusMiles],
+  );
+
+  /*
+    Ask once on load. Permission may be denied or unavailable, so this only
+    ever improves the default view — it never blocks it.
+  */
+  useEffect(() => {
+    if (!("geolocation" in navigator)) return;
+    let live = true;
+    // Deferred so the effect body itself does not synchronously set state.
+    queueMicrotask(() => live && setLocating(true));
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        if (!live) return;
+        const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        setCenter(next);
+        setLocating(false);
+        setLocationNote(null);
+        void runSearch({ ...next, radiusMiles: 20 });
+      },
+      () => {
+        if (!live) return;
+        setLocating(false);
+        setLocationNote("Showing all areas — turn on location for shops near you.");
+      },
+      { timeout: 8000, maximumAge: 300_000 },
+    );
+
+    return () => {
+      live = false;
+    };
+    // Deliberately runs once: this is the initial locate, not a reaction to filters.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function changeRadius(next: number) {
+    setRadiusMiles(next);
+    if (center) void runSearch({ ...center, radiusMiles: next });
   }
 
   const selected = results.find((r) => r.id === selectedId) ?? null;
@@ -163,7 +223,7 @@ export function Discover({
       <div className="pointer-events-none absolute inset-0 flex flex-col">
         <div className="pointer-events-auto p-3 sm:p-4">
           <div className="glass rounded-glass p-3 sm:p-4 max-w-4xl mx-auto">
-            <div className="grid gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-5 lg:items-end">
+            <div className="grid gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-6 lg:items-end">
               <Picker label="Make" value={makeId} onChange={chooseMake} options={makes} anyLabel="Any make" />
               <Picker
                 label="Model"
@@ -204,6 +264,25 @@ export function Discover({
 
               <Picker label="Service" value={serviceId} onChange={setServiceId} options={services} anyLabel="Any service" />
 
+              <label className="block">
+                <span className="block text-footnote font-medium mb-1">
+                  Within {center ? `${radiusMiles} mi` : "any distance"}
+                </span>
+                <select
+                  value={radiusMiles}
+                  onChange={(e) => changeRadius(Number(e.target.value))}
+                  disabled={!center}
+                  aria-label="Search radius in miles"
+                  className="w-full min-h-11 rounded-control bg-elevated/90 border border-separator px-3 text-subhead disabled:opacity-50"
+                >
+                  {[5, 10, 20, 35, 50, 100, 200].map((r) => (
+                    <option key={r} value={r}>
+                      {r} miles
+                    </option>
+                  ))}
+                </select>
+              </label>
+
               <div className="flex items-center gap-3">
                 <label className="flex items-center gap-2 text-subhead min-h-11 cursor-pointer">
                   <input
@@ -217,7 +296,7 @@ export function Discover({
                 {/* The one primary action in this context gets the colour. */}
                 <button
                   type="button"
-                  onClick={runSearch}
+                  onClick={() => void runSearch()}
                   disabled={loading}
                   className="flex-1 min-h-11 px-4 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold disabled:opacity-50"
                 >
@@ -244,17 +323,29 @@ export function Discover({
               className="flex items-center justify-between w-full px-4 min-h-14 text-left sm:cursor-default"
             >
               <span className="text-headline font-semibold">
-                {results.length} {results.length === 1 ? "shop" : "shops"}
+                {locating
+                  ? "Finding you…"
+                  : `${results.length} ${results.length === 1 ? "shop" : "shops"}`}
+                {center && !locating && (
+                  <span className="text-secondary font-normal"> within {radiusMiles} mi</span>
+                )}
               </span>
               <span className="text-subhead text-secondary sm:hidden" aria-hidden="true">
                 {panelOpen ? "Hide" : "Show"}
               </span>
             </button>
 
+            {locationNote && (
+              <p className="px-4 pb-2 text-footnote text-secondary">{locationNote}</p>
+            )}
+
             <ul ref={listRef} className="overflow-y-auto overscroll-contain px-2 pb-2 flex-1">
-              {results.length === 0 && (
+              {results.length === 0 && !loading && (
                 <li className="px-2 py-6 text-subhead text-secondary text-center">
-                  No shops matched. Try widening the filters.
+                  No shops matched.
+                  {center && radiusMiles < 200
+                    ? " Try a wider radius."
+                    : " Try clearing some filters."}
                 </li>
               )}
               {results.map((m) => (
@@ -270,7 +361,9 @@ export function Discover({
                     <span className="flex items-baseline justify-between gap-2">
                       <span className="text-subhead font-semibold">{m.name}</span>
                       <span className="text-footnote text-secondary shrink-0">
-                        {m.distanceMiles !== null ? `${m.distanceMiles} mi` : `${m.city}, ${m.state}`}
+                        {m.distanceMiles !== null
+                          ? `${m.distanceMiles} mi`
+                          : placeLabel(m.city, m.state)}
                       </span>
                     </span>
                     <span className="block text-footnote text-secondary mt-1">
@@ -296,8 +389,9 @@ export function Discover({
                 <div>
                   <h2 className="text-headline font-semibold">{selected.name}</h2>
                   <p className="text-footnote text-secondary mt-0.5">
-                    {selected.city}, {selected.state}
-                    {selected.distanceMiles !== null && ` · ${selected.distanceMiles} mi`}
+                    {[placeLabel(selected.city, selected.state), selected.distanceMiles !== null ? `${selected.distanceMiles} mi` : null]
+                      .filter(Boolean)
+                      .join(" · ")}
                   </p>
                 </div>
                 <button

@@ -6,9 +6,19 @@ import {
   type MechanicSearchParams,
 } from "../repositories/mechanic";
 import { countExperiences } from "../repositories/experience";
+import { ensureAreaCovered } from "./ingest";
 import { toMechanicView } from "./dto";
 
 export async function search(params: MechanicSearchParams) {
+  /*
+    When the search is anchored to a place, make sure that place has shop
+    records before querying. The first search in a new area pulls it from
+    OpenStreetMap; later searches hit the cached rows.
+  */
+  if (params.lat !== undefined && params.lng !== undefined) {
+    await ensureAreaCovered(params.lat, params.lng, params.radiusMiles ?? 20);
+  }
+
   const rows = await searchMechanics(params);
   return {
     items: rows.map((r) => ({

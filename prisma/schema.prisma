@@ -47,6 +47,15 @@ enum ReportStatus {
   DISMISSED
 }
 
+// Where a shop record came from. OSM rows are ingested on demand from
+// OpenStreetMap so the directory covers anywhere people search, rather than
+// only places that were seeded by hand.
+enum MechanicSource {
+  SEED
+  OSM
+  USER
+}
+
 // ---------- Auth (Auth.js / NextAuth database session strategy) ----------
 
 model User {
@@ -166,6 +175,9 @@ model Generation {
   vehicles Vehicle[]
 
   @@unique([modelId, code])
+  // Resolving a model year to its generation is the hottest taxonomy query.
+  @@index([modelId, yearStart, yearEnd])
+  @@index([platformId])
 }
 
 model Trim {
@@ -240,7 +252,7 @@ model VehiclePhoto {
 // ---------- Mechanics & services ----------
 
 model Mechanic {
-  id          String    @id @default(cuid())
+  id          String         @id @default(cuid())
   name        String
   description String?
   address     String
@@ -252,15 +264,22 @@ model Mechanic {
   phone       String?
   website     String?
   hours       Json?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  source      MechanicSource @default(SEED)
+  /// Upstream identifier, e.g. "node/123456" for OpenStreetMap.
+  sourceRef   String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   deletedAt   DateTime?
 
   specialties MechanicSpecialty[]
   experiences MechanicExperience[]
 
+  // Re-ingesting the same OSM element updates the row instead of duplicating it.
+  @@unique([source, sourceRef])
   @@index([city, state])
+  // Supports the bounding-box prefilter that runs before distance is computed.
   @@index([lat, lng])
+  @@index([deletedAt])
 }
 
 model Service {
@@ -356,6 +375,23 @@ model Report {
   experience MechanicExperience? @relation(fields: [experienceId], references: [id], onDelete: Cascade)
 
   @@index([status])
+}
+
+/*
+  Records which areas have already been pulled from OpenStreetMap, so a popular
+  search does not hit the shared Overpass API on every request. The centre is
+  rounded to a coarse grid, and a stored entry satisfies any request with an
+  equal or smaller radius.
+*/
+model GeoCoverage {
+  id          String   @id @default(cuid())
+  cellLat     Float
+  cellLng     Float
+  radiusMiles Int
+  shopCount   Int      @default(0)
+  fetchedAt   DateTime @default(now())
+
+  @@unique([cellLat, cellLng])
 }
 
 model AuditLog {

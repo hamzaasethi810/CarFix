@@ -23,18 +23,10 @@
   what resolves the generation, so an overlap would make that ambiguous.
 */
 
-export type GenerationSpec = {
-  /** Chassis code where one exists, otherwise a generation label. Unique per model. */
-  code: string;
-  from: number;
-  to: number | null;
-  /** Groups related generations (facelift halves, shared chassis) for aggregation. */
-  platform?: string;
-  trims?: string[];
-};
+import { mergeMakes, type MakeSpec } from "./types";
+import { MAJOR_MAKES } from "./vehicles-major";
 
-export type ModelSpec = { name: string; generations: GenerationSpec[] };
-export type MakeSpec = { name: string; models: ModelSpec[] };
+export type { GenerationSpec, ModelSpec, MakeSpec } from "./types";
 
 export const ENGINES = [
   "1.5L I4 Turbo",
@@ -87,7 +79,7 @@ export const SERVICES = [
   "Other",
 ];
 
-export const MAKES: MakeSpec[] = [
+const BASE_MAKES: MakeSpec[] = [
   {
     name: "Acura",
     models: [
@@ -342,7 +334,7 @@ export const MAKES: MakeSpec[] = [
     name: "Jeep",
     models: [
       { name: "Wrangler", generations: [
-        { code: "JK", from: 2007, to: 2018 },
+        { code: "JK", from: 2007, to: 2017 },
         { code: "JL", from: 2018, to: null, trims: ["Sport", "Sahara", "Rubicon", "392"] },
       ]},
       { name: "Grand Cherokee", generations: [
@@ -411,7 +403,7 @@ export const MAKES: MakeSpec[] = [
     models: [
       { name: "MX-5 Miata", generations: [
         { code: "NC", from: 2006, to: 2015 },
-        { code: "ND", from: 2016, to: 2023, platform: "ND" },
+        { code: "ND", from: 2016, to: 2018, platform: "ND" },
         { code: "ND2", from: 2019, to: null, platform: "ND" },
       ]},
       { name: "Mazda3", generations: [
@@ -462,7 +454,7 @@ export const MAKES: MakeSpec[] = [
         { code: "W167", from: 2020, to: null },
       ]},
       { name: "C63 AMG", generations: [
-        { code: "W204", from: 2008, to: 2015 },
+        { code: "W204", from: 2008, to: 2014 },
         { code: "W205", from: 2015, to: 2021, trims: ["C63", "C63 S"] },
       ]},
     ],
@@ -514,7 +506,7 @@ export const MAKES: MakeSpec[] = [
     models: [
       { name: "911", generations: [
         { code: "997.1", from: 2005, to: 2008, platform: "997" },
-        { code: "997.2", from: 2009, to: 2012, platform: "997" },
+        { code: "997.2", from: 2009, to: 2011, platform: "997" },
         { code: "991.1", from: 2012, to: 2016, platform: "991" },
         { code: "991.2", from: 2017, to: 2019, platform: "991" },
         { code: "992", from: 2020, to: null, trims: ["Carrera", "Carrera S", "Turbo", "GT3"] },
@@ -641,3 +633,9 @@ export const MAKES: MakeSpec[] = [
     ],
   },
 ];
+
+/*
+  The list the seed consumes. Add a marque-specific file, import it, and pass it
+  here — no other code changes.
+*/
+export const MAKES: MakeSpec[] = mergeMakes(BASE_MAKES, MAJOR_MAKES);

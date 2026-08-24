@@ -85,6 +85,23 @@ export async function searchMechanics(p: MechanicSearchParams) {
       ? Prisma.sql`WHERE "distanceMiles" <= ${p.radiusMiles}`
       : Prisma.empty;
 
+  /*
+    A bounding box on (lat, lng) can use the index; the haversine expression
+    cannot. Narrowing to the box first means the trigonometry only runs on
+    candidates, which keeps the query flat as the shop table grows.
+    ~69 miles per degree of latitude; longitude degrees shrink with cos(lat).
+  */
+  const boundingBox =
+    hasGeo && p.radiusMiles !== undefined
+      ? (() => {
+          const latDelta = p.radiusMiles / 69;
+          const lngDelta = p.radiusMiles / (69 * Math.max(Math.cos((p.lat! * Math.PI) / 180), 0.01));
+          return Prisma.sql`
+            AND m.lat BETWEEN ${p.lat! - latDelta} AND ${p.lat! + latDelta}
+            AND m.lng BETWEEN ${p.lng! - lngDelta} AND ${p.lng! + lngDelta}`;
+        })()
+      : Prisma.empty;
+
   const rows = await prisma.$queryRaw<MechanicSearchRow[]>(Prisma.sql`
     WITH stats AS (
       SELECT
@@ -123,7 +140,7 @@ export async function searchMechanics(p: MechanicSearchParams) {
           ? Prisma.sql`JOIN stats s ON s.mechanic_id = m.id`
           : Prisma.sql`LEFT JOIN stats s ON s.mechanic_id = m.id`
       }
-      WHERE m."deletedAt" IS NULL
+      WHERE m."deletedAt" IS NULL${boundingBox}
     ) AS ranked
     ${radiusFilter}
     ORDER BY

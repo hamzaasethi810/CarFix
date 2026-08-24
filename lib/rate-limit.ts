@@ -11,7 +11,9 @@ export type LimitName =
   | "receiptUpload"
   | "photoUpload"
   | "search"
-  | "report";
+  | "report"
+  | "vinLookup"
+  | "mechanicIngest";
 
 const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m" | "h"}` }> = {
   login: { tokens: 8, window: "5 m" },
@@ -21,6 +23,9 @@ const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m
   photoUpload: { tokens: 30, window: "1 h" },
   search: { tokens: 120, window: "1 m" },
   report: { tokens: 15, window: "1 h" },
+  vinLookup: { tokens: 40, window: "1 h" },
+  // Ingestion hits a shared community API, so it is deliberately conservative.
+  mechanicIngest: { tokens: 20, window: "10 m" },
 };
 
 const redis =

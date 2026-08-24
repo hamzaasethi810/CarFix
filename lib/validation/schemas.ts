@@ -110,7 +110,8 @@ export const mechanicSearchSchema = z
     year: z.coerce.number().int().min(1900).max(2100).optional(),
     lat: z.coerce.number().min(-90).max(90).optional(),
     lng: z.coerce.number().min(-180).max(180).optional(),
-    radiusMiles: z.coerce.number().min(1).max(500).optional(),
+    // 20 miles is the default catchment; the reader can widen it up to 200.
+    radiusMiles: z.coerce.number().int().min(1).max(200).default(20),
     verifiedOnly: z
       .enum(["true", "false"])
       .optional()
