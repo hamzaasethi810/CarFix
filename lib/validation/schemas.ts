@@ -114,6 +114,10 @@ export const mechanicSearchSchema = z
       .enum(["true", "false"])
       .optional()
       .transform((v) => v === "true"),
+    subscribedOnly: z
+      .enum(["true", "false"])
+      .optional()
+      .transform((v) => v === "true"),
     minRating: z.coerce.number().min(1).max(5).optional(),
     maxPrice: money.optional(),
     limit: z.coerce.number().int().min(1).max(50).default(20),

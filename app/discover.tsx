@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { MapMechanic } from "@/components/mechanic-map";
 import { distance, money, num } from "@/components/ui";
 import { AreaPicker, type Area } from "@/components/area-picker";
+import { GoldCar } from "@/app/shops/[id]/subscription-panel";
 
 // Leaflet needs `window`, so the map never renders on the server.
 const MechanicMap = dynamic(
@@ -28,6 +29,7 @@ type Generation = {
 type Result = MapMechanic & {
   distanceMiles: number | null;
   wouldReturnPct: number | null;
+  subscribed: boolean;
 };
 
 /** OSM records often lack city or state, so never render a bare comma. */
@@ -51,6 +53,7 @@ export function Discover({
   const [genValue, setGenValue] = useState("");
   const [serviceId, setServiceId] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
+  const [subscribedOnly, setSubscribedOnly] = useState(false);
 
   const [results, setResults] = useState<Result[]>(initial);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -147,6 +150,7 @@ export function Discover({
       if (genValue.startsWith("p:")) params.set("platformId", genValue.slice(2));
       else if (genValue.startsWith("g:")) params.set("generationId", genValue.slice(2));
       if (verifiedOnly) params.set("verifiedOnly", "true");
+      if (subscribedOnly) params.set("subscribedOnly", "true");
 
       const anchor = override ?? center;
       if (anchor) {
@@ -164,7 +168,7 @@ export function Discover({
       setSelectedId(null);
       setPanelOpen(true);
     },
-    [serviceId, makeId, modelId, genValue, verifiedOnly, center, radiusMiles],
+    [serviceId, makeId, modelId, genValue, verifiedOnly, subscribedOnly, center, radiusMiles],
   );
 
   /*
@@ -315,6 +319,21 @@ export function Discover({
                   Verified only
                 </button>
 
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={subscribedOnly}
+                  onClick={() => setSubscribedOnly((v) => !v)}
+                  className={`inline-flex items-center gap-2 min-h-11 px-4 rounded-full text-subhead font-medium transition-colors duration-150 ${
+                    subscribedOnly
+                      ? "bg-[color-mix(in_srgb,#b8860b_18%,transparent)] text-[#8a6508]"
+                      : "bg-black/[0.06] text-secondary hover:bg-black/10"
+                  }`}
+                >
+                  <GoldCar className="size-4" />
+                  Gold shops
+                </button>
+
                 <span className="flex-1" />
 
                 {/* The one primary action in this context gets the colour. */}
@@ -382,7 +401,10 @@ export function Discover({
                     }`}
                   >
                     <span className="flex items-baseline justify-between gap-2">
-                      <span className="text-subhead font-semibold">{m.name}</span>
+                      <span className="text-subhead font-semibold inline-flex items-center gap-1.5">
+                        {m.subscribed && <GoldCar className="size-4 shrink-0" />}
+                        {m.name}
+                      </span>
                       <span className="text-footnote text-secondary shrink-0">
                         {m.distanceMiles !== null
                           ? distance(m.distanceMiles)
@@ -411,7 +433,10 @@ export function Discover({
             <div className="glass rounded-glass p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-headline font-semibold">{selected.name}</h2>
+                  <h2 className="text-headline font-semibold inline-flex items-center gap-1.5">
+                    {selected.subscribed && <GoldCar className="size-5 shrink-0" />}
+                    {selected.name}
+                  </h2>
                   <p className="text-footnote text-secondary mt-0.5">
                     {[placeLabel(selected.city, selected.state), distance(selected.distanceMiles)]
                       .filter(Boolean)

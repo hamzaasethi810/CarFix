@@ -14,8 +14,12 @@ const prisma = new PrismaClient({
   or the experiences attached to them.
 */
 async function main() {
-  for (const name of SERVICES) {
-    await prisma.service.upsert({ where: { name }, create: { name }, update: {} });
+  for (const { name, category } of SERVICES) {
+    await prisma.service.upsert({
+      where: { name },
+      create: { name, category },
+      update: { category },
+    });
   }
   for (const name of ENGINES) {
     await prisma.engine.upsert({ where: { name }, create: { name }, update: {} });

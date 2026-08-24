@@ -159,6 +159,7 @@ type MechanicRow = {
   phone: string | null;
   website: string | null;
   hours: unknown;
+  subscriptionStatus: string;
   specialties: { service: { id: string; name: string } }[];
 };
 
@@ -175,5 +176,7 @@ export const toMechanicView = (m: MechanicRow) => ({
   phone: m.phone,
   website: m.website,
   hours: m.hours ?? null,
+  // Only whether they are current — never the Stripe ids.
+  subscribed: m.subscriptionStatus === "ACTIVE",
   specialties: m.specialties.map((s) => s.service),
 });

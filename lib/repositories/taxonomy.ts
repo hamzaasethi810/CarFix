@@ -66,3 +66,22 @@ export const findGenerationById = (id: string) =>
 
 export const serviceExists = async (id: string) =>
   Boolean(await prisma.service.findUnique({ where: { id }, select: { id: true } }));
+
+/**
+ * Service typeahead. With 60+ services across eight categories a plain list is
+ * hard to scan, so matching happens here and the category rides along to give
+ * each suggestion context.
+ */
+export const searchServices = (query: string, limit: number) =>
+  prisma.service.findMany({
+    where: { name: { contains: query, mode: "insensitive" } },
+    select: { id: true, name: true, category: true },
+    orderBy: [{ category: "asc" }, { name: "asc" }],
+    take: limit,
+  });
+
+export const listServicesGrouped = () =>
+  prisma.service.findMany({
+    select: { id: true, name: true, category: true },
+    orderBy: [{ category: "asc" }, { name: "asc" }],
+  });

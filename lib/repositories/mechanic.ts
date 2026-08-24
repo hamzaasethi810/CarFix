@@ -15,6 +15,8 @@ export type MechanicSearchRow = {
   avgRating: number | null;
   medianPrice: number | null;
   wouldReturnPct: number | null;
+  /** True for a shop with an active subscription — the golden mark. */
+  subscribed: boolean;
 };
 
 export type MechanicSearchParams = {
@@ -30,6 +32,8 @@ export type MechanicSearchParams = {
   lng?: number;
   radiusMiles?: number;
   verifiedOnly: boolean;
+  /** Restrict to subscribing shops. */
+  subscribedOnly?: boolean;
   minRating?: number;
   maxPrice?: number;
   limit: number;
@@ -80,6 +84,10 @@ export async function searchMechanics(p: MechanicSearchParams) {
       p.maxPrice !== undefined,
   );
 
+  const subscribedFilter = p.subscribedOnly
+    ? Prisma.sql` AND m."subscriptionStatus" = 'ACTIVE'`
+    : Prisma.empty;
+
   const radiusFilter =
     hasGeo && p.radiusMiles !== undefined
       ? Prisma.sql`WHERE "distanceMiles" <= ${p.radiusMiles}`
@@ -126,6 +134,7 @@ export async function searchMechanics(p: MechanicSearchParams) {
         m.state,
         m.lat,
         m.lng,
+        (m."subscriptionStatus" = 'ACTIVE') AS subscribed,
         ${distance} AS "distanceMiles",
         COALESCE(s.experience_count, 0) AS "experienceCount",
         COALESCE(s.verified_count, 0) AS "verifiedCount",
@@ -140,10 +149,11 @@ export async function searchMechanics(p: MechanicSearchParams) {
           ? Prisma.sql`JOIN stats s ON s.mechanic_id = m.id`
           : Prisma.sql`LEFT JOIN stats s ON s.mechanic_id = m.id`
       }
-      WHERE m."deletedAt" IS NULL${boundingBox}
+      WHERE m."deletedAt" IS NULL${boundingBox}${subscribedFilter}
     ) AS ranked
     ${radiusFilter}
     ORDER BY
+      subscribed DESC,
       ${hasGeo ? Prisma.sql`"distanceMiles" ASC NULLS LAST,` : Prisma.empty}
       "experienceCount" DESC,
       "avgRating" DESC NULLS LAST
@@ -169,6 +179,7 @@ export const findMechanicById = (id: string) =>
       phone: true,
       website: true,
       hours: true,
+      subscriptionStatus: true,
       specialties: { select: { service: { select: { id: true, name: true } } } },
     },
   });

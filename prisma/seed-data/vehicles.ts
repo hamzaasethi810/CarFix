@@ -55,28 +55,92 @@ export const ENGINES = [
 
 export const DRIVETRAINS = ["FWD", "RWD", "AWD", "4WD"];
 
-export const SERVICES = [
-  "Oil change",
-  "Brake pads",
-  "Brake pads + rotors",
-  "Transmission service",
-  "Coolant service",
-  "Spark plugs",
-  "Battery",
-  "Tires",
-  "Alignment",
-  "Motor mounts",
-  "Water pump",
-  "Thermostat",
-  "Suspension",
-  "Exhaust",
-  "Clutch",
-  "Turbocharger",
-  "Timing chain / belt",
-  "Differential service",
-  "Air conditioning",
-  "Diagnostic",
-  "Other",
+/*
+  Services people actually report on, grouped so the picker stays navigable.
+  This covers maintenance and repair as well as the modification work
+  enthusiasts care about — a wrap or an exhaust install is exactly the kind of
+  job where prices vary wildly and owner reports are worth having.
+
+  Add a service by appending here; the seed is idempotent and the category is
+  what the search groups by.
+*/
+export const SERVICES: { name: string; category: string }[] = [
+  // Routine
+  { name: "Oil change", category: "Maintenance" },
+  { name: "Spark plugs", category: "Maintenance" },
+  { name: "Battery", category: "Maintenance" },
+  { name: "Coolant service", category: "Maintenance" },
+  { name: "Transmission service", category: "Maintenance" },
+  { name: "Differential service", category: "Maintenance" },
+  { name: "Timing chain / belt", category: "Maintenance" },
+  { name: "Air conditioning", category: "Maintenance" },
+  { name: "Fluid flush", category: "Maintenance" },
+
+  // Brakes, tyres, alignment
+  { name: "Brake pads", category: "Brakes & Tires" },
+  { name: "Brake pads + rotors", category: "Brakes & Tires" },
+  { name: "Brake fluid flush", category: "Brakes & Tires" },
+  { name: "Big brake kit install", category: "Brakes & Tires" },
+  { name: "Tires", category: "Brakes & Tires" },
+  { name: "Alignment", category: "Brakes & Tires" },
+  { name: "Corner balancing", category: "Brakes & Tires" },
+  { name: "Wheel installation", category: "Brakes & Tires" },
+
+  // Repair
+  { name: "Water pump", category: "Repair" },
+  { name: "Thermostat", category: "Repair" },
+  { name: "Motor mounts", category: "Repair" },
+  { name: "Clutch", category: "Repair" },
+  { name: "Turbocharger", category: "Repair" },
+  { name: "Head gasket", category: "Repair" },
+  { name: "Engine rebuild", category: "Repair" },
+  { name: "Transmission rebuild", category: "Repair" },
+  { name: "Diagnostic", category: "Repair" },
+  { name: "Electrical diagnosis", category: "Repair" },
+
+  // Performance
+  { name: "Exhaust installation", category: "Performance" },
+  { name: "Cat-back exhaust", category: "Performance" },
+  { name: "Downpipe install", category: "Performance" },
+  { name: "Header install", category: "Performance" },
+  { name: "Intake install", category: "Performance" },
+  { name: "ECU tune / flash", category: "Performance" },
+  { name: "Dyno tuning", category: "Performance" },
+  { name: "Turbo install", category: "Performance" },
+  { name: "Supercharger install", category: "Performance" },
+  { name: "Intercooler install", category: "Performance" },
+  { name: "Fuel system upgrade", category: "Performance" },
+
+  // Suspension and chassis
+  { name: "Suspension", category: "Suspension & Chassis" },
+  { name: "Coilover install", category: "Suspension & Chassis" },
+  { name: "Lowering springs", category: "Suspension & Chassis" },
+  { name: "Air suspension install", category: "Suspension & Chassis" },
+  { name: "Sway bar install", category: "Suspension & Chassis" },
+  { name: "Bushing replacement", category: "Suspension & Chassis" },
+  { name: "Roll bar / cage", category: "Suspension & Chassis" },
+
+  // Appearance and protection
+  { name: "Full car wrap", category: "Appearance & Protection" },
+  { name: "Partial wrap", category: "Appearance & Protection" },
+  { name: "Paint protection film (PPF)", category: "Appearance & Protection" },
+  { name: "Ceramic coating", category: "Appearance & Protection" },
+  { name: "Window tint", category: "Appearance & Protection" },
+  { name: "Paint correction", category: "Appearance & Protection" },
+  { name: "Detailing", category: "Appearance & Protection" },
+  { name: "Vinyl decals / livery", category: "Appearance & Protection" },
+  { name: "Headlight restoration", category: "Appearance & Protection" },
+  { name: "Body work / dent repair", category: "Appearance & Protection" },
+  { name: "Respray", category: "Appearance & Protection" },
+
+  // Interior and electronics
+  { name: "Audio system install", category: "Interior & Electronics" },
+  { name: "Seat install", category: "Interior & Electronics" },
+  { name: "Upholstery / retrim", category: "Interior & Electronics" },
+  { name: "Dash cam install", category: "Interior & Electronics" },
+  { name: "Alarm / immobiliser", category: "Interior & Electronics" },
+
+  { name: "Other", category: "Other" },
 ];
 
 const BASE_MAKES: MakeSpec[] = [

@@ -4,22 +4,24 @@ import { Card, PageTitle, num } from "@/components/ui";
 import { currentUser } from "@/lib/auth/guards";
 import { getVerificationQueue } from "@/lib/services/experiences";
 import { getReports } from "@/lib/services/moderation";
+import { getClaimQueue } from "@/lib/services/shops";
 
 export default async function AdminPage() {
   const user = await currentUser();
   if (!user) redirect("/login");
   if (user.role !== "ADMIN") redirect("/");
 
-  const [pending, reports] = await Promise.all([
+  const [pending, reports, claims] = await Promise.all([
     getVerificationQueue(50, 0),
     getReports("OPEN", 50, 0),
+    getClaimQueue(50, 0),
   ]);
 
   return (
     <>
       <PageTitle title="Admin" subtitle="Verification and moderation queues." />
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         <Link href="/admin/verifications" className="block group">
           <Card className="group-hover:bg-tertiary transition-colors duration-150">
             <p className="text-footnote text-secondary uppercase tracking-wide">
@@ -28,6 +30,16 @@ export default async function AdminPage() {
             <p className="text-large-title font-bold mt-1 tabular-nums">{num(pending.length)}</p>
             <p className="text-subhead text-secondary mt-1">
               {pending.length === 1 ? "receipt awaiting" : "receipts awaiting"} review
+            </p>
+          </Card>
+        </Link>
+
+        <Link href="/admin/claims" className="block group">
+          <Card className="group-hover:bg-tertiary transition-colors duration-150">
+            <p className="text-footnote text-secondary uppercase tracking-wide">Shop claims</p>
+            <p className="text-large-title font-bold mt-1 tabular-nums">{num(claims.length)}</p>
+            <p className="text-subhead text-secondary mt-1">
+              {claims.length === 1 ? "claim" : "claims"} awaiting review
             </p>
           </Card>
         </Link>

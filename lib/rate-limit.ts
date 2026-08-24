@@ -13,7 +13,9 @@ export type LimitName =
   | "report"
   | "vinLookup"
   | "mechanicIngest"
-  | "geocode";
+  | "geocode"
+  | "billing"
+  | "shopClaim";
 
 const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m" | "h"}` }> = {
   login: { tokens: 8, window: "5 m" },
@@ -29,6 +31,8 @@ const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m
   mechanicIngest: { tokens: 20, window: "10 m" },
   // Nominatim asks for no more than one request a second; this stays well under.
   geocode: { tokens: 20, window: "5 m" },
+  billing: { tokens: 10, window: "10 m" },
+  shopClaim: { tokens: 5, window: "1 h" },
 };
 
 const redis =

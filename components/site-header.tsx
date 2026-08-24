@@ -17,7 +17,7 @@ export function SiteHeader({ isAuthed, isAdmin }: { isAuthed: boolean; isAdmin: 
       >
         <Link
           href="/"
-          className="inline-flex items-center min-h-11 pr-2 mr-auto sm:mr-4 text-title3 font-bold tracking-tight"
+          className="inline-flex items-center min-h-11 pr-2 sm:pr-4 text-title3 font-bold tracking-tight"
         >
           Car<span className="text-brand">Fix</span>
         </Link>
@@ -39,6 +39,9 @@ export function SiteHeader({ isAuthed, isAdmin }: { isAuthed: boolean; isAdmin: 
           </Link>
         )}
 
+        {/* Pushes sign in and join hard to the right at every width. */}
+        <span className="flex-1" />
+
         <div className="flex items-center gap-2 sm:gap-3">
           {isAuthed ? (
             <form
@@ -58,7 +61,7 @@ export function SiteHeader({ isAuthed, isAdmin }: { isAuthed: boolean; isAdmin: 
               </Link>
               <Link
                 href="/register"
-                className="inline-flex items-center min-h-11 px-4 rounded-control bg-accent text-on-accent text-subhead font-semibold hover:bg-accent-hover transition-colors duration-150"
+                className="inline-flex items-center min-h-11 px-4 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold hover:bg-accent-hover transition-colors duration-150"
               >
                 Join
               </Link>

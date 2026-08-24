@@ -6,7 +6,9 @@ import {
   listMakes,
   listModels,
   listServices,
+  listServicesGrouped,
   listTrims,
+  searchServices,
 } from "../repositories/taxonomy";
 
 export const getMakes = () => listMakes();
@@ -28,4 +30,14 @@ export async function getGenerations(modelId: string) {
     platform: g.platform?.name ?? null,
     years: `${g.yearStart}–${g.yearEnd ?? "present"}`,
   }));
+}
+
+/**
+ * Suggestions for the service picker. An empty query returns the full grouped
+ * list, so the field is useful before anyone types.
+ */
+export async function suggestServices(query: string, limit = 10) {
+  const trimmed = query.trim();
+  const rows = trimmed.length === 0 ? await listServicesGrouped() : await searchServices(trimmed, limit);
+  return rows.map((s) => ({ id: s.id, name: s.name, category: s.category }));
 }

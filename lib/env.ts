@@ -17,6 +17,17 @@ const serverEnvSchema = z.object({
   S3_BUCKET_RECEIPTS: z.string().min(1),
 
   // Blank is treated as absent so an unset optional in .env does not fail boot.
+  /*
+    Stripe. Optional so the app runs without billing configured; the
+    subscription routes refuse to operate when they are absent rather than
+    half-working.
+  */
+  STRIPE_SECRET_KEY: blankAsUndefined(z.string().startsWith("sk_")),
+  STRIPE_WEBHOOK_SECRET: blankAsUndefined(z.string().startsWith("whsec_")),
+  STRIPE_PRICE_ID: blankAsUndefined(z.string().startsWith("price_")),
+  /** Absolute origin used to build Stripe return URLs. */
+  APP_URL: blankAsUndefined(z.string().url()),
+
   UPSTASH_REDIS_REST_URL: blankAsUndefined(z.string().url()),
   UPSTASH_REDIS_REST_TOKEN: blankAsUndefined(z.string().min(1)),
 

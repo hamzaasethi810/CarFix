@@ -42,6 +42,21 @@ enum ReportStatus {
   DISMISSED
 }
 
+enum ShopClaimStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Mirrors Stripe's subscription lifecycle. Entitlement is read from here, never
+// from anything the browser sends.
+enum SubscriptionStatus {
+  NONE
+  ACTIVE
+  PAST_DUE
+  CANCELED
+}
+
 // Where a shop record came from. OSM rows are ingested on demand from
 // OpenStreetMap so the directory covers anywhere people search, rather than
 // only places that were seeded by hand.
@@ -71,6 +86,9 @@ model User {
   auditLogs           AuditLog[]
   accounts            Account[]
   sessions            Session[]
+  claimedShops        Mechanic[]  @relation("ClaimedShops")
+  submittedClaims     ShopClaim[] @relation("SubmittedClaims")
+  decidedClaims       ShopClaim[] @relation("DecidedClaims")
 
   @@index([deletedAt])
 }
@@ -254,9 +272,23 @@ model Mechanic {
   updatedAt   DateTime       @updatedAt
   deletedAt   DateTime?
 
+  /// Set once a claim is approved. Only this user may manage the shop.
+  claimedById String?
+  claimedAt   DateTime?
+
+  subscriptionStatus SubscriptionStatus @default(NONE)
+  /// Stripe identifiers. No card data is ever stored here or anywhere else.
+  stripeCustomerId     String?   @unique
+  stripeSubscriptionId String?   @unique
+  subscriptionEndsAt   DateTime?
+
+  claimedBy   User?                @relation("ClaimedShops", fields: [claimedById], references: [id], onDelete: SetNull)
+  claims      ShopClaim[]
+  servicePrices ShopServicePrice[]
   specialties MechanicSpecialty[]
   experiences MechanicExperience[]
 
+  @@index([subscriptionStatus])
   // Re-ingesting the same OSM element updates the row instead of duplicating it.
   @@unique([source, sourceRef])
   @@index([city, state])
@@ -271,6 +303,12 @@ model Service {
 
   mechanics   MechanicSpecialty[]
   experiences MechanicExperience[]
+  shopPrices  ShopServicePrice[]
+
+  /// Groups services in the picker: "Maintenance", "Modification", and so on.
+  category    String @default("Other")
+
+  @@index([category])
 }
 
 model MechanicSpecialty {
@@ -375,6 +413,66 @@ model GeoCoverage {
   fetchedAt   DateTime @default(now())
 
   @@unique([cellLat, cellLng])
+}
+
+/*
+  A request to manage a shop listing, backed by a document proving the person
+  runs the business. The document lives in private storage under a random key
+  and is destroyed the moment a decision is made — exactly like a receipt.
+*/
+model ShopClaim {
+  id         String          @id @default(cuid())
+  userId     String
+  mechanicId String
+  status     ShopClaimStatus @default(PENDING)
+  /// Null once the decision has been made and the file deleted.
+  documentKey String?
+  businessName String
+  contactPhone String?
+  note        String?
+  submittedAt DateTime        @default(now())
+  decidedAt   DateTime?
+  decidedById String?
+
+  user      User     @relation("SubmittedClaims", fields: [userId], references: [id], onDelete: Cascade)
+  mechanic  Mechanic @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
+  decidedBy User?    @relation("DecidedClaims", fields: [decidedById], references: [id], onDelete: SetNull)
+
+  // One open claim per person per shop.
+  @@unique([userId, mechanicId])
+  @@index([status])
+}
+
+/*
+  A shop's own published price for a service. `maxPrice` is optional: a fixed
+  price leaves it null, a range fills it in. These are the shop's asking
+  prices and are always presented separately from what owners report paying.
+*/
+model ShopServicePrice {
+  id         String   @id @default(cuid())
+  mechanicId String
+  serviceId  String
+  minPrice   Float
+  maxPrice   Float?
+  note       String?
+  updatedAt  DateTime @updatedAt
+
+  mechanic Mechanic @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
+  service  Service  @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([mechanicId, serviceId])
+  @@index([serviceId])
+}
+
+/*
+  Every Stripe webhook we have already handled. Stripe retries on any non-2xx
+  and can deliver the same event more than once, so processing is keyed on the
+  event id to make replays harmless.
+*/
+model StripeEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
 }
 
 model AuditLog {
