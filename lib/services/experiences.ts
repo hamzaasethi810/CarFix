@@ -23,6 +23,7 @@ import { vehicleBelongsTo } from "../repositories/vehicle";
 import { deleteObject, putObject, signedReadUrl } from "../storage/objects";
 import { inspectReceipt, randomKey } from "../storage/files";
 import { toExperienceView } from "./dto";
+import { reconsiderListing } from "./shop-submissions";
 import { readText } from "../providers/ocr";
 import { evaluateReceipt } from "./receipt-check";
 
@@ -96,6 +97,14 @@ export async function submitExperience(
   if (duplicate) return toExperienceView(duplicate, userId);
 
   const created = await createExperience({ ...input, userId });
+
+  /*
+    A report is also a vote that the place exists. If enough different people
+    have now reported work here, a publicly submitted listing stops being
+    provisional.
+  */
+  await reconsiderListing(input.mechanicId);
+
   return toExperienceView(created, userId);
 }
 

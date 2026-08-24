@@ -20,7 +20,8 @@ export type LimitName =
   | "read"
   | "mutation"
   | "accountDelete"
-  | "workPhoto";
+  | "workPhoto"
+  | "shopSubmit";
 
 const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m" | "h"}` }> = {
   login: { tokens: 8, window: "5 m" },
@@ -47,6 +48,8 @@ const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m
   // Irreversible, so deliberately tiny.
   accountDelete: { tokens: 3, window: "24 h" },
   workPhoto: { tokens: 20, window: "1 h" },
+  // Each submission geocodes, so this shares Nominatim's conservative budget.
+  shopSubmit: { tokens: 8, window: "1 h" },
 };
 
 const redis =

@@ -46,6 +46,17 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
         </p>
       </div>
 
+      {!mechanic.confirmed && (
+        <Card className="mb-4 border-l-2 border-warning">
+          <p className="text-subhead">
+            <span className="font-semibold">Unconfirmed listing.</span>{" "}
+            Somebody added this shop and nobody has corroborated it yet. It is
+            confirmed once several different people report work here, or the
+            shop claims it.
+          </p>
+        </Card>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat
           label="Experiences"

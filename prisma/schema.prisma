@@ -66,6 +66,22 @@ enum SubscriptionStatus {
   CANCELED
 }
 
+/*
+  How much confidence there is that a listing is a real business.
+
+  A listing added by a member of the public starts PROVISIONAL: visible, but
+  labelled, and barred from the gold badge. It becomes CONFIRMED when enough
+  independent people report work there, or a reviewer approves it, or its
+  owner claims it with a trading document. Anything imported from
+  OpenStreetMap starts CONFIRMED, because it has already been through that
+  project's own editing and review.
+*/
+enum ListingStatus {
+  PROVISIONAL
+  CONFIRMED
+  REJECTED
+}
+
 // Where a shop record came from. OSM rows are ingested on demand from
 // OpenStreetMap so the directory covers anywhere people search, rather than
 // only places that were seeded by hand.
@@ -120,6 +136,7 @@ model User {
   shopReplies         ShopReply[]
   savedSearches       SavedSearch[]
   submittedClaims     ShopClaim[] @relation("SubmittedClaims")
+  submittedShops      Mechanic[]  @relation("SubmittedShops")
   decidedClaims       ShopClaim[] @relation("DecidedClaims")
 
   @@index([deletedAt])
@@ -313,7 +330,11 @@ model Mechanic {
   phone       String?
   website     String?
   hours       Json?
-  source      MechanicSource @default(SEED)
+  source        MechanicSource @default(SEED)
+  listingStatus ListingStatus  @default(CONFIRMED)
+  /// Who added it, when a member of the public did.
+  submittedById String?
+  submittedAt   DateTime?
   /// Upstream identifier, e.g. "node/123456" for OpenStreetMap.
   sourceRef   String?
   createdAt   DateTime       @default(now())
@@ -331,6 +352,7 @@ model Mechanic {
   subscriptionEndsAt   DateTime?
 
   claimedBy   User?                @relation("ClaimedShops", fields: [claimedById], references: [id], onDelete: SetNull)
+  submittedBy User?                @relation("SubmittedShops", fields: [submittedById], references: [id], onDelete: SetNull)
   claims      ShopClaim[]
   replies     ShopReply[]
   servicePrices ShopServicePrice[]
@@ -338,6 +360,7 @@ model Mechanic {
   experiences MechanicExperience[]
 
   @@index([subscriptionStatus])
+  @@index([listingStatus])
   // Re-ingesting the same OSM element updates the row instead of duplicating it.
   @@unique([source, sourceRef])
   @@index([city, state])

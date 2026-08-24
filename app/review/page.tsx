@@ -3,6 +3,8 @@ import { Card, EmptyState, PageTitle, SectionTitle } from "@/components/ui";
 import { currentUser, isPrivileged } from "@/lib/auth/guards";
 import { getVerificationQueue } from "@/lib/services/experiences";
 import { getClaimQueue } from "@/lib/services/shops";
+import { getProvisionalQueue } from "@/lib/services/shop-submissions";
+import { ListingRow } from "./listing-row";
 import { VerificationRow } from "../admin/verifications/verification-row";
 import { ClaimRow } from "../admin/claims/claim-row";
 
@@ -21,12 +23,14 @@ export default async function ReviewPage() {
   // The layout already redirects here, but a direct hit must not slip through.
   if (!user.mfaEnabled) redirect("/setup-2fa");
 
-  const [receipts, claims] = await Promise.all([
+  const [receipts, claims, listings] = await Promise.all([
     getVerificationQueue(50, 0),
     getClaimQueue(50, 0),
+    getProvisionalQueue(50, 0),
   ]);
 
-  const nothingWaiting = receipts.length === 0 && claims.length === 0;
+  const nothingWaiting =
+    receipts.length === 0 && claims.length === 0 && listings.length === 0;
 
   return (
     <>
@@ -61,6 +65,21 @@ export default async function ReviewPage() {
             {claims.map((c) => (
               <li key={c.id}>
                 <ClaimRow item={c} />
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {listings.length > 0 && (
+        <>
+          <SectionTitle hint="Added by the public and not yet corroborated.">
+            Unconfirmed listings ({listings.length})
+          </SectionTitle>
+          <ul className="space-y-3">
+            {listings.map((l) => (
+              <li key={l.id}>
+                <ListingRow item={l} />
               </li>
             ))}
           </ul>

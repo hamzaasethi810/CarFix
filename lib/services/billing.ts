@@ -37,6 +37,17 @@ export async function createCheckoutSession(mechanicId: string, userId: string) 
   // Ownership is re-checked here, not trusted from the page that linked here.
   if (shop.claimedById !== userId) throw forbidden();
 
+  /*
+    An unconfirmed listing cannot buy prominence. Otherwise inventing a shop
+    and paying for the gold mark would be a way to manufacture credibility,
+    which is exactly what the provisional state exists to prevent.
+  */
+  if (shop.listingStatus !== "CONFIRMED")
+    throw new AppError(
+      "FORBIDDEN",
+      "This listing has to be confirmed before it can subscribe.",
+    );
+
   let customerId = shop.stripeCustomerId;
   if (!customerId) {
     const customer = await stripe().customers.create({

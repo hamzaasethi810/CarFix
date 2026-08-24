@@ -17,6 +17,8 @@ export type MechanicSearchRow = {
   wouldReturnPct: number | null;
   /** True for a shop with an active subscription — the golden mark. */
   subscribed: boolean;
+  /** False while a publicly submitted listing is still unconfirmed. */
+  confirmed: boolean;
 };
 
 export type MechanicSearchParams = {
@@ -169,6 +171,7 @@ export async function searchMechanics(p: MechanicSearchParams) {
         m.lat,
         m.lng,
         (m."subscriptionStatus" = 'ACTIVE') AS subscribed,
+        (m."listingStatus" = 'CONFIRMED') AS confirmed,
         ${distance} AS "distanceMiles",
         COALESCE(s.experience_count, 0) AS "experienceCount",
         COALESCE(s.verified_count, 0) AS "verifiedCount",
@@ -214,6 +217,7 @@ export const findMechanicById = (id: string) =>
       website: true,
       hours: true,
       subscriptionStatus: true,
+      listingStatus: true,
       specialties: { select: { service: { select: { id: true, name: true } } } },
     },
   });

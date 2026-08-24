@@ -36,6 +36,7 @@ export async function search(params: MechanicSearchParams) {
       medianPrice: r.medianPrice === null ? null : Math.round(r.medianPrice),
       wouldReturnPct: r.wouldReturnPct === null ? null : Math.round(r.wouldReturnPct),
       subscribed: r.subscribed,
+      confirmed: r.confirmed,
     })),
     limit: params.limit,
     offset: params.offset,

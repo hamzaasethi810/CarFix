@@ -31,6 +31,7 @@ type Result = MapMechanic & {
   distanceMiles: number | null;
   wouldReturnPct: number | null;
   subscribed: boolean;
+  confirmed: boolean;
 };
 
 /** OSM records often lack city or state, so never render a bare comma. */
@@ -440,10 +441,18 @@ export function Discover({
 
               {results.length === 0 && !loading && (
                 <li className="px-2 py-6 text-subhead text-secondary text-center">
-                  No shops matched.
-                  {center && radiusMiles < 200
-                    ? " Try a wider radius."
-                    : " Try clearing some filters."}
+                  <p>
+                    No shops matched.
+                    {center && radiusMiles < 200
+                      ? " Try a wider radius."
+                      : " Try clearing some filters."}
+                  </p>
+                  <Link
+                    href="/shops/add"
+                    className="inline-flex items-center min-h-11 px-4 mt-3 rounded-full bg-fill text-accent text-subhead font-semibold"
+                  >
+                    Add a shop we are missing
+                  </Link>
                 </li>
               )}
               {visible.map((m) => (
@@ -460,6 +469,14 @@ export function Discover({
                       <span className="text-subhead font-semibold inline-flex items-center gap-1.5">
                         {m.subscribed && <GoldCar className="size-4 shrink-0" />}
                         {m.name}
+                        {!m.confirmed && (
+                          <span
+                            title="Added by a member of the public and not yet confirmed"
+                            className="text-caption font-medium rounded-full px-1.5 py-0.5 bg-warning/12 text-warning"
+                          >
+                            Unconfirmed
+                          </span>
+                        )}
                       </span>
                       <span className="text-footnote text-secondary shrink-0">
                         {m.distanceMiles !== null

@@ -105,7 +105,13 @@ export const decideClaim = (params: {
     if (params.approve) {
       await tx.mechanic.update({
         where: { id: claim.mechanicId },
-        data: { claimedById: claim.userId, claimedAt: new Date() },
+        data: {
+          claimedById: claim.userId,
+          claimedAt: new Date(),
+          // A trading document is the strongest evidence there is, so an
+          // approved claim confirms a provisional listing outright.
+          listingStatus: "CONFIRMED",
+        },
       });
     }
 
@@ -153,6 +159,7 @@ export const findShopBilling = (mechanicId: string) =>
       id: true,
       name: true,
       claimedById: true,
+      listingStatus: true,
       stripeCustomerId: true,
       stripeSubscriptionId: true,
       subscriptionStatus: true,
@@ -239,3 +246,125 @@ export const deleteShopPrice = async (mechanicId: string, serviceId: string) => 
  */
 export const releaseStripeEvent = (id: string) =>
   prisma.stripeEvent.deleteMany({ where: { id } });
+
+// ---------- Publicly submitted listings ----------
+
+/**
+ * Anything already listed close to a proposed location with a similar name.
+ *
+ * Duplicates are the most common failure of an open submission form — usually
+ * honest, from someone who searched the wrong spelling — so the check happens
+ * before anything is written rather than being cleaned up later.
+ */
+export const nearbyByName = (lat: number, lng: number) => {
+  // ~1km box; close enough that two entries are almost certainly one business.
+  const d = 0.01;
+  return prisma.mechanic.findMany({
+    where: {
+      deletedAt: null,
+      lat: { gte: lat - d, lte: lat + d },
+      lng: { gte: lng - d, lte: lng + d },
+    },
+    select: { id: true, name: true, address: true, city: true, state: true, listingStatus: true },
+    take: 25,
+  });
+};
+
+export const createSubmittedShop = (data: {
+  name: string;
+  description: string | null;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  lat: number;
+  lng: number;
+  phone: string | null;
+  website: string | null;
+  submittedById: string;
+}) =>
+  prisma.mechanic.create({
+    data: {
+      ...data,
+      source: "USER",
+      // Visible immediately, but labelled and ineligible for the gold badge.
+      listingStatus: "PROVISIONAL",
+      submittedAt: new Date(),
+    },
+    select: { id: true, name: true, listingStatus: true },
+  });
+
+export const countSubmissionsSince = (userId: string, since: Date) =>
+  prisma.mechanic.count({ where: { submittedById: userId, submittedAt: { gte: since } } });
+
+export const listProvisionalShops = (limit: number, offset: number) =>
+  prisma.mechanic.findMany({
+    where: { listingStatus: "PROVISIONAL", deletedAt: null },
+    select: {
+      id: true,
+      name: true,
+      address: true,
+      city: true,
+      state: true,
+      zip: true,
+      phone: true,
+      website: true,
+      submittedAt: true,
+      submittedBy: { select: { profile: { select: { displayName: true } } } },
+      _count: { select: { experiences: true } },
+    },
+    orderBy: { submittedAt: "asc" },
+    take: limit,
+    skip: offset,
+  });
+
+export const setListingStatus = (params: {
+  mechanicId: string;
+  status: "CONFIRMED" | "REJECTED";
+  actorId: string;
+}) =>
+  prisma.$transaction(async (tx) => {
+    const updated = await tx.mechanic.updateMany({
+      where: { id: params.mechanicId, listingStatus: "PROVISIONAL" },
+      data: {
+        listingStatus: params.status,
+        // A rejected listing is hidden rather than erased, so the reports
+        // attached to it are not silently destroyed along with it.
+        ...(params.status === "REJECTED" ? { deletedAt: new Date() } : {}),
+      },
+    });
+    if (updated.count === 0) return null;
+
+    await tx.auditLog.create({
+      data: {
+        actorId: params.actorId,
+        action: `listing.${params.status.toLowerCase()}`,
+        targetType: "Mechanic",
+        targetId: params.mechanicId,
+      },
+    });
+
+    return { id: params.mechanicId };
+  });
+
+/**
+ * How many different people have reported work at a shop.
+ *
+ * This is the corroboration signal: one person can invent a place, but
+ * several independent accounts reporting real services at it is hard to fake
+ * cheaply.
+ */
+export const distinctReportersFor = async (mechanicId: string) => {
+  const rows = await prisma.mechanicExperience.findMany({
+    where: { mechanicId, deletedAt: null },
+    select: { userId: true },
+    distinct: ["userId"],
+  });
+  return rows.length;
+};
+
+export const promoteIfCorroborated = (mechanicId: string) =>
+  prisma.mechanic.updateMany({
+    where: { id: mechanicId, listingStatus: "PROVISIONAL" },
+    data: { listingStatus: "CONFIRMED" },
+  });
