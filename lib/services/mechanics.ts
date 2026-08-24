@@ -1,0 +1,41 @@
+import "server-only";
+import { notFound } from "../errors";
+import {
+  findMechanicById,
+  searchMechanics,
+  type MechanicSearchParams,
+} from "../repositories/mechanic";
+import { countExperiences } from "../repositories/experience";
+import { toMechanicView } from "./dto";
+
+export async function search(params: MechanicSearchParams) {
+  const rows = await searchMechanics(params);
+  return {
+    items: rows.map((r) => ({
+      id: r.id,
+      name: r.name,
+      city: r.city,
+      state: r.state,
+      distanceMiles: r.distanceMiles === null ? null : Math.round(r.distanceMiles * 10) / 10,
+      experienceCount: r.experienceCount,
+      verifiedCount: r.verifiedCount,
+      avgRating: r.avgRating === null ? null : Math.round(r.avgRating * 10) / 10,
+      medianPrice: r.medianPrice === null ? null : Math.round(r.medianPrice),
+      wouldReturnPct: r.wouldReturnPct === null ? null : Math.round(r.wouldReturnPct),
+    })),
+    limit: params.limit,
+    offset: params.offset,
+  };
+}
+
+export async function getMechanic(id: string) {
+  const mechanic = await findMechanicById(id);
+  if (!mechanic) throw notFound();
+
+  const [experienceCount, verifiedCount] = await Promise.all([
+    countExperiences({ mechanicId: id }),
+    countExperiences({ mechanicId: id, verifiedOnly: true }),
+  ]);
+
+  return { ...toMechanicView(mechanic), experienceCount, verifiedCount };
+}
