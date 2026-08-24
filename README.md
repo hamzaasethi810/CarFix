@@ -244,3 +244,57 @@ connect as any role without a password. That is fine for a laptop on
 `localhost`, but a production cluster must use `scram-sha-256` and require TLS
 (`?sslmode=require` on both connection strings). Managed Postgres such as Neon
 does both by default.
+
+---
+
+## Applying the database role split
+
+The application's runtime role must not be able to destroy the database. Run
+this once per environment, as a superuser.
+
+**1. Create the roles and move ownership**
+
+```bash
+psql -d carfix_prod -f prisma/roles.sql
+```
+
+That gives `carfix_migrate` ownership of the schema and strips `carfix_app`
+back to `SELECT` / `INSERT` / `UPDATE` / `DELETE`.
+
+**2. Set passwords** (skip on managed Postgres that issues its own):
+
+```sql
+ALTER ROLE carfix_app     PASSWORD 'a-long-random-string';
+ALTER ROLE carfix_migrate PASSWORD 'a-different-long-random-string';
+```
+
+**3. Point the app and the migrator at different roles**
+
+```bash
+# The app's environment — this is the only one the running app ever sees.
+DATABASE_URL="postgresql://carfix_app:...@host:5432/carfix_prod?sslmode=require"
+
+# Migrations only. Keep this OUT of the app's environment; supply it in CI or
+# at the shell when running npm run db:deploy.
+MIGRATE_DATABASE_URL="postgresql://carfix_migrate:...@host:5432/carfix_prod?sslmode=require"
+```
+
+**4. Prove it worked**
+
+```bash
+./scripts/db-security-check.sh
+```
+
+Thirteen assertions: nine destructive statements must be refused, four data
+operations must succeed. Re-run it after any migration that adds tables — new
+tables inherit grants through `ALTER DEFAULT PRIVILEGES`, and this confirms it
+actually happened.
+
+**On a managed provider (Neon, RDS, Supabase)** the bootstrap role is usually
+not a true superuser. Run `roles.sql` as the database owner instead; every
+statement in it is within an owner's rights. `sslmode=require` is already the
+default on those providers — keep it.
+
+**Also change from the Homebrew default:** local installs ship `pg_hba.conf`
+with `trust`, meaning any local user can connect as any role without a
+password. Production must use `scram-sha-256` and require TLS.
