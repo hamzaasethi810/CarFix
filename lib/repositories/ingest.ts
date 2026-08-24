@@ -1,6 +1,7 @@
 import "server-only";
 import { prisma } from "../db";
 import type { OsmShop } from "../providers/overpass";
+import { specialtiesFromTags } from "../services/osm-specialties";
 
 /** Coarse grid (~5.5km) so nearby searches share a coverage record. */
 const CELL = 0.05;
@@ -44,6 +45,14 @@ export async function recordCoverage(
 export async function upsertOsmShops(shops: OsmShop[]) {
   let created = 0;
 
+  /*
+    The whole service catalogue, fetched once. Specialties are matched by name,
+    and anything unrecognised is skipped rather than created — an OSM tag must
+    never be able to invent a service.
+  */
+  const services = await prisma.service.findMany({ select: { id: true, name: true } });
+  const byName = new Map(services.map((s) => [s.name.toLowerCase(), s.id]));
+
   for (const shop of shops) {
     const existing = await prisma.mechanic.findUnique({
       where: { source_sourceRef: { source: "OSM", sourceRef: shop.sourceRef } },
@@ -62,13 +71,29 @@ export async function upsertOsmShops(shops: OsmShop[]) {
       website: shop.website,
     };
 
+    let mechanicId: string;
     if (existing) {
       await prisma.mechanic.update({ where: { id: existing.id }, data });
+      mechanicId = existing.id;
     } else {
-      await prisma.mechanic.create({
+      const made = await prisma.mechanic.create({
         data: { ...data, source: "OSM", sourceRef: shop.sourceRef },
+        select: { id: true },
       });
+      mechanicId = made.id;
       created += 1;
+    }
+
+    // What the shop's tags say it does, so it is findable by service before
+    // anyone has reported on it.
+    for (const name of specialtiesFromTags(shop.tags)) {
+      const serviceId = byName.get(name.toLowerCase());
+      if (!serviceId) continue;
+      await prisma.mechanicSpecialty.upsert({
+        where: { mechanicId_serviceId: { mechanicId, serviceId } },
+        create: { mechanicId, serviceId },
+        update: {},
+      });
     }
   }
 

@@ -33,6 +33,8 @@ export type OsmShop = {
   phone: string | null;
   website: string | null;
   brands: string[];
+  /** The raw OSM tags, so specialties can be derived without a second fetch. */
+  tags: Record<string, string>;
 };
 
 type OverpassElement = {
@@ -54,11 +56,45 @@ export async function fetchNearbyShops(
   radiusMeters: number,
 ): Promise<OsmShop[]> {
   const radius = Math.min(Math.round(radiusMeters), 80_000);
+  /*
+    Everything a car person might pay someone to do, not just repair.
+
+    OpenStreetMap has no single tag for this, so the net is cast across the
+    shop, craft, and amenity keys, plus the `service:vehicle:*` subtags that
+    specialised places carry. Tags that return nothing in a given area cost
+    nothing to ask for.
+
+    Worth knowing: there is no established tag for a wrap or PPF installer.
+    Those places are usually mapped as car_repair or a painter, which the
+    query below catches, and the rest arrive as owners report on them.
+  */
+  const around = `(around:${radius},${lat},${lng})`;
+  const selectors = [
+    // Repair and maintenance
+    '["shop"="car_repair"]',
+    '["shop"="tyres"]',
+    '["shop"="car_parts"]',
+    '["shop"="motorcycle_repair"]',
+    // Body, paint, and glass
+    '["craft"="car_painter"]',
+    '["shop"="car_body_repair"]',
+    '["service:vehicle:body_repair"="yes"]',
+    '["service:vehicle:painting"="yes"]',
+    '["service:vehicle:glass"="yes"]',
+    // Modification and performance
+    '["service:vehicle:tuning"="yes"]',
+    '["shop"="tuning"]',
+    // Appearance
+    '["amenity"="car_wash"]',
+    '["shop"="car_detailing"]',
+    // Trim and interiors
+    '["craft"="upholsterer"]["service:vehicle"]',
+  ];
+
   const query = `
     [out:json][timeout:20];
     (
-      nwr["shop"="car_repair"](around:${radius},${lat},${lng});
-      nwr["shop"="tyres"](around:${radius},${lat},${lng});
+      ${selectors.map((sel) => `nwr${sel}${around};`).join("\n      ")}
     );
     out center ${MAX_RESULTS};
   `;
@@ -118,6 +154,7 @@ export async function fetchNearbyShops(
         .split(";")
         .map((b) => b.trim())
         .filter(Boolean),
+      tags,
     });
   }
 

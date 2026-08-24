@@ -72,8 +72,19 @@ export async function searchMechanics(p: MechanicSearchParams) {
       Prisma.sql`PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY e."totalPrice") <= ${p.maxPrice}`,
     );
 
+  /*
+    Whether a filter is about reported work specifically.
+
+    A service filter deliberately is NOT one of these. Asking for "Full car
+    wrap" should surface shops that do wraps, not only shops somebody has
+    already reviewed for a wrap — otherwise a newly ingested area looks empty
+    and the directory cannot bootstrap itself. The service condition is applied
+    further down against the shop's specialties as well as its experiences.
+
+    Verified-only is different: a claim about verified pricing cannot be
+    satisfied by a shop merely listing the service, so it keeps the strict join.
+  */
   const hasExperienceFilter = Boolean(
-    p.serviceId ||
       p.generationId ||
       p.platformId ||
       p.makeId ||
@@ -83,6 +94,29 @@ export async function searchMechanics(p: MechanicSearchParams) {
       p.minRating !== undefined ||
       p.maxPrice !== undefined,
   );
+
+  /*
+    Matches a shop that has reported work for this service OR lists it as
+    something it does. When a stricter filter is already in play the strict
+    join has narrowed things down, and this simply confirms the service.
+  */
+  const serviceFilter = p.serviceId
+    ? hasExperienceFilter
+      ? Prisma.sql` AND EXISTS (
+          SELECT 1 FROM "MechanicExperience" me
+          WHERE me."mechanicId" = m.id AND me."serviceId" = ${p.serviceId} AND me."deletedAt" IS NULL
+        )`
+      : Prisma.sql` AND (
+          EXISTS (
+            SELECT 1 FROM "MechanicExperience" me
+            WHERE me."mechanicId" = m.id AND me."serviceId" = ${p.serviceId} AND me."deletedAt" IS NULL
+          )
+          OR EXISTS (
+            SELECT 1 FROM "MechanicSpecialty" ms
+            WHERE ms."mechanicId" = m.id AND ms."serviceId" = ${p.serviceId}
+          )
+        )`
+    : Prisma.empty;
 
   const subscribedFilter = p.subscribedOnly
     ? Prisma.sql` AND m."subscriptionStatus" = 'ACTIVE'`
@@ -149,7 +183,7 @@ export async function searchMechanics(p: MechanicSearchParams) {
           ? Prisma.sql`JOIN stats s ON s.mechanic_id = m.id`
           : Prisma.sql`LEFT JOIN stats s ON s.mechanic_id = m.id`
       }
-      WHERE m."deletedAt" IS NULL${boundingBox}${subscribedFilter}
+      WHERE m."deletedAt" IS NULL${boundingBox}${subscribedFilter}${serviceFilter}
     ) AS ranked
     ${radiusFilter}
     ORDER BY
