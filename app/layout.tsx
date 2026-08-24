@@ -2,8 +2,6 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
-import { headers } from "next/headers";
-import { redirect } from "next/navigation";
 import { currentUser, isPrivileged } from "@/lib/auth/guards";
 
 export const metadata: Metadata = {
@@ -25,18 +23,6 @@ export const viewport: Viewport = {
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const user = await currentUser();
-
-  /*
-    A privileged account with no second factor is sent to enrolment and kept
-    there. Doing it in the layout means every route is covered, including ones
-    added later — there is no list to forget to update.
-  */
-  if (user && isPrivileged(user.role) && !user.mfaEnabled) {
-    const path = (await headers()).get("x-pathname") ?? "";
-    if (!path.startsWith("/setup-2fa") && !path.startsWith("/api")) {
-      redirect("/setup-2fa");
-    }
-  }
 
   return (
     <html lang="en" className="h-full">
