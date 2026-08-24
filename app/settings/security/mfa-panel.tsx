@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Card, ErrorText, buttonStyles } from "@/components/ui";
 import { Field, TextInput } from "@/components/form";
 
@@ -15,6 +16,7 @@ type Status = { enabled: boolean; required: boolean; backupCodesRemaining: numbe
   cannot show them again.
 */
 export function MfaPanel({ initial }: { initial: Status }) {
+  const router = useRouter();
   const [status, setStatus] = useState(initial);
   const [setup, setSetup] = useState<{ secret: string; qrDataUri: string } | null>(null);
   const [codes, setCodes] = useState<string[] | null>(null);
@@ -45,6 +47,9 @@ export function MfaPanel({ initial }: { initial: Status }) {
     setCodes(body.backupCodes);
     setSetup(null);
     setStatus((s) => ({ ...s, enabled: true, backupCodesRemaining: body.backupCodes.length }));
+    // The confirm response re-minted the session cookie; pick up the new one
+    // so the surrounding page stops treating this account as un-enrolled.
+    router.refresh();
   }
 
   async function turnOff(formData: FormData) {
@@ -59,6 +64,7 @@ export function MfaPanel({ initial }: { initial: Status }) {
     setPending(false);
     if (!res.ok) return setError(body?.error?.message ?? "Could not turn it off.");
     setStatus((s) => ({ ...s, enabled: false, backupCodesRemaining: 0 }));
+    router.refresh();
   }
 
   if (codes) {

@@ -137,3 +137,20 @@ describe("constant-time comparison", () => {
     expect(safeEqual("short", "muchlonger")).toBe(false);
   });
 });
+
+describe("the sign-in form's credential fields", () => {
+  it("declares every field authorize actually reads", async () => {
+    const { credentialFields, credentialsSchema } = await import("../lib/auth/credentials");
+
+    /*
+      Auth.js strips any credential the provider did not declare, without
+      complaint. An undeclared field therefore reaches authorize() as
+      undefined — and when that field is `totp`, every account with a second
+      factor is locked out of the site with a "wrong password" message. This
+      keeps the declaration and the schema from drifting apart.
+    */
+    for (const field of Object.keys(credentialsSchema.shape)) {
+      expect(Object.keys(credentialFields)).toContain(field);
+    }
+  });
+});

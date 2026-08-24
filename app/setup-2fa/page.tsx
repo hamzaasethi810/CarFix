@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Card, PageTitle } from "@/components/ui";
+import { Card, PageTitle, buttonStyles } from "@/components/ui";
 import { currentUser, isPrivileged } from "@/lib/auth/guards";
 import { getMfaStatus } from "@/lib/services/mfa";
 import { MfaPanel } from "../settings/security/mfa-panel";
@@ -11,6 +12,14 @@ import { MfaPanel } from "../settings/security/mfa-panel";
   signing back in they arrive here and cannot go anywhere else until a second
   factor is enrolled. Nothing about the tools is visible before that, because
   the tools reveal other people's receipts and identity documents.
+
+  This page deliberately does NOT redirect away once enrolment succeeds, even
+  though it knows it has. Middleware decides who gets sent here, and it decides
+  from the session cookie, which can be a few moments behind the database. A
+  redirect from here would bounce against that stale answer — page sends you to
+  /review, middleware sends you back — and the browser would spin until it gave
+  up. That is the frozen screen. One side navigates, the other decides; they
+  are never both allowed to do both.
 */
 export default async function SetupTwoFactorPage() {
   const user = await currentUser();
@@ -18,9 +27,29 @@ export default async function SetupTwoFactorPage() {
 
   // Nobody who does not need this should ever see it.
   if (!isPrivileged(user.role)) redirect("/");
-  if (user.mfaEnabled) redirect("/review");
 
   const status = await getMfaStatus(user.id);
+
+  if (status.enabled) {
+    return (
+      <div className="max-w-xl">
+        <PageTitle
+          title="You're all set"
+          subtitle="Two-factor authentication is on for this account."
+        />
+        <Card className="space-y-4">
+          <p className="text-subhead">
+            From now on, signing in asks for a code from your authenticator
+            after your password. Keep your backup codes somewhere safe — they
+            are the way back in if you lose your phone.
+          </p>
+          <Link href="/review" className={buttonStyles.primary}>
+            Open the review queue
+          </Link>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-xl">

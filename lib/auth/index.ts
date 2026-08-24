@@ -1,7 +1,7 @@
 import "server-only";
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { z } from "zod";
+import { credentialFields, credentialsSchema } from "./credentials";
 import { env, isProd } from "../env";
 import { findUserByEmail, findActiveUserById } from "../repositories/user";
 import { verifyPassword } from "./password";
@@ -9,17 +9,46 @@ import { clientIdentifier, enforceRateLimit } from "../rate-limit";
 import { hasMfaEnabled } from "../repositories/mfa";
 import { verifySecondFactor } from "../services/mfa";
 
-const credentialsSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-  // A TOTP code or a backup code, required only when the account has MFA on.
-  totp: z.string().max(20).optional(),
-});
+/*
+  Auth.js only forwards an error's `code` property to the browser — the message
+  passed to the constructor is deliberately swallowed, so `new
+  CredentialsSignin("MFA_REQUIRED")` arrives at the login page as the generic
+  "credentials" code. The sign-in form then cannot tell "this account needs a
+  code" from "that password was wrong", and never shows the code field, which
+  locks out every account that has a second factor. Setting `code` explicitly
+  is what actually crosses the boundary.
+
+  Neither of these is disclosed until after the password has been accepted, so
+  they tell an attacker nothing about an account they cannot already open.
+*/
+class MfaRequired extends CredentialsSignin {
+  code = "MFA_REQUIRED";
+}
+
+class MfaInvalid extends CredentialsSignin {
+  code = "MFA_INVALID";
+}
+
 
 // The Credentials provider requires the JWT session strategy, so the token is
 // re-checked against the database on every request: a deleted account or a
 // changed role takes effect immediately instead of living until token expiry.
-export const { handlers, auth, signIn, signOut } = NextAuth({
+export const {
+  handlers,
+  auth,
+  signIn,
+  signOut,
+  /*
+    Re-mints the session cookie from the database.
+
+    The cookie carries a copy of the account's role and MFA state so that
+    middleware can decide without a query. Copies go stale: enrolling a second
+    factor changes the database but not the cookie already in the browser, and
+    middleware would keep acting on the old answer for up to `updateAge`.
+    Calling this after any change middleware cares about keeps the two in step.
+  */
+  unstable_update: refreshSessionCookie,
+} = NextAuth({
   secret: env.AUTH_SECRET,
   session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7, updateAge: 60 * 15 },
   trustHost: true,
@@ -32,7 +61,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   providers: [
     Credentials({
-      credentials: { email: {}, password: {} },
+      credentials: credentialFields,
       async authorize(raw, request) {
         const parsed = credentialsSchema.safeParse(raw);
         if (!parsed.success) return null;
@@ -62,9 +91,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           ever issued to someone holding only the password.
         */
         if (await hasMfaEnabled(user.id)) {
-          if (!parsed.data.totp) throw new CredentialsSignin("MFA_REQUIRED");
+          if (!parsed.data.totp) throw new MfaRequired();
           const valid = await verifySecondFactor(user.id, parsed.data.totp);
-          if (!valid) throw new CredentialsSignin("MFA_INVALID");
+          if (!valid) throw new MfaInvalid();
         }
 
         return { id: user.id, email: user.email, role: user.role };
