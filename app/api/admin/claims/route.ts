@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { ok, parseQuery, route } from "@/lib/api/handler";
-import { requireAdmin } from "@/lib/auth/guards";
+import { requireReviewer } from "@/lib/auth/guards";
 import { getClaimQueue } from "@/lib/services/shops";
 import { clientIdentifier, enforceRateLimit } from "@/lib/rate-limit";
 
@@ -13,8 +13,8 @@ const querySchema = z
 
 export async function GET(req: Request) {
   return route(async () => {
-    const admin = await requireAdmin();
-    await enforceRateLimit("read", clientIdentifier(req, admin.id));
+    const reviewer = await requireReviewer();
+    await enforceRateLimit("read", clientIdentifier(req, reviewer.id));
     const { limit, offset } = parseQuery(req, querySchema);
     return ok(await getClaimQueue(limit, offset));
   });

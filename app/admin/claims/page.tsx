@@ -1,13 +1,13 @@
 import { redirect } from "next/navigation";
 import { EmptyState, PageTitle } from "@/components/ui";
-import { currentUser } from "@/lib/auth/guards";
+import { currentUser, isPrivileged } from "@/lib/auth/guards";
 import { getClaimQueue } from "@/lib/services/shops";
 import { ClaimRow } from "./claim-row";
 
 export default async function ClaimsPage() {
   const user = await currentUser();
   if (!user) redirect("/login");
-  if (user.role !== "ADMIN") redirect("/");
+  if (!isPrivileged(user.role)) redirect("/");
 
   const queue = await getClaimQueue(50, 0);
 

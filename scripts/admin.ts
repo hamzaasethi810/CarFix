@@ -10,9 +10,10 @@ import { PrismaClient } from "../lib/generated/prisma/client";
 
   Usage:
     npm run admin -- list
-    npm run admin -- grant you@example.com
-    npm run admin -- revoke them@example.com
-    npm run admin -- whoami you@example.com
+    npm run admin -- grant    you@example.com    (full administrator)
+    npm run admin -- reviewer them@example.com   (document review only)
+    npm run admin -- revoke   them@example.com   (back to an ordinary account)
+    npm run admin -- whoami   you@example.com
 */
 
 const prisma = new PrismaClient({
@@ -21,31 +22,37 @@ const prisma = new PrismaClient({
 
 async function list() {
   const admins = await prisma.user.findMany({
-    where: { role: "ADMIN", deletedAt: null },
+    where: { role: { in: ["ADMIN", "REVIEWER"] }, deletedAt: null },
     select: {
       email: true,
+      role: true,
       createdAt: true,
       totpEnabledAt: true,
       profile: { select: { displayName: true } },
     },
-    orderBy: { createdAt: "asc" },
+    orderBy: [{ role: "desc" }, { createdAt: "asc" }],
   });
 
   if (admins.length === 0) {
-    console.log("No administrators yet. Grant one with: npm run admin -- grant <email>");
+    console.log("Nobody has privileged access yet. Grant it with: npm run admin -- grant <email>");
     return;
   }
 
-  console.log(`${admins.length} administrator${admins.length === 1 ? "" : "s"}:\n`);
+  console.log(`${admins.length} privileged account${admins.length === 1 ? "" : "s"}:\n`);
   for (const a of admins) {
-    // Flagged loudly: an admin without a second factor is the weakest link in
-    // the whole system, since they can see receipts and identity documents.
-    const mfa = a.totpEnabledAt ? "2FA on" : "!! NO 2FA";
-    console.log(`  ${a.email.padEnd(34)} ${(a.profile?.displayName ?? "").padEnd(20)} ${mfa}`);
+    /*
+      Flagged loudly. Both roles can mint links revealing receipts and identity
+      documents, and the guards refuse to let either work without a second
+      factor — so anyone listed without one is currently locked out.
+    */
+    const mfa = a.totpEnabledAt ? "2FA on" : "!! NO 2FA — blocked from the queues";
+    console.log(
+      `  ${a.email.padEnd(32)} ${a.role.padEnd(9)} ${(a.profile?.displayName ?? "").padEnd(16)} ${mfa}`,
+    );
   }
 }
 
-async function setRole(email: string, role: "ADMIN" | "USER") {
+async function setRole(email: string, role: "ADMIN" | "REVIEWER" | "USER") {
   const user = await prisma.user.findFirst({
     where: { email: email.toLowerCase(), deletedAt: null },
     select: { id: true, email: true, role: true, totpEnabledAt: true },
@@ -71,7 +78,7 @@ async function setRole(email: string, role: "ADMIN" | "USER") {
   await prisma.auditLog.create({
     data: {
       actorId: user.id,
-      action: role === "ADMIN" ? "role.granted_admin" : "role.revoked_admin",
+      action: `role.set_${role.toLowerCase()}`,
       targetType: "User",
       targetId: user.id,
       metadata: { previousRole: user.role, viaCli: true },
@@ -81,10 +88,11 @@ async function setRole(email: string, role: "ADMIN" | "USER") {
   console.log(`${user.email} is now ${role}.`);
   console.log("The change takes effect on their next request — the session re-reads the role.");
 
-  if (role === "ADMIN" && !user.totpEnabledAt) {
+  if (role !== "USER" && !user.totpEnabledAt) {
     console.log(
-      "\n!! This account has no second factor. Administrators can view receipts and\n" +
-        "   identity documents, so have them turn it on at /settings/security.",
+      "\n!! This account has no second factor, so it is BLOCKED from the review\n" +
+        "   queues until it has one. Have them set it up at /settings/security —\n" +
+        "   Duo Mobile, Google Authenticator, Authy, and 1Password all work.",
     );
   }
 }
@@ -129,6 +137,10 @@ async function main() {
       if (!arg) throw new Error("Usage: npm run admin -- grant <email>");
       await setRole(arg, "ADMIN");
       break;
+    case "reviewer":
+      if (!arg) throw new Error("Usage: npm run admin -- reviewer <email>");
+      await setRole(arg, "REVIEWER");
+      break;
     case "revoke":
       if (!arg) throw new Error("Usage: npm run admin -- revoke <email>");
       await setRole(arg, "USER");
@@ -140,10 +152,11 @@ async function main() {
     default:
       console.log(
         "Commands:\n" +
-          "  list              every administrator, and whether they have 2FA\n" +
-          "  grant <email>     make an existing account an administrator\n" +
-          "  revoke <email>    take it away\n" +
-          "  whoami <email>    what one account is and owns",
+          "  list               every privileged account, its role, and whether it has 2FA\n" +
+          "  grant <email>      full administrator: queues, moderation, everything\n" +
+          "  reviewer <email>   document review only: receipts and shop claims\n" +
+          "  revoke <email>     back to an ordinary account\n" +
+          "  whoami <email>     what one account is and owns",
       );
   }
 }

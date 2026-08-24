@@ -323,17 +323,34 @@ That connects as `carfix_app`, which can read and write rows but cannot drop
 or alter anything — see the role split above. For schema work, use
 `MIGRATE_DATABASE_URL` instead.
 
-### Granting and revoking administrator rights
+### Roles
+
+| Role | Can |
+|---|---|
+| `USER` | their own cars and reports |
+| `REVIEWER` | work the verification and shop-claim queues — which means opening the short-lived links that reveal receipts and business documents |
+| `ADMIN` | all of that, plus moderation |
+
+A reviewer exists so document review can be delegated without handing out the
+ability to grant administrator rights or take down other people's writing.
+
+**Both privileged roles must have a second factor**, and that is a hard gate:
+the guards refuse the request, so an account without one is locked out of the
+queues rather than merely warned. Any authenticator works — Duo Mobile,
+Google Authenticator, Authy, 1Password. In Duo Mobile: Add account, Use QR code.
+
+### Granting and revoking rights
 
 Deliberately a command-line tool, not a page. Granting admin is the one action
 that would turn any other bug into a total compromise if it were reachable
 over HTTP, so there is no self-service path to it anywhere in the product.
 
 ```bash
-npm run admin -- list                    # every admin, and whether they have 2FA
-npm run admin -- grant you@example.com   # promote an existing account
-npm run admin -- revoke them@example.com # demote
-npm run admin -- whoami you@example.com  # what one account is and owns
+npm run admin -- list                       # every privileged account, role, and 2FA state
+npm run admin -- grant    you@example.com   # full administrator
+npm run admin -- reviewer them@example.com  # document review only
+npm run admin -- revoke   them@example.com  # back to an ordinary account
+npm run admin -- whoami   you@example.com   # what one account is and owns
 ```
 
 The person must have signed up first — this promotes an existing account
@@ -344,11 +361,21 @@ is equally immediate.
 Administrators must have a second factor. `list` flags any who do not, and the
 app refuses to let an admin turn theirs off.
 
-### What an administrator can see
+### How a reviewer actually sees a document
 
-- The verification queue, and each receipt through a 120-second signed link
+The link is never sent anywhere. When a reviewer clicks **View receipt**, their
+browser calls the API from their own authenticated session; the server checks
+the role and the second factor, mints a URL signed for **120 seconds**, writes
+an audit entry, and returns it. The browser opens it in a tab and it expires.
+
+Nothing is emailed, nothing is stored, and the URL cannot be forwarded
+usefully — by the time it is pasted anywhere it has almost certainly lapsed.
+
+### What a reviewer or administrator can see
+
+- The verification queue, and each receipt through that 120-second link
 - The shop claim queue, and each business document the same way
-- Reports, and the moderation actions on them
+- Administrators only: reports, and the moderation actions on them
 
 Every one of those views is written to `AuditLog` with the admin's id, so
 privileged reads are attributable after the fact.

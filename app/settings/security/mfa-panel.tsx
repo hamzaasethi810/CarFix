@@ -99,7 +99,9 @@ export function MfaPanel({ initial }: { initial: Status }) {
         <div>
           <h2 className="text-headline font-semibold">Scan this in your authenticator</h2>
           <p className="text-subhead text-secondary mt-1">
-            Google Authenticator, Authy, 1Password, or any other TOTP app.
+            Duo Mobile, Google Authenticator, Authy, 1Password — any authenticator
+            app. In Duo Mobile choose &ldquo;Add account&rdquo;, then
+            &ldquo;Use QR code&rdquo;.
           </p>
         </div>
 
@@ -148,10 +150,10 @@ export function MfaPanel({ initial }: { initial: Status }) {
         )}
       </div>
 
-      {status.required && (
-        <p className="text-footnote text-secondary">
-          Required for administrator accounts, which can see other people&rsquo;s
-          receipts and identity documents.
+      {status.required && !status.enabled && (
+        <p className="text-footnote text-warning">
+          Required for your role. Until this is on, the review queues are closed
+          to you — they reveal other people&rsquo;s receipts and identity documents.
         </p>
       )}
 

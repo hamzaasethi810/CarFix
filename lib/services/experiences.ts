@@ -154,8 +154,17 @@ export async function editExperience(
   return toExperienceView(updated, userId);
 }
 
-export async function removeExperience(id: string, actor: { id: string; role: "USER" | "ADMIN" }) {
-  const ok = await softDeleteExperience(id, actor.role === "ADMIN" ? {} : { userId: actor.id });
+export async function removeExperience(
+  id: string,
+  actor: { id: string; role: "USER" | "REVIEWER" | "ADMIN" },
+) {
+  /*
+    Only an administrator can remove someone else's report. A reviewer works
+    the document queues; taking down other people's writing is moderation, and
+    deliberately not part of that role.
+  */
+  const scope = actor.role === "ADMIN" ? {} : { userId: actor.id };
+  const ok = await softDeleteExperience(id, scope);
   if (!ok) throw notFound();
 }
 

@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
-import { currentUser } from "@/lib/auth/guards";
+import { currentUser, isPrivileged } from "@/lib/auth/guards";
 
 export const metadata: Metadata = {
   title: "CarFix — owner-reported mechanic pricing",
@@ -34,7 +34,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           Skip to content
         </a>
 
-        <SiteHeader isAuthed={Boolean(user)} isAdmin={user?.role === "ADMIN"} />
+        <SiteHeader
+          isAuthed={Boolean(user)}
+          isAdmin={user?.role === "ADMIN"}
+          isReviewer={Boolean(user && isPrivileged(user.role))}
+        />
 
         <main
           id="main"

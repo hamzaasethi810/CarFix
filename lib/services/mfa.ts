@@ -27,9 +27,12 @@ export async function getMfaStatus(userId: string) {
 
   return {
     enabled: Boolean(user.totpEnabledAt),
-    // Admins handle other people's receipts and identity documents, so a
-    // second factor is not optional for them.
-    required: user.role === "ADMIN",
+    /*
+      Reviewers and administrators can both mint links that reveal other
+      people's receipts and identity documents, so neither may work without a
+      second factor. The guards enforce this; this only reports it.
+    */
+    required: user.role === "ADMIN" || user.role === "REVIEWER",
     backupCodesRemaining: user.totpEnabledAt ? await countUnusedBackupCodes(userId) : 0,
   };
 }
@@ -130,10 +133,10 @@ export async function verifySecondFactor(userId: string, submitted: string): Pro
 export async function disable(userId: string, code: string) {
   const user = await findMfaState(userId);
   if (!user?.totpEnabledAt) throw conflict("Two-factor authentication is not on.");
-  if (user.role === "ADMIN")
+  if (user.role === "ADMIN" || user.role === "REVIEWER")
     throw new AppError(
       "FORBIDDEN",
-      "Administrator accounts must keep two-factor authentication on.",
+      "Accounts that review receipts and documents must keep two-factor authentication on.",
     );
 
   const ok = await verifySecondFactor(userId, code);

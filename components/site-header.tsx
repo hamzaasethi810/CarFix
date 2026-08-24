@@ -4,7 +4,15 @@ import { signOut } from "@/lib/auth";
 const navLink =
   "inline-flex items-center min-h-11 px-3 -mx-1 rounded-control text-subhead text-secondary hover:text-label hover:bg-fill transition-colors duration-150";
 
-export function SiteHeader({ isAuthed, isAdmin }: { isAuthed: boolean; isAdmin: boolean }) {
+export function SiteHeader({
+  isAuthed,
+  isAdmin,
+  isReviewer,
+}: {
+  isAuthed: boolean;
+  isAdmin: boolean;
+  isReviewer: boolean;
+}) {
   return (
     /*
       The bar is a translucent material on its own plane above the content,
@@ -33,9 +41,10 @@ export function SiteHeader({ isAuthed, isAdmin }: { isAuthed: boolean; isAdmin: 
           </>
         )}
 
-        {isAdmin && (
+        {/* Reviewers see the queues; only administrators see the rest. */}
+        {isReviewer && (
           <Link href="/admin" className={navLink}>
-            Admin
+            {isAdmin ? "Admin" : "Review"}
           </Link>
         )}
 
