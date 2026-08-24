@@ -1,6 +1,5 @@
 import "server-only";
 import { prisma } from "../db";
-import type { PhotoSlot } from "../generated/prisma/enums";
 
 const vehicleDetail = {
   id: true,
@@ -15,7 +14,6 @@ const vehicleDetail = {
   trim: { select: { id: true, name: true } },
   engine: { select: { id: true, name: true } },
   drivetrain: { select: { id: true, name: true } },
-  photos: { select: { slot: true, storageKey: true } },
   owner: { select: { profile: { select: { username: true, displayName: true } } } },
 } as const;
 
@@ -88,39 +86,4 @@ export const vehicleBelongsTo = async (id: string, ownerId: string) =>
     }),
   );
 
-export const upsertVehiclePhoto = async (
-  vehicleId: string,
-  ownerId: string,
-  slot: PhotoSlot,
-  storageKey: string,
-) => {
-  const owned = await vehicleBelongsTo(vehicleId, ownerId);
-  if (!owned) return null;
 
-  const existing = await prisma.vehiclePhoto.findUnique({
-    where: { vehicleId_slot: { vehicleId, slot } },
-    select: { storageKey: true },
-  });
-
-  await prisma.vehiclePhoto.upsert({
-    where: { vehicleId_slot: { vehicleId, slot } },
-    create: { vehicleId, slot, storageKey },
-    update: { storageKey },
-  });
-
-  return { replacedKey: existing?.storageKey ?? null };
-};
-
-export const deleteVehiclePhoto = async (vehicleId: string, ownerId: string, slot: PhotoSlot) => {
-  const owned = await vehicleBelongsTo(vehicleId, ownerId);
-  if (!owned) return null;
-
-  const existing = await prisma.vehiclePhoto.findUnique({
-    where: { vehicleId_slot: { vehicleId, slot } },
-    select: { storageKey: true },
-  });
-  if (!existing) return { removedKey: null };
-
-  await prisma.vehiclePhoto.delete({ where: { vehicleId_slot: { vehicleId, slot } } });
-  return { removedKey: existing.storageKey };
-};

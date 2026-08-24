@@ -3,6 +3,7 @@ import { notFound } from "../errors";
 import {
   findMechanicById,
   searchMechanics,
+  searchMechanicsByName,
   type MechanicSearchParams,
 } from "../repositories/mechanic";
 import { countExperiences } from "../repositories/experience";
@@ -50,4 +51,17 @@ export async function getMechanic(id: string) {
   ]);
 
   return { ...toMechanicView(mechanic), experienceCount, verifiedCount };
+}
+
+export async function suggest(query: string, limit = 8) {
+  const trimmed = query.trim();
+  // Below two characters the result set is meaninglessly broad.
+  if (trimmed.length < 2) return [];
+
+  const rows = await searchMechanicsByName(trimmed, limit);
+  return rows.map((m) => ({
+    id: m.id,
+    name: m.name,
+    place: [m.city, m.state].filter((p) => p && p.trim()).join(", "),
+  }));
 }

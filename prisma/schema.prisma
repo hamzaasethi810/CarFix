@@ -17,11 +17,6 @@ enum Role {
   ADMIN
 }
 
-enum PhotoSlot {
-  FRONT
-  BACK
-  INTERIOR
-}
 
 enum VerificationStatus {
   UNVERIFIED
@@ -230,24 +225,12 @@ model Vehicle {
   trim        Trim?                @relation(fields: [trimId], references: [id], onDelete: SetNull)
   engine      Engine?              @relation(fields: [engineId], references: [id], onDelete: SetNull)
   drivetrain  Drivetrain?          @relation(fields: [drivetrainId], references: [id], onDelete: SetNull)
-  photos      VehiclePhoto[]
   experiences MechanicExperience[]
 
   @@index([ownerId, deletedAt])
   @@index([generationId])
 }
 
-model VehiclePhoto {
-  id         String    @id @default(cuid())
-  vehicleId  String
-  slot       PhotoSlot
-  storageKey String
-  updatedAt  DateTime  @updatedAt
-
-  vehicle Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-
-  @@unique([vehicleId, slot])
-}
 
 // ---------- Mechanics & services ----------
 

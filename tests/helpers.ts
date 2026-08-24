@@ -6,7 +6,6 @@ export async function resetData() {
   await prisma.report.deleteMany();
   await prisma.receipt.deleteMany();
   await prisma.mechanicExperience.deleteMany();
-  await prisma.vehiclePhoto.deleteMany();
   await prisma.vehicle.deleteMany();
   await prisma.profile.deleteMany();
   await prisma.session.deleteMany();

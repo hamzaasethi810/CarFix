@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { AppError } from "../lib/errors";
-import { addVehicle, editVehicle, removeVehicle, setVehiclePhoto } from "../lib/services/vehicles";
+import { addVehicle, editVehicle, removeVehicle } from "../lib/services/vehicles";
 import {
   editExperience,
   removeExperience,
@@ -57,11 +57,6 @@ describe("cross-user authorization", () => {
     expect(await codeOf(() => removeVehicle(vehicleId, bob.id))).toBe("NOT_FOUND");
   });
 
-  it("User A cannot upload a photo to User B's vehicle", async () => {
-    expect(
-      await codeOf(() => setVehiclePhoto(vehicleId, bob.id, "FRONT", fakeFile(PNG_BYTES))),
-    ).toBe("FORBIDDEN");
-  });
 
   it("User A cannot submit an experience against User B's vehicle", async () => {
     expect(

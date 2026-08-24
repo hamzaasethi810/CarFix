@@ -9,7 +9,6 @@ export type LimitName =
   | "register"
   | "experienceSubmit"
   | "receiptUpload"
-  | "photoUpload"
   | "search"
   | "report"
   | "vinLookup"
@@ -19,8 +18,9 @@ const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m
   login: { tokens: 8, window: "5 m" },
   register: { tokens: 5, window: "1 h" },
   experienceSubmit: { tokens: 10, window: "1 h" },
-  receiptUpload: { tokens: 10, window: "1 h" },
-  photoUpload: { tokens: 30, window: "1 h" },
+  // Receipts are the heaviest path on the site: an upload, an object write,
+  // and eventually a human review. Kept deliberately tight.
+  receiptUpload: { tokens: 4, window: "1 h" },
   search: { tokens: 120, window: "1 m" },
   report: { tokens: 15, window: "1 h" },
   vinLookup: { tokens: 40, window: "1 h" },

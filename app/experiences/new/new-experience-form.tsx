@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckboxRow, Field, Select, SubmitButton, TextArea, TextInput } from "@/components/form";
 import { Card, ErrorText } from "@/components/ui";
+import { MechanicPicker } from "@/components/mechanic-picker";
 
 type Option = { id: string; label?: string; name?: string };
 
@@ -19,11 +20,9 @@ const RATINGS = [
 export function NewExperienceForm({
   vehicles,
   services,
-  mechanics,
 }: {
   vehicles: Option[];
   services: Option[];
-  mechanics: Option[];
 }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -102,17 +101,11 @@ export function NewExperienceForm({
           )}
         </Field>
 
-        <Field label="Which mechanic?">
-          {({ id }) => (
-            <Select id={id} name="mechanicId" required>
-              <option value="">Select a mechanic</option>
-              {mechanics.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label}
-                </option>
-              ))}
-            </Select>
-          )}
+        <Field
+          label="Which mechanic?"
+          hint="Search by shop name or town."
+        >
+          {() => <MechanicPicker name="mechanicId" required />}
         </Field>
 
         <Field label="Service">

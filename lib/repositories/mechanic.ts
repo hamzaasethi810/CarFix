@@ -219,3 +219,21 @@ export async function pricingStats(filters: {
 
   return row ?? { count: 0, verifiedCount: 0, min: null, max: null, avg: null, median: null };
 }
+
+/**
+ * Typeahead lookup by name or town. Matching runs in Postgres and only a
+ * handful of rows come back, so the browser never holds the shop list.
+ */
+export const searchMechanicsByName = (query: string, limit: number) =>
+  prisma.mechanic.findMany({
+    where: {
+      deletedAt: null,
+      OR: [
+        { name: { contains: query, mode: "insensitive" } },
+        { city: { contains: query, mode: "insensitive" } },
+      ],
+    },
+    select: { id: true, name: true, city: true, state: true },
+    orderBy: [{ name: "asc" }],
+    take: limit,
+  });

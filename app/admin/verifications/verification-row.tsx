@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, ErrorText, buttonStyles, money } from "@/components/ui";
+import { Card, ErrorText, buttonStyles, miles, money } from "@/components/ui";
 
 type QueueItem = {
   id: string;
@@ -66,7 +66,7 @@ export function VerificationRow({ item }: { item: QueueItem }) {
         <time dateTime={item.serviceDate}>
           {new Date(item.serviceDate).toLocaleDateString()}
         </time>{" "}
-        · {item.mileageAtService.toLocaleString()} mi
+        · {miles(item.mileageAtService)}
       </p>
 
       {confirming ? (

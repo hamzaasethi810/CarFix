@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Card, PageTitle } from "@/components/ui";
+import { Card, PageTitle, num } from "@/components/ui";
 import { currentUser } from "@/lib/auth/guards";
 import { getVerificationQueue } from "@/lib/services/experiences";
 import { getReports } from "@/lib/services/moderation";
@@ -25,7 +25,7 @@ export default async function AdminPage() {
             <p className="text-footnote text-secondary uppercase tracking-wide">
               Verification queue
             </p>
-            <p className="text-large-title font-bold mt-1 tabular-nums">{pending.length}</p>
+            <p className="text-large-title font-bold mt-1 tabular-nums">{num(pending.length)}</p>
             <p className="text-subhead text-secondary mt-1">
               {pending.length === 1 ? "receipt awaiting" : "receipts awaiting"} review
             </p>
@@ -34,7 +34,7 @@ export default async function AdminPage() {
 
         <Card>
           <p className="text-footnote text-secondary uppercase tracking-wide">Open reports</p>
-          <p className="text-large-title font-bold mt-1 tabular-nums">{reports.length}</p>
+          <p className="text-large-title font-bold mt-1 tabular-nums">{num(reports.length)}</p>
           <p className="text-subhead text-secondary mt-1">
             {reports.length === 1 ? "report" : "reports"} needing attention
           </p>

@@ -40,7 +40,6 @@ type VehicleRow = {
   trim: { id: string; name: string } | null;
   engine: { id: string; name: string } | null;
   drivetrain: { id: string; name: string } | null;
-  photos: { slot: string; storageKey: string }[];
   owner?: { profile: { username: string; displayName: string } | null } | null;
 };
 
@@ -62,8 +61,6 @@ export const toVehicleSummary = (v: VehicleRow, viewerId?: string) => ({
   trim: v.trim?.name ?? null,
   engine: v.engine?.name ?? null,
   drivetrain: v.drivetrain?.name ?? null,
-  // Photos are served through an authorized route, never as a raw storage key.
-  photoSlots: v.photos.map((p) => p.slot),
   owner: v.owner?.profile
     ? { username: v.owner.profile.username, displayName: v.owner.profile.displayName }
     : null,

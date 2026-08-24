@@ -3,17 +3,12 @@ import { forbidden, notFound, validation } from "../errors";
 import { findGenerationForYear, listModels } from "../repositories/taxonomy";
 import {
   createVehicle,
-  deleteVehiclePhoto,
   findVehicleById,
   listVehiclesForOwner,
   softDeleteVehicleOwnedBy,
   updateVehicleOwnedBy,
-  upsertVehiclePhoto,
 } from "../repositories/vehicle";
-import { deleteObject, putObject } from "../storage/objects";
-import { inspectImage, randomKey } from "../storage/files";
 import { toVehicleSummary } from "./dto";
-import type { PhotoSlot } from "../generated/prisma/enums";
 
 // The generation is derived from make/model/year rather than accepted from the
 // client, which is what keeps generation-level aggregation trustworthy.
@@ -101,28 +96,4 @@ export async function removeVehicle(id: string, ownerId: string) {
   if (!ok) throw notFound();
 }
 
-export async function setVehiclePhoto(
-  vehicleId: string,
-  ownerId: string,
-  slot: PhotoSlot,
-  file: File,
-) {
-  const { bytes, mime, ext } = await inspectImage(file);
-  const key = randomKey(`vehicles/${vehicleId}`, ext);
-  await putObject("photos", key, bytes, mime);
 
-  const result = await upsertVehiclePhoto(vehicleId, ownerId, slot, key);
-  if (!result) {
-    await deleteObject("photos", key);
-    throw forbidden();
-  }
-
-  if (result.replacedKey) await deleteObject("photos", result.replacedKey);
-  return { slot };
-}
-
-export async function removeVehiclePhoto(vehicleId: string, ownerId: string, slot: PhotoSlot) {
-  const result = await deleteVehiclePhoto(vehicleId, ownerId, slot);
-  if (!result) throw forbidden();
-  if (result.removedKey) await deleteObject("photos", result.removedKey);
-}

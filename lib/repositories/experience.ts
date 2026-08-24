@@ -234,3 +234,9 @@ export const decideVerification = (params: {
 
     return updated;
   });
+
+/** How many of this user's experiences are already awaiting review. */
+export const countPendingVerificationsForUser = (userId: string) =>
+  prisma.mechanicExperience.count({
+    where: { userId, deletedAt: null, verificationStatus: "PENDING" },
+  });

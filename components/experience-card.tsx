@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card, Stars, VerifiedBadge, money } from "@/components/ui";
+import { Card, Stars, VerifiedBadge, miles, money } from "@/components/ui";
 
 export type ExperienceView = {
   id: string;
@@ -70,7 +70,7 @@ export function ExperienceCard({
             month: "short",
           })}
         </time>{" "}
-        · {e.mileageAtService.toLocaleString()} mi
+        · {miles(e.mileageAtService)}
         {e.author && ` · ${e.author.displayName}`}
         {e.wouldReturn && " · would return"}
       </p>

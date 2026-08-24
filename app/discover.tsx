@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { MapMechanic } from "@/components/mechanic-map";
+import { distance, money, num } from "@/components/ui";
 
 // Leaflet needs `window`, so the map never renders on the server.
 const MechanicMap = dynamic(
@@ -32,8 +33,6 @@ type Result = MapMechanic & {
 const placeLabel = (city: string, state: string) =>
   [city, state].filter((p) => p && p.trim()).join(", ");
 
-const money = (n: number | null) =>
-  n === null ? null : n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
 export function Discover({
   makes,
@@ -223,7 +222,7 @@ export function Discover({
       <div className="pointer-events-none absolute inset-0 flex flex-col">
         <div className="pointer-events-auto p-3 sm:p-4">
           <div className="glass rounded-glass p-3 sm:p-4 max-w-4xl mx-auto">
-            <div className="grid gap-2 sm:gap-3 sm:grid-cols-2 lg:grid-cols-6 lg:items-end">
+            <div className="grid gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-5 [&>*]:min-w-0">
               <Picker label="Make" value={makeId} onChange={chooseMake} options={makes} anyLabel="Any make" />
               <Picker
                 label="Model"
@@ -266,7 +265,7 @@ export function Discover({
 
               <label className="block">
                 <span className="block text-footnote font-medium mb-1">
-                  Within {center ? `${radiusMiles} mi` : "any distance"}
+                  {center ? "Distance" : "Distance (needs location)"}
                 </span>
                 <select
                   value={radiusMiles}
@@ -283,22 +282,31 @@ export function Discover({
                 </select>
               </label>
 
-              <div className="flex items-center gap-3">
-                <label className="flex items-center gap-2 text-subhead min-h-11 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={verifiedOnly}
-                    onChange={(e) => setVerifiedOnly(e.target.checked)}
-                    className="size-6 rounded accent-[var(--accent-fill)]"
-                  />
-                  Verified
-                </label>
+              <div className="sm:col-span-2 lg:col-span-5 flex flex-wrap items-center gap-3 pt-1">
+                {/* Verified reads as a toggle chip rather than a bare checkbox. */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={verifiedOnly}
+                  onClick={() => setVerifiedOnly((v) => !v)}
+                  className={`inline-flex items-center gap-2 min-h-11 px-4 rounded-full text-subhead font-medium transition-colors duration-150 ${
+                    verifiedOnly
+                      ? "bg-success/15 text-success"
+                      : "bg-black/[0.06] text-secondary hover:bg-black/10"
+                  }`}
+                >
+                  <span aria-hidden="true">{verifiedOnly ? "✓" : "○"}</span>
+                  Verified only
+                </button>
+
+                <span className="flex-1" />
+
                 {/* The one primary action in this context gets the colour. */}
                 <button
                   type="button"
                   onClick={() => void runSearch()}
                   disabled={loading}
-                  className="flex-1 min-h-11 px-4 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold disabled:opacity-50"
+                  className="min-h-11 px-7 rounded-full bg-accent-fill text-on-accent text-subhead font-semibold shadow-sm disabled:opacity-50 w-full sm:w-auto"
                 >
                   {loading ? "Searching…" : "Search"}
                 </button>
@@ -307,14 +315,13 @@ export function Discover({
           </div>
         </div>
 
-        <div className="flex-1" />
-
-        {/* Result panel, docked bottom on mobile and left on desktop. */}
-        <div className="pointer-events-auto p-3 sm:p-4 sm:absolute sm:left-0 sm:top-28 sm:bottom-4 sm:w-96 sm:pr-0">
+        {/* Results share the flex column with the bar, so they never overlap it. */}
+        <div className="flex-1 min-h-0 flex flex-col sm:flex-row sm:items-stretch">
+          <div className="pointer-events-auto px-3 pb-3 sm:px-4 sm:pb-4 w-full sm:w-96 mt-auto sm:mt-0 flex flex-col min-h-0">
           <div
             className={`glass rounded-glass overflow-hidden flex flex-col ${
               panelOpen ? "max-h-[45vh]" : "max-h-16"
-            } sm:max-h-none sm:h-full transition-[max-height] duration-300`}
+            } sm:max-h-none sm:flex-1 transition-[max-height] duration-300`}
           >
             <button
               type="button"
@@ -362,13 +369,13 @@ export function Discover({
                       <span className="text-subhead font-semibold">{m.name}</span>
                       <span className="text-footnote text-secondary shrink-0">
                         {m.distanceMiles !== null
-                          ? `${m.distanceMiles} mi`
+                          ? distance(m.distanceMiles)
                           : placeLabel(m.city, m.state)}
                       </span>
                     </span>
                     <span className="block text-footnote text-secondary mt-1">
                       {m.avgRating !== null ? `${m.avgRating}/5 · ` : ""}
-                      {m.experienceCount} {m.experienceCount === 1 ? "experience" : "experiences"}
+                      {num(m.experienceCount)} {m.experienceCount === 1 ? "experience" : "experiences"}
                       {m.verifiedCount > 0 && (
                         <span className="text-success"> · {m.verifiedCount} verified</span>
                       )}
@@ -378,6 +385,7 @@ export function Discover({
                 </li>
               ))}
             </ul>
+          </div>
           </div>
         </div>
 
@@ -389,7 +397,7 @@ export function Discover({
                 <div>
                   <h2 className="text-headline font-semibold">{selected.name}</h2>
                   <p className="text-footnote text-secondary mt-0.5">
-                    {[placeLabel(selected.city, selected.state), selected.distanceMiles !== null ? `${selected.distanceMiles} mi` : null]
+                    {[placeLabel(selected.city, selected.state), distance(selected.distanceMiles)]
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
@@ -406,8 +414,8 @@ export function Discover({
 
               <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
                 <Stat label="Rating" value={selected.avgRating !== null ? `${selected.avgRating}` : "—"} />
-                <Stat label="Reports" value={String(selected.experienceCount)} />
-                <Stat label="Median" value={money(selected.medianPrice) ?? "—"} />
+                <Stat label="Reports" value={num(selected.experienceCount)} />
+                <Stat label="Median" value={money(selected.medianPrice)} />
               </dl>
 
               <Link

@@ -1,11 +1,10 @@
 import { notFound } from "next/navigation";
-import { Card, EmptyState, PageTitle, SectionTitle, money } from "@/components/ui";
+import { Card, EmptyState, PageTitle, SectionTitle, miles, money } from "@/components/ui";
 import { ExperienceCard } from "@/components/experience-card";
 import { currentUser } from "@/lib/auth/guards";
 import { getVehicle } from "@/lib/services/vehicles";
 import { browseExperiences, getPricing } from "@/lib/services/experiences";
 import { AppError } from "@/lib/errors";
-import { VehiclePhotos } from "./vehicle-photos";
 
 function Detail({ label, value }: { label: string; value: string }) {
   return (
@@ -43,7 +42,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
         <Detail
           label="Mileage"
           value={
-            vehicle.mileage === null ? "Not reported" : `${vehicle.mileage.toLocaleString()} mi`
+            vehicle.mileage === null ? "Not reported" : miles(vehicle.mileage)
           }
         />
         <Detail
@@ -51,8 +50,6 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
           value={[vehicle.engine, vehicle.drivetrain].filter(Boolean).join(" · ") || "Not reported"}
         />
       </div>
-
-      <VehiclePhotos vehicleId={vehicle.id} slots={vehicle.photoSlots} editable={vehicle.isOwn} />
 
       <SectionTitle>Service history for this car</SectionTitle>
       {own.items.length === 0 ? (

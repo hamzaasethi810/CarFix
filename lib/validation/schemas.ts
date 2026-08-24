@@ -44,8 +44,6 @@ export const createVehicleSchema = z
 
 export const updateVehicleSchema = createVehicleSchema.partial().strict();
 
-export const photoSlotSchema = z.enum(["FRONT", "BACK", "INTERIOR"]);
-
 export const createExperienceSchema = z
   .object({
     vehicleId: id,

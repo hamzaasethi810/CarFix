@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Card, EmptyState, PageTitle } from "@/components/ui";
+import { Card, EmptyState, PageTitle, miles } from "@/components/ui";
 import { currentUser } from "@/lib/auth/guards";
 import { getGarage } from "@/lib/services/vehicles";
 import { getMakes } from "@/lib/services/taxonomy";
@@ -38,7 +38,7 @@ export default async function GaragePage() {
                       <p className="text-subhead text-secondary mt-1">
                         {v.year} {v.make} {v.model}
                         {v.trim && ` ${v.trim}`}
-                        {v.mileage !== null && ` · ${v.mileage.toLocaleString()} mi`}
+                        {v.mileage !== null && ` · ${miles(v.mileage)}`}
                       </p>
                     </Card>
                   </Link>

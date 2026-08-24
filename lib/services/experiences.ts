@@ -1,8 +1,9 @@
 import "server-only";
-import { forbidden, notFound, validation } from "../errors";
+import { conflict, forbidden, notFound, validation } from "../errors";
 import {
   attachReceipt,
   countExperiences,
+  countPendingVerificationsForUser,
   createExperience,
   decideVerification,
   experienceBelongsTo,
@@ -20,6 +21,9 @@ import { vehicleBelongsTo } from "../repositories/vehicle";
 import { deleteObject, putObject, signedReadUrl } from "../storage/objects";
 import { inspectReceipt, randomKey } from "../storage/files";
 import { toExperienceView } from "./dto";
+
+/** Ceiling on how much of the review queue one account can occupy. */
+const MAX_PENDING_PER_USER = 5;
 
 export async function submitExperience(
   userId: string,
@@ -132,6 +136,17 @@ export async function uploadReceipt(experienceId: string, userId: string, file: 
   // Ownership is checked before anything is written, so a caller who does not
   // own the experience never causes an object to land in the bucket at all.
   if (!(await experienceBelongsTo(experienceId, userId))) throw forbidden();
+
+  /*
+    Rate limiting caps how fast one person can upload; this caps how much of
+    the review queue they can occupy at once. Without it a single account could
+    fill the admin queue and stall verification for everyone.
+  */
+  const pending = await countPendingVerificationsForUser(userId);
+  if (pending >= MAX_PENDING_PER_USER)
+    throw conflict(
+      `You already have ${pending} receipts awaiting review. Wait for those before submitting more.`,
+    );
 
   const { bytes, mime, ext } = await inspectReceipt(file);
   const key = randomKey(`receipts/${experienceId}`, ext);

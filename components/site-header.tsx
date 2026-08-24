@@ -22,8 +22,8 @@ export function SiteHeader({ isAuthed, isAdmin }: { isAuthed: boolean; isAdmin: 
           Car<span className="text-brand">Fix</span>
         </Link>
 
-        <Link href="/mechanics" className={navLink}>
-          Mechanics
+        <Link href="/" className={navLink}>
+          Find a shop
         </Link>
 
         {isAuthed && (

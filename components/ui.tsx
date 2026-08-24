@@ -81,14 +81,33 @@ export function VerifiedBadge({ verified }: { verified: boolean }) {
   );
 }
 
-export const money = (n: number | null) =>
-  n === null
+/*
+  One place for number formatting so every figure on the site reads the same
+  way — thousands separators throughout, and an em dash rather than a bare
+  "0" or "null" when there is genuinely no value.
+*/
+export const money = (n: number | null | undefined) =>
+  n === null || n === undefined
     ? "—"
     : n.toLocaleString("en-US", {
         style: "currency",
         currency: "USD",
         maximumFractionDigits: 0,
       });
+
+/** Whole numbers: mileage, counts, distances. */
+export const num = (n: number | null | undefined) =>
+  n === null || n === undefined ? "—" : n.toLocaleString("en-US");
+
+/** Mileage always carries its unit. */
+export const miles = (n: number | null | undefined) =>
+  n === null || n === undefined ? "—" : `${n.toLocaleString("en-US")} mi`;
+
+/** Distances keep one decimal but still group thousands. */
+export const distance = (n: number | null | undefined) =>
+  n === null || n === undefined
+    ? null
+    : `${n.toLocaleString("en-US", { maximumFractionDigits: 1 })} mi`;
 
 /*
   Every control is at least 44px tall — the platform default touch target —
