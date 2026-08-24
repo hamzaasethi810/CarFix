@@ -52,6 +52,21 @@ export function MfaPanel({ initial }: { initial: Status }) {
     router.refresh();
   }
 
+  async function newBackupCodes(formData: FormData) {
+    setPending(true);
+    setError(null);
+    const res = await fetch("/api/mfa/backup-codes", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code: String(formData.get("code") ?? "") }),
+    });
+    const body = await res.json().catch(() => null);
+    setPending(false);
+    if (!res.ok) return setError(body?.error?.message ?? "Could not issue new codes.");
+    setCodes(body.backupCodes);
+    setStatus((s) => ({ ...s, backupCodesRemaining: body.backupCodes.length }));
+  }
+
   async function turnOff(formData: FormData) {
     setPending(true);
     setError(null);
@@ -165,10 +180,35 @@ export function MfaPanel({ initial }: { initial: Status }) {
 
       {error && <ErrorText>{error}</ErrorText>}
 
+      {status.enabled && (
+        <form action={newBackupCodes} className="space-y-3 pt-2 border-t border-separator">
+          <div>
+            <h3 className="text-subhead font-semibold">Backup codes</h3>
+            <p className="text-footnote text-secondary mt-1">
+              {status.backupCodesRemaining} left. If you never saw them, or you
+              are not sure where they went, issue a new set — the old ones stop
+              working straight away.
+            </p>
+          </div>
+          <Field label="Enter a code to issue a new set">
+            {({ id }) => (
+              <TextInput id={id} name="code" required inputMode="numeric"
+                placeholder="123456 or a backup code" />
+            )}
+          </Field>
+          <button type="submit" disabled={pending} className={buttonStyles.secondary}>
+            {pending ? "Working…" : "Issue new backup codes"}
+          </button>
+        </form>
+      )}
+
       {status.enabled ? (
         status.required ? (
           <p className="text-subhead text-secondary">
-            This cannot be turned off while your account is an administrator.
+            This cannot be turned off while your account is an administrator or
+            reviewer. If you have lost your authenticator, ask an operator to run{" "}
+            <code className="font-mono text-footnote">npm run admin -- reset-mfa</code>{" "}
+            for your account — it clears the factor so you can enrol a new one.
           </p>
         ) : (
           <form action={turnOff} className="space-y-3">

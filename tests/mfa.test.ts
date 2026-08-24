@@ -153,4 +153,19 @@ describe("the sign-in form's credential fields", () => {
       expect(Object.keys(credentialFields)).toContain(field);
     }
   });
+
+  it("gives every sign-in failure its own distinguishable code", async () => {
+    const { SIGNIN_ERROR } = await import("../lib/auth/credentials");
+
+    /*
+      Auth.js forwards only an error's `code`, and defaults it to
+      "credentials". Any reason that shares that default, or shares another
+      reason's value, reaches the form indistinguishable from a wrong
+      password — which is how "enrol a second factor" and "wait five minutes"
+      both ended up being reported as a bad password.
+    */
+    const codes = Object.values(SIGNIN_ERROR);
+    expect(new Set(codes).size).toBe(codes.length);
+    for (const code of codes) expect(code).not.toBe("credentials");
+  });
 });

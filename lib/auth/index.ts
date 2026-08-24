@@ -1,7 +1,7 @@
 import "server-only";
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { credentialFields, credentialsSchema } from "./credentials";
+import { SIGNIN_ERROR, credentialFields, credentialsSchema } from "./credentials";
 import { env, isProd } from "../env";
 import { findUserByEmail, findActiveUserById } from "../repositories/user";
 import { verifyPassword } from "./password";
@@ -22,11 +22,26 @@ import { verifySecondFactor } from "../services/mfa";
   they tell an attacker nothing about an account they cannot already open.
 */
 class MfaRequired extends CredentialsSignin {
-  code = "MFA_REQUIRED";
+  code = SIGNIN_ERROR.mfaRequired;
 }
 
 class MfaInvalid extends CredentialsSignin {
-  code = "MFA_INVALID";
+  code = SIGNIN_ERROR.mfaInvalid;
+}
+
+/*
+  Rate limiting has the same boundary problem, one step further out.
+
+  enforceRateLimit throws an AppError, which Auth.js does not recognise as a
+  sign-in failure at all — it treats it as a crash and sends the browser to
+  /api/auth/error?error=Configuration, a page telling the person the server is
+  misconfigured. Someone who simply typed a code wrong a few times is told the
+  site is broken, or (through the client helper) that their password is wrong,
+  and heads for a password reset that cannot help them. The only fix is to wait,
+  and nothing in the product ever says so.
+*/
+class TooManyAttempts extends CredentialsSignin {
+  code = SIGNIN_ERROR.rateLimited;
 }
 
 
@@ -73,7 +88,13 @@ export const {
           victim by hammering their address from elsewhere.
         */
         const ip = clientIdentifier(request as unknown as Request);
-        await enforceRateLimit("login", `${ip}:${parsed.data.email.toLowerCase()}`);
+        try {
+          await enforceRateLimit("login", `${ip}:${parsed.data.email.toLowerCase()}`);
+        } catch {
+          // Re-thrown as a sign-in error so it reaches the form as a code
+          // rather than being mistaken for a server fault.
+          throw new TooManyAttempts();
+        }
 
         const user = await findUserByEmail(parsed.data.email);
         if (!user) {

@@ -14,6 +14,7 @@ import { PrismaClient } from "../lib/generated/prisma/client";
     npm run admin -- reviewer them@example.com   (document review only)
     npm run admin -- revoke   them@example.com   (back to an ordinary account)
     npm run admin -- whoami   you@example.com
+    npm run admin -- reset-mfa them@example.com  (lost authenticator)
 */
 
 const prisma = new PrismaClient({
@@ -134,6 +135,79 @@ async function whoami(email: string) {
   console.log(`  shops owned  ${user._count.claimedShops}`);
 }
 
+/*
+  The way back in when someone loses their authenticator.
+
+  Every other door is deliberately shut: an administrator or reviewer is
+  forbidden from turning their own second factor off, a password reset on an
+  account that has one still demands a code, and backup codes are stored
+  hashed so nobody can read them back out. Without this command a lost phone
+  meant the account was gone permanently, which is not a security property —
+  it is a bug that only ever hurts the legitimate owner.
+
+  It lives on the command line for the same reason granting administrator does:
+  if it were reachable over HTTP it would be a way to strip somebody's second
+  factor, and any other bug in the app would become a total compromise. Running
+  it needs shell access to the server and the database, which is the same bar as
+  reading the data directly.
+
+  It clears the factor rather than replacing it. The account signs in with its
+  password, lands back on /setup-2fa, and enrols a new authenticator — so the
+  operator never sees or handles a secret.
+*/
+async function resetMfa(email: string) {
+  const user = await prisma.user.findFirst({
+    where: { email: email.toLowerCase(), deletedAt: null },
+    select: { id: true, email: true, role: true, totpEnabledAt: true },
+  });
+
+  if (!user) {
+    console.error(`No active account for ${email}.`);
+    process.exit(1);
+  }
+
+  if (!user.totpEnabledAt) {
+    console.log(`${user.email} has no second factor enrolled. Nothing to reset.`);
+    return;
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await tx.user.update({
+      where: { id: user.id },
+      data: {
+        totpSecret: null,
+        totpEnabledAt: null,
+        totpLastUsedAt: null,
+        // Signs them out everywhere. A lost authenticator is often a lost
+        // phone, and a lost phone may still be holding a live session.
+        sessionsValidFrom: new Date(),
+      },
+    });
+    // The old codes belong to the old secret and must not outlive it.
+    await tx.backupCode.deleteMany({ where: { userId: user.id } });
+    await tx.auditLog.create({
+      data: {
+        actorId: user.id,
+        action: "mfa.reset_by_operator",
+        targetType: "User",
+        targetId: user.id,
+        metadata: { viaCli: true, previousRole: user.role },
+      },
+    });
+  });
+
+  console.log(`Second factor cleared for ${user.email}.`);
+  console.log("Signed out everywhere. Their password still works.");
+
+  if (user.role === "ADMIN" || user.role === "REVIEWER") {
+    console.log(
+      "\nOn their next sign-in they land on /setup-2fa and stay there until a new\n" +
+        "authenticator is enrolled — the review queues stay shut until it is.\n" +
+        "Tell them to save the backup codes this time; they are shown once.",
+    );
+  }
+}
+
 async function main() {
   const [command, arg] = process.argv.slice(2);
 
@@ -157,6 +231,10 @@ async function main() {
       if (!arg) throw new Error("Usage: npm run admin -- whoami <email>");
       await whoami(arg);
       break;
+    case "reset-mfa":
+      if (!arg) throw new Error("Usage: npm run admin -- reset-mfa <email>");
+      await resetMfa(arg);
+      break;
     default:
       console.log(
         "Commands:\n" +
@@ -164,7 +242,8 @@ async function main() {
           "  grant <email>      full administrator: queues, moderation, everything\n" +
           "  reviewer <email>   document review only: receipts and shop claims\n" +
           "  revoke <email>     back to an ordinary account\n" +
-          "  whoami <email>     what one account is and owns",
+          "  whoami <email>     what one account is and owns\n" +
+          "  reset-mfa <email>  clear a lost authenticator so they can enrol again",
       );
   }
 }

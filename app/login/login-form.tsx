@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import { SIGNIN_ERROR } from "@/lib/auth/credentials";
 import { Field, SubmitButton, TextInput } from "@/components/form";
 import { Card, ErrorText } from "@/components/ui";
 
@@ -41,13 +42,21 @@ export function LoginForm() {
     */
     const reason = String(result.code ?? result.error);
 
-    if (reason.includes("MFA_REQUIRED")) {
+    if (reason.includes(SIGNIN_ERROR.mfaRequired)) {
       setPendingCredentials({ email, password });
       setError(null);
       return;
     }
 
-    if (reason.includes("MFA_INVALID")) {
+    if (reason.includes(SIGNIN_ERROR.rateLimited)) {
+      setError(
+        "Too many sign-in attempts. Wait about five minutes and try again — " +
+          "your password and your codes are still fine.",
+      );
+      return;
+    }
+
+    if (reason.includes(SIGNIN_ERROR.mfaInvalid)) {
       setError("That code was not correct. Try the next one your app shows.");
       return;
     }

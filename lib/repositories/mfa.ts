@@ -29,6 +29,19 @@ export const enableTotp = (userId: string, codes: string[]) =>
     return { enabled: true };
   });
 
+/**
+ * Swaps the whole set for a fresh one. The old codes are deleted rather than
+ * added to, so a set written down somewhere insecure stops working the moment
+ * a new set is issued.
+ */
+export const replaceBackupCodes = (userId: string, codes: string[]) =>
+  prisma.$transaction(async (tx) => {
+    await tx.backupCode.deleteMany({ where: { userId } });
+    await tx.backupCode.createMany({
+      data: codes.map((codeHash) => ({ userId, codeHash })),
+    });
+  });
+
 export const disableTotp = (userId: string) =>
   prisma.$transaction(async (tx) => {
     await tx.user.update({

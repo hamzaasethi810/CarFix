@@ -9,6 +9,7 @@ import {
   enableTotp,
   findMfaState,
   recordTotpUse,
+  replaceBackupCodes,
   stageSecret,
 } from "../repositories/mfa";
 import { writeAuditLog } from "../repositories/moderation";
@@ -127,6 +128,38 @@ export async function verifySecondFactor(userId: string, submitted: string): Pro
 
   await recordTotpUse(user.id, usedAt);
   return true;
+}
+
+/**
+ * Issues a fresh set of backup codes, replacing any that exist.
+ *
+ * Necessary because the codes are only ever displayed once and are stored
+ * hashed, so there is genuinely no way to show them again. Somebody who missed
+ * the one screen they appeared on — a closed tab, a crashed page — would
+ * otherwise be relying on their phone alone, with nothing to fall back on.
+ *
+ * Requires a working second factor, so a stolen session cannot quietly mint
+ * itself a set of permanent keys to the account.
+ */
+export async function regenerateBackupCodes(userId: string, code: string) {
+  const user = await findMfaState(userId);
+  if (!user?.totpEnabledAt) throw conflict("Two-factor authentication is not on.");
+
+  const ok = await verifySecondFactor(userId, code);
+  if (!ok) throw validation("That code was not correct.");
+
+  const codes = generateBackupCodes();
+  await replaceBackupCodes(userId, codes.map(hashBackupCode));
+
+  await writeAuditLog({
+    actorId: userId,
+    action: "mfa.backup_codes_regenerated",
+    targetType: "User",
+    targetId: userId,
+  });
+
+  // Shown exactly once, for the same reason as the first set.
+  return { backupCodes: codes };
 }
 
 /** Turning it off requires proving possession, so a stolen session cannot. */
