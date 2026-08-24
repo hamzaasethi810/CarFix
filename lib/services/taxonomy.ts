@@ -23,6 +23,9 @@ export async function getGenerations(modelId: string) {
     code: g.code,
     yearStart: g.yearStart,
     yearEnd: g.yearEnd,
+    // A shared platform is what lets facelift halves aggregate together.
+    platformId: g.platform?.id ?? null,
     platform: g.platform?.name ?? null,
+    years: `${g.yearStart}–${g.yearEnd ?? "present"}`,
   }));
 }

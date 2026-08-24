@@ -16,6 +16,8 @@ export async function search(params: MechanicSearchParams) {
       name: r.name,
       city: r.city,
       state: r.state,
+      lat: r.lat,
+      lng: r.lng,
       distanceMiles: r.distanceMiles === null ? null : Math.round(r.distanceMiles * 10) / 10,
       experienceCount: r.experienceCount,
       verifiedCount: r.verifiedCount,

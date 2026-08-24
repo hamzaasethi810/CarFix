@@ -7,6 +7,8 @@ export type MechanicSearchRow = {
   name: string;
   city: string;
   state: string;
+  lat: number;
+  lng: number;
   distanceMiles: number | null;
   experienceCount: number;
   verifiedCount: number;
@@ -17,7 +19,10 @@ export type MechanicSearchRow = {
 
 export type MechanicSearchParams = {
   serviceId?: string;
+  /** Exact generation, e.g. only the W212R facelift. */
   generationId?: string;
+  /** Whole platform, e.g. every W212 E-Class across both facelift halves. */
+  platformId?: string;
   makeId?: string;
   modelId?: string;
   year?: number;
@@ -48,6 +53,9 @@ export async function searchMechanics(p: MechanicSearchParams) {
   if (p.serviceId) expFilters.push(Prisma.sql`e."serviceId" = ${p.serviceId}`);
   if (p.verifiedOnly) expFilters.push(Prisma.sql`e."verificationStatus" = 'VERIFIED'`);
   if (p.generationId) expFilters.push(Prisma.sql`v."generationId" = ${p.generationId}`);
+  // Platform widens the net to every generation sharing the chassis, so a
+  // W212 and a W212R contribute to the same result.
+  if (p.platformId) expFilters.push(Prisma.sql`g."platformId" = ${p.platformId}`);
   if (p.makeId) expFilters.push(Prisma.sql`v."makeId" = ${p.makeId}`);
   if (p.modelId) expFilters.push(Prisma.sql`v."modelId" = ${p.modelId}`);
   if (p.year !== undefined) expFilters.push(Prisma.sql`v."year" = ${p.year}`);
@@ -63,6 +71,7 @@ export async function searchMechanics(p: MechanicSearchParams) {
   const hasExperienceFilter = Boolean(
     p.serviceId ||
       p.generationId ||
+      p.platformId ||
       p.makeId ||
       p.modelId ||
       p.year !== undefined ||
@@ -87,6 +96,7 @@ export async function searchMechanics(p: MechanicSearchParams) {
         (COUNT(*) FILTER (WHERE e."wouldReturn")::float / NULLIF(COUNT(*), 0) * 100) AS would_return_pct
       FROM "MechanicExperience" e
       JOIN "Vehicle" v ON v.id = e."vehicleId"
+      JOIN "Generation" g ON g.id = v."generationId"
       WHERE ${Prisma.join(expFilters, " AND ")}
       GROUP BY e."mechanicId"
       ${havingFilters.length ? Prisma.sql`HAVING ${Prisma.join(havingFilters, " AND ")}` : Prisma.empty}
@@ -97,6 +107,8 @@ export async function searchMechanics(p: MechanicSearchParams) {
         m.name,
         m.city,
         m.state,
+        m.lat,
+        m.lng,
         ${distance} AS "distanceMiles",
         COALESCE(s.experience_count, 0) AS "experienceCount",
         COALESCE(s.verified_count, 0) AS "verifiedCount",
@@ -162,6 +174,7 @@ export async function pricingStats(filters: {
   mechanicId?: string;
   serviceId?: string;
   generationId?: string;
+  platformId?: string;
   vehicleId?: string;
   verifiedOnly?: boolean;
 }): Promise<PricingStats> {
@@ -170,6 +183,7 @@ export async function pricingStats(filters: {
   if (filters.serviceId) conds.push(Prisma.sql`e."serviceId" = ${filters.serviceId}`);
   if (filters.vehicleId) conds.push(Prisma.sql`e."vehicleId" = ${filters.vehicleId}`);
   if (filters.generationId) conds.push(Prisma.sql`v."generationId" = ${filters.generationId}`);
+  if (filters.platformId) conds.push(Prisma.sql`g."platformId" = ${filters.platformId}`);
   if (filters.verifiedOnly) conds.push(Prisma.sql`e."verificationStatus" = 'VERIFIED'`);
 
   const [row] = await prisma.$queryRaw<PricingStats[]>(Prisma.sql`
@@ -182,6 +196,7 @@ export async function pricingStats(filters: {
       PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY e."totalPrice")::float AS median
     FROM "MechanicExperience" e
     JOIN "Vehicle" v ON v.id = e."vehicleId"
+    JOIN "Generation" g ON g.id = v."generationId"
     WHERE ${Prisma.join(conds, " AND ")}
   `);
 

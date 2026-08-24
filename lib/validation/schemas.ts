@@ -106,6 +106,7 @@ export const mechanicSearchSchema = z
     makeId: id.optional(),
     modelId: id.optional(),
     generationId: id.optional(),
+    platformId: id.optional(),
     year: z.coerce.number().int().min(1900).max(2100).optional(),
     lat: z.coerce.number().min(-90).max(90).optional(),
     lng: z.coerce.number().min(-180).max(180).optional(),

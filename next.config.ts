@@ -7,7 +7,8 @@ const csp = [
   // Next injects inline hydration scripts; dev additionally needs eval for HMR.
   `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' blob: data:",
+  // OpenStreetMap raster tiles for the mechanic map (no API key, no billing).
+  "img-src 'self' blob: data: https://*.tile.openstreetmap.org https://tile.openstreetmap.org",
   "font-src 'self' data:",
   "connect-src 'self'",
   "frame-ancestors 'none'",

@@ -19,7 +19,7 @@ export const listGenerations = (modelId: string) =>
       code: true,
       yearStart: true,
       yearEnd: true,
-      platform: { select: { name: true } },
+      platform: { select: { id: true, name: true } },
     },
     orderBy: { yearStart: "desc" },
   });
