@@ -6,6 +6,7 @@ import {
   countPendingVerificationsForUser,
   createExperience,
   decideVerification,
+  approveVerificationAutomatically,
   experienceBelongsTo,
   findExperienceById,
   findReceiptForExperience,
@@ -22,6 +23,8 @@ import { vehicleBelongsTo } from "../repositories/vehicle";
 import { deleteObject, putObject, signedReadUrl } from "../storage/objects";
 import { inspectReceipt, randomKey } from "../storage/files";
 import { toExperienceView } from "./dto";
+import { readText } from "../providers/ocr";
+import { evaluateReceipt } from "./receipt-check";
 
 /** Ceiling on how much of the review queue one account can occupy. */
 const MAX_PENDING_PER_USER = 5;
@@ -209,7 +212,58 @@ export async function uploadReceipt(experienceId: string, userId: string, file: 
   if (previous?.storageKey && previous.storageKey !== key)
     await deleteObject("receipts", previous.storageKey);
 
-  return { status: "PENDING" as const };
+  // The bytes go back to the caller so the automated check can run after the
+  // response, without fetching the object again.
+  return { status: "PENDING" as const, bytes, mime };
+}
+
+/*
+  Runs the automated check and, only on a confident match of both the shop name
+  and the total, approves without a human. Anything else is left in the queue.
+
+  Deliberately never rejects: a bad scan is not evidence of fraud, and an
+  automatic rejection would be a false accusation the owner cannot appeal.
+*/
+export async function autoCheckReceipt(experienceId: string, bytes: Buffer) {
+  const experience = await findExperienceById(experienceId);
+  if (!experience || experience.verificationStatus !== "PENDING") return;
+
+  let ocr;
+  try {
+    ocr = await readText(bytes);
+  } catch (error) {
+    console.error("[receipt] OCR failed", { experienceId, error });
+    return; // Falls through to human review.
+  }
+
+  const check = evaluateReceipt({
+    claimedShopName: experience.mechanic.name,
+    claimedTotal: experience.totalPrice,
+    receiptText: ocr.text,
+    ocrConfidence: ocr.confidence,
+  });
+
+  // The outcome is recorded either way, so a reviewer can see what the check
+  // concluded and why before deciding themselves.
+  await writeAuditLog({
+    actorId: experience.userId,
+    action: `receipt.autocheck.${check.decision.toLowerCase()}`,
+    targetType: "MechanicExperience",
+    targetId: experienceId,
+    metadata: {
+      reason: check.reason,
+      nameMatched: check.name.matched,
+      priceMatched: check.price.matched,
+      ocrConfidence: Math.round(check.ocrConfidence),
+    },
+  });
+
+  if (check.decision !== "AUTO_APPROVE") return;
+
+  const receipt = await findReceiptForExperience(experienceId);
+  await approveVerificationAutomatically(experienceId);
+  // The file is destroyed on decision, exactly as it is for a human approval.
+  if (receipt?.storageKey) await deleteObject("receipts", receipt.storageKey);
 }
 
 export async function getVerificationQueue(limit: number, offset: number) {

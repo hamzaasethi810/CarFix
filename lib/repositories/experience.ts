@@ -271,3 +271,28 @@ export const findRecentDuplicate = (data: {
     },
     select: experienceDetail,
   });
+
+/**
+ * Approval with no human actor. `verifiedById` stays null, which is what
+ * distinguishes an automated approval from an admin's in the audit trail.
+ */
+export const approveVerificationAutomatically = (experienceId: string) =>
+  prisma.$transaction(async (tx) => {
+    const updated = await tx.mechanicExperience.updateMany({
+      where: { id: experienceId, deletedAt: null, verificationStatus: "PENDING" },
+      data: {
+        verificationStatus: "VERIFIED",
+        verificationMethod: "RECEIPT",
+        verifiedAt: new Date(),
+        verifiedById: null,
+      },
+    });
+    if (updated.count === 0) return null;
+
+    await tx.receipt.updateMany({
+      where: { experienceId },
+      data: { storageKey: null, deletedAt: new Date() },
+    });
+
+    return { id: experienceId };
+  });
