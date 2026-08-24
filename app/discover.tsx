@@ -66,6 +66,8 @@ export function Discover({
   const [radiusMiles, setRadiusMiles] = useState(20);
   const [locating, setLocating] = useState(false);
   const [locationNote, setLocationNote] = useState<string | null>(null);
+  // Filters the visible results by name, for looking up one specific shop.
+  const [shopQuery, setShopQuery] = useState("");
   const [areaLabel, setAreaLabel] = useState<string | null>(null);
 
   /*
@@ -221,6 +223,22 @@ export function Discover({
     if (center) void runSearch({ ...center, radiusMiles: next });
   }
 
+  /*
+    Narrowing the list the reader is already looking at, rather than a new
+    query — the point is to find one shop among the results, and filtering in
+    memory is instant where a round trip would not be.
+  */
+  const visible = useMemo(() => {
+    const q = shopQuery.trim().toLowerCase();
+    if (q === "") return results;
+    return results.filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) ||
+        r.city.toLowerCase().includes(q) ||
+        r.state.toLowerCase().includes(q),
+    );
+  }, [results, shopQuery]);
+
   const selected = results.find((r) => r.id === selectedId) ?? null;
 
   return (
@@ -366,8 +384,11 @@ export function Discover({
               <span className="text-headline font-semibold">
                 {locating
                   ? "Finding you…"
-                  : `${results.length} ${results.length === 1 ? "shop" : "shops"}`}
-                {center && !locating && (
+                  : `${visible.length} ${visible.length === 1 ? "shop" : "shops"}`}
+                {shopQuery.trim() !== "" && results.length !== visible.length && (
+                  <span className="text-secondary font-normal"> of {results.length}</span>
+                )}
+                {center && !locating && !shopQuery.trim() && (
                   <span className="text-secondary font-normal"> within {radiusMiles} mi</span>
                 )}
               </span>
@@ -376,11 +397,47 @@ export function Discover({
               </span>
             </button>
 
+            {/* Look up one shop among the results. */}
+            <div className="px-3 pb-2">
+              <div className="relative">
+                <input
+                  type="search"
+                  value={shopQuery}
+                  onChange={(e) => setShopQuery(e.target.value)}
+                  placeholder="Find a shop by name or town"
+                  aria-label="Filter these shops by name or town"
+                  className="w-full min-h-11 rounded-control bg-elevated/80 border border-separator pl-9 pr-9 text-subhead"
+                />
+                <span
+                  aria-hidden="true"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary"
+                >
+                  ⌕
+                </span>
+                {shopQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setShopQuery("")}
+                    aria-label="Clear shop filter"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 size-9 grid place-items-center text-secondary"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+
             {locationNote && (
               <p className="px-4 pb-2 text-footnote text-secondary">{locationNote}</p>
             )}
 
             <ul ref={listRef} className="overflow-y-auto overscroll-contain px-2 pb-2 flex-1">
+              {visible.length === 0 && results.length > 0 && (
+                <li className="px-2 py-6 text-subhead text-secondary text-center">
+                  No shop here matches &ldquo;{shopQuery.trim()}&rdquo;.
+                </li>
+              )}
+
               {results.length === 0 && !loading && (
                 <li className="px-2 py-6 text-subhead text-secondary text-center">
                   No shops matched.
@@ -389,7 +446,7 @@ export function Discover({
                     : " Try clearing some filters."}
                 </li>
               )}
-              {results.map((m) => (
+              {visible.map((m) => (
                 <li key={m.id}>
                   <button
                     type="button"

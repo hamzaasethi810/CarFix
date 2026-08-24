@@ -15,7 +15,10 @@
     "db:generate": "prisma generate",
     "db:validate": "tsx prisma/validate-taxonomy.ts",
     "admin": "tsx scripts/admin.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "create-user": "tsx scripts/create-user.ts",
+    "stripe:setup": "tsx scripts/stripe-setup.ts",
+    "set-password": "tsx scripts/set-password.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",

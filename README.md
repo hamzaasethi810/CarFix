@@ -394,3 +394,94 @@ if you need to retain them for a dispute or a legal obligation, that is a
 policy change with real consequences, not a missing feature.
 
 The same applies to LLC and trading documents on shop claims.
+
+---
+
+## Deploying free
+
+Everything below has a free tier that is enough to launch on. Nothing is tied
+to a proprietary SDK, so moving to AWS later is a change of connection strings
+rather than a rewrite.
+
+| Piece | Free option | Later |
+|---|---|---|
+| Hosting | Vercel Hobby | ECS / App Runner |
+| Database | Neon | RDS |
+| File storage | Cloudflare R2 (no egress fees) | S3 |
+| Rate limiting | Upstash Redis | ElastiCache |
+| Map tiles | OpenStreetMap | self-hosted or MapTiler |
+| Geocoding | Nominatim | self-hosted |
+| VIN decoding | NHTSA vPIC | unchanged, it is free |
+| OCR | Tesseract, in-process | unchanged, it is free |
+
+### 1. Database
+
+Create a project at neon.tech and copy the connection string. Then, from your
+machine:
+
+```bash
+MIGRATE_DATABASE_URL="postgresql://...neon.../carfix?sslmode=require" \
+  npx prisma migrate deploy
+
+psql "postgresql://...neon.../carfix?sslmode=require" -f prisma/roles.sql
+```
+
+Neon's default role owns the schema, so `roles.sql` runs as-is. Afterwards
+`carfix_app` is the one the app uses and it cannot drop or truncate anything.
+
+```bash
+DATABASE_URL="postgresql://carfix_app:...@...neon.../carfix?sslmode=require" npm run db:seed
+```
+
+### 2. Storage
+
+Two **private** buckets at Cloudflare R2: `carfix-photos` and
+`carfix-receipts`. Create an API token with object read/write. Never make the
+receipts bucket public.
+
+### 3. Rate limiting
+
+An Upstash Redis database. Without it the app falls back to per-instance
+counting, which does not hold across several instances — set it before launch.
+
+### 4. Subscriptions
+
+```bash
+STRIPE_SECRET_KEY=sk_test_... npm run stripe:setup
+```
+
+That creates the **Golden Shop** product at **$7.99/month, auto-renewing**, and
+prints the `STRIPE_PRICE_ID`. Then add the webhook at
+`https://YOUR-DOMAIN/api/billing/webhook` for
+`customer.subscription.created`, `.updated`, `.deleted`, and
+`invoice.payment_failed`, and copy its signing secret into
+`STRIPE_WEBHOOK_SECRET`.
+
+Use test keys until you are ready to take real money; the flow is identical.
+
+### 5. Deploy
+
+Import the GitHub repository at vercel.com/new, then set every variable from
+`.env.example` in Project Settings → Environment Variables.
+
+`MIGRATE_DATABASE_URL` should **not** go in Vercel — migrations run from your
+machine or CI, and the deployed app has no business holding a credential that
+can alter the schema.
+
+Set `APP_URL` to your real domain once you have one, because Stripe's return
+URLs are built from it.
+
+### 6. First operator
+
+```bash
+npm run create-user -- you@example.com yourname "Your Name" "a-long-password" ADMIN
+```
+
+Sign in, and you will be sent to `/setup-2fa` and kept there until an
+authenticator is enrolled. The review desk is at `/review` afterwards.
+
+### Before real traffic
+
+- Confirm `./scripts/db-security-check.sh` passes against production
+- Confirm the Stripe webhook shows a 200 in the dashboard
+- Switch Stripe to live keys

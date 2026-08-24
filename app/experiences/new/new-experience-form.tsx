@@ -270,7 +270,12 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
       <Card>
         <h2 className="text-headline font-semibold mb-1">Receipt</h2>
         <p className="text-subhead text-secondary mb-4">
-          Optional. We check it to verify your pricing, then delete it. It is never shown publicly.
+          Optional. We check the shop name and total, then delete it — permanently,
+          the moment a decision is made. A reviewer gets 120 seconds to look and
+          nothing else. It is never shown publicly.{" "}
+          <a href="/policies/receipts" className="text-accent" target="_blank" rel="noopener">
+            Read the policy
+          </a>
         </p>
 
         <label className="flex items-center justify-center min-h-11 rounded-control bg-fill text-accent text-subhead font-medium cursor-pointer hover:opacity-80 transition-opacity duration-150">

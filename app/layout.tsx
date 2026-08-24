@@ -70,7 +70,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             className="max-w-5xl mx-auto px-4 py-6 text-footnote text-secondary"
             style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
           >
-            Prices are reported by owners, not quotes from shops.
+            Prices are reported by owners, not quotes from shops.{" "}
+            <a href="/policies/receipts" className="text-accent">
+              How we handle receipts
+            </a>
           </div>
         </footer>
       </body>
