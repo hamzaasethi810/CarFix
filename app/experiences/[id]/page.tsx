@@ -4,6 +4,7 @@ import { Card, PageTitle, Stars, VerifiedBadge, miles, money } from "@/component
 import { currentUser } from "@/lib/auth/guards";
 import { getExperience } from "@/lib/services/experiences";
 import { AppError } from "@/lib/errors";
+import { OwnerActions } from "./owner-actions";
 
 const RATING_LABELS = [
   ["quality", "Work quality"],
@@ -83,6 +84,19 @@ export default async function ExperiencePage({ params }: { params: Promise<{ id:
           </p>
         )}
       </Card>
+
+      {e.isOwn && (
+        <OwnerActions
+          experienceId={e.id}
+          editableForMs={e.editableForMs}
+          initial={{
+            totalPrice: e.totalPrice,
+            partsCost: e.partsCost,
+            laborCost: e.laborCost,
+            reviewText: e.reviewText,
+          }}
+        />
+      )}
 
       {e.verificationStatus === "PENDING" && (
         <Card className="mt-4">

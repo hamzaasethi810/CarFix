@@ -38,7 +38,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
         <main
           id="main"
-          className="flex-1 w-full max-w-5xl mx-auto px-4 py-8 sm:py-10"
+          className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10"
           style={{
             paddingLeft: "max(1rem, env(safe-area-inset-left))",
             paddingRight: "max(1rem, env(safe-area-inset-right))",

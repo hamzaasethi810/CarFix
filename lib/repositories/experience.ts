@@ -240,3 +240,34 @@ export const countPendingVerificationsForUser = (userId: string) =>
   prisma.mechanicExperience.count({
     where: { userId, deletedAt: null, verificationStatus: "PENDING" },
   });
+
+/**
+ * Finds an identical submission from the same user inside a short window.
+ *
+ * Double-submits happen — a double click, a flaky connection retrying, an
+ * impatient tap. Guarding on the client is not enough because a second request
+ * can leave the browser before React re-renders the disabled button, so the
+ * check has to live here.
+ */
+export const findRecentDuplicate = (data: {
+  userId: string;
+  vehicleId: string;
+  mechanicId: string;
+  serviceId: string;
+  serviceDate: Date;
+  totalPrice: number;
+  withinMs: number;
+}) =>
+  prisma.mechanicExperience.findFirst({
+    where: {
+      userId: data.userId,
+      vehicleId: data.vehicleId,
+      mechanicId: data.mechanicId,
+      serviceId: data.serviceId,
+      serviceDate: data.serviceDate,
+      totalPrice: data.totalPrice,
+      deletedAt: null,
+      createdAt: { gte: new Date(Date.now() - data.withinMs) },
+    },
+    select: experienceDetail,
+  });

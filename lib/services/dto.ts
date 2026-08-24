@@ -1,5 +1,10 @@
 import "server-only";
 
+/** Mirrors EDIT_WINDOW_MS in services/experiences. */
+const EDIT_WINDOW_MS = 10 * 60_000;
+const editWindowRemaining = (createdAt: Date) =>
+  Math.max(0, EDIT_WINDOW_MS - (Date.now() - createdAt.getTime()));
+
 // Every API response is built by one of these mappers. Nothing reaches a client
 // unless it is named here, so password hashes, storage keys, emails, and
 // moderation internals cannot leak by accident.
@@ -137,6 +142,8 @@ export const toExperienceView = (e: ExperienceRow, viewerId?: string) => ({
     ? { username: e.user.profile.username, displayName: e.user.profile.displayName }
     : null,
   isOwn: viewerId ? e.userId === viewerId : false,
+  // Milliseconds left in the author's edit window; 0 once it has closed.
+  editableForMs: viewerId === e.userId ? editWindowRemaining(e.createdAt) : 0,
 });
 
 type MechanicRow = {

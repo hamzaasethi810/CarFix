@@ -13,17 +13,13 @@ export function SiteHeader({ isAuthed, isAdmin }: { isAuthed: boolean; isAdmin: 
     <header className="sticky top-0 z-50 border-b border-separator bg-[color-mix(in_srgb,var(--bg-elevated)_78%,transparent)] backdrop-blur-xl backdrop-saturate-150">
       <nav
         aria-label="Primary"
-        className="max-w-5xl mx-auto px-4 h-14 flex items-center gap-1 sm:gap-2"
+        className="w-full max-w-none px-3 sm:px-6 h-16 flex items-center gap-2 sm:gap-4"
       >
         <Link
           href="/"
-          className="inline-flex items-center min-h-11 pr-3 text-title3 font-bold tracking-tight"
+          className="inline-flex items-center min-h-11 pr-2 mr-auto sm:mr-4 text-title3 font-bold tracking-tight"
         >
           Car<span className="text-brand">Fix</span>
-        </Link>
-
-        <Link href="/" className={navLink}>
-          Find a shop
         </Link>
 
         {isAuthed && (
@@ -43,7 +39,7 @@ export function SiteHeader({ isAuthed, isAdmin }: { isAuthed: boolean; isAdmin: 
           </Link>
         )}
 
-        <div className="ml-auto flex items-center gap-1 sm:gap-2">
+        <div className="flex items-center gap-2 sm:gap-3">
           {isAuthed ? (
             <form
               action={async () => {

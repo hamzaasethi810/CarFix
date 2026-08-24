@@ -5,6 +5,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { MapMechanic } from "@/components/mechanic-map";
 import { distance, money, num } from "@/components/ui";
+import { AreaPicker, type Area } from "@/components/area-picker";
 
 // Leaflet needs `window`, so the map never renders on the server.
 const MechanicMap = dynamic(
@@ -63,6 +64,7 @@ export function Discover({
   const [radiusMiles, setRadiusMiles] = useState(20);
   const [locating, setLocating] = useState(false);
   const [locationNote, setLocationNote] = useState<string | null>(null);
+  const [areaLabel, setAreaLabel] = useState<string | null>(null);
 
   /*
     Dependent selections are cleared in the change handler, not in an effect,
@@ -182,12 +184,13 @@ export function Discover({
         setCenter(next);
         setLocating(false);
         setLocationNote(null);
+        setAreaLabel("Near you");
         void runSearch({ ...next, radiusMiles: 20 });
       },
       () => {
         if (!live) return;
         setLocating(false);
-        setLocationNote("Showing all areas — turn on location for shops near you.");
+        setLocationNote("Showing all areas — use Select area, or allow location.");
       },
       { timeout: 8000, maximumAge: 300_000 },
     );
@@ -199,6 +202,17 @@ export function Discover({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  function chooseArea(area: Area) {
+    const next = { lat: area.lat, lng: area.lng };
+    setCenter(next);
+    // A postcode gets a tight radius, a country a wide one.
+    setRadiusMiles(area.suggestedRadiusMiles);
+    // Nominatim labels are long; the first two parts identify the place.
+    setAreaLabel(area.label.split(",").slice(0, 2).join(",").trim());
+    setLocationNote(null);
+    void runSearch({ ...next, radiusMiles: area.suggestedRadiusMiles });
+  }
+
   function changeRadius(next: number) {
     setRadiusMiles(next);
     if (center) void runSearch({ ...center, radiusMiles: next });
@@ -207,7 +221,7 @@ export function Discover({
   const selected = results.find((r) => r.id === selectedId) ?? null;
 
   return (
-    <div className="map-root fixed inset-0 top-14">
+    <div className="map-root fixed inset-0 top-16">
       <MechanicMap
         mechanics={results}
         selectedId={selectedId}
@@ -283,6 +297,8 @@ export function Discover({
               </label>
 
               <div className="sm:col-span-2 lg:col-span-5 flex flex-wrap items-center gap-3 pt-1">
+                <AreaPicker current={areaLabel} onChoose={chooseArea} />
+
                 {/* Verified reads as a toggle chip rather than a bare checkbox. */}
                 <button
                   type="button"

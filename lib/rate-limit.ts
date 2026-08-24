@@ -12,7 +12,8 @@ export type LimitName =
   | "search"
   | "report"
   | "vinLookup"
-  | "mechanicIngest";
+  | "mechanicIngest"
+  | "geocode";
 
 const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m" | "h"}` }> = {
   login: { tokens: 8, window: "5 m" },
@@ -26,6 +27,8 @@ const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m
   vinLookup: { tokens: 40, window: "1 h" },
   // Ingestion hits a shared community API, so it is deliberately conservative.
   mechanicIngest: { tokens: 20, window: "10 m" },
+  // Nominatim asks for no more than one request a second; this stays well under.
+  geocode: { tokens: 20, window: "5 m" },
 };
 
 const redis =

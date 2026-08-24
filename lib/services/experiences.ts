@@ -9,6 +9,7 @@ import {
   experienceBelongsTo,
   findExperienceById,
   findReceiptForExperience,
+  findRecentDuplicate,
   listExperiences,
   listPendingVerifications,
   softDeleteExperience,
@@ -24,6 +25,21 @@ import { toExperienceView } from "./dto";
 
 /** Ceiling on how much of the review queue one account can occupy. */
 const MAX_PENDING_PER_USER = 5;
+
+/** Window in which an identical repeat submission is treated as the same one. */
+const DUPLICATE_WINDOW_MS = 60_000;
+
+/*
+  How long an author may edit their own report. Reports are the evidence other
+  owners rely on, so they settle quickly — long enough to fix a typo or a
+  mistyped figure, short enough that the record cannot be quietly rewritten
+  after people have acted on it. Deleting stays available indefinitely: it is
+  the author's own account of their own money.
+*/
+const EDIT_WINDOW_MS = 10 * 60_000;
+
+export const editWindowRemainingMs = (createdAt: Date) =>
+  Math.max(0, EDIT_WINDOW_MS - (Date.now() - createdAt.getTime()));
 
 export async function submitExperience(
   userId: string,
@@ -58,6 +74,23 @@ export async function submitExperience(
   if (!ownsVehicle) throw forbidden();
   if (!mechanicOk) throw validation("That mechanic could not be found.");
   if (!serviceOk) throw validation("That service could not be found.");
+
+  /*
+    Idempotency. If the same submission arrives twice in quick succession,
+    return the row that already exists rather than creating a second one —
+    the caller gets the same answer either way and the pricing data stays
+    honest.
+  */
+  const duplicate = await findRecentDuplicate({
+    userId,
+    vehicleId: input.vehicleId,
+    mechanicId: input.mechanicId,
+    serviceId: input.serviceId,
+    serviceDate: input.serviceDate,
+    totalPrice: input.totalPrice,
+    withinMs: DUPLICATE_WINDOW_MS,
+  });
+  if (duplicate) return toExperienceView(duplicate, userId);
 
   const created = await createExperience({ ...input, userId });
   return toExperienceView(created, userId);
@@ -99,6 +132,20 @@ export async function editExperience(
   userId: string,
   input: Parameters<typeof updateExperienceOwnedBy>[2],
 ) {
+  const existing = await findExperienceById(id);
+  if (!existing) throw notFound();
+  if (existing.userId !== userId) throw forbidden();
+
+  /*
+    The window is enforced here, not in the browser. A client that keeps the
+    edit form on screen, or one crafted by hand, still cannot rewrite a report
+    once the window has closed.
+  */
+  if (editWindowRemainingMs(existing.createdAt) === 0)
+    throw conflict(
+      "The 10 minute window for editing this report has passed. You can still delete it.",
+    );
+
   const updated = await updateExperienceOwnedBy(id, userId, input);
   if (!updated) throw forbidden();
   return toExperienceView(updated, userId);

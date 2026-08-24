@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckboxRow, Field, Select, SubmitButton, TextArea, TextInput } from "@/components/form";
 import { Card, ErrorText } from "@/components/ui";
@@ -28,8 +28,13 @@ export function NewExperienceForm({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [receipt, setReceipt] = useState<File | null>(null);
+  // State updates are async; this flips immediately so a double click cannot
+  // fire a second request before the button re-renders as disabled.
+  const submitting = useRef(false);
 
   async function onSubmit(formData: FormData) {
+    if (submitting.current) return;
+    submitting.current = true;
     setPending(true);
     setError(null);
 
@@ -66,6 +71,7 @@ export function NewExperienceForm({
     if (!res.ok) {
       const body = await res.json().catch(() => null);
       setPending(false);
+      submitting.current = false;
       return setError(body?.error?.message ?? "We could not save that experience.");
     }
 

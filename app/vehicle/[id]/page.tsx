@@ -30,6 +30,12 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
     getPricing({ generationId: vehicle.generationId }),
   ]);
 
+  /*
+    The car's own experiences already appear above, so showing them again in
+    the generation roll-up reads as a duplicate. Only other cars appear here.
+  */
+  const otherGenerationExperiences = generation.items.filter((e) => e.vehicle.id !== id);
+
   return (
     <>
       <PageTitle
@@ -77,11 +83,11 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
         {vehicle.generation} data
       </SectionTitle>
 
-      {generation.items.length === 0 ? (
-        <EmptyState title={`No ${vehicle.generation} experiences yet`} />
+      {otherGenerationExperiences.length === 0 ? (
+        <EmptyState title={`No other ${vehicle.generation} experiences yet`} />
       ) : (
         <ul className="space-y-3">
-          {generation.items.map((e) => (
+          {otherGenerationExperiences.map((e) => (
             <li key={e.id}>
               <ExperienceCard e={e} showMechanic />
             </li>
