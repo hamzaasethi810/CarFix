@@ -448,7 +448,22 @@ export function Discover({
         Functional layer. Everything below floats above the map on Liquid Glass;
         the map itself is the content layer.
       */}
-      <div className="pointer-events-none absolute inset-0 flex flex-col">
+      {/*
+        The map is fixed to the viewport, so it sits outside the page shell and
+        gets none of its safe-area padding. With viewport-fit set to cover — as
+        it must be for a full-bleed map — everything here would otherwise be
+        drawn under the Dynamic Island and the home indicator. Measured on an
+        iPhone 16 Pro Max held sideways, the shop count, the zoom buttons and
+        the first letter of "Make" were all underneath it.
+      */}
+      <div
+        className="pointer-events-none absolute inset-0 flex flex-col"
+        style={{
+          paddingLeft: "env(safe-area-inset-left)",
+          paddingRight: "env(safe-area-inset-right)",
+          paddingBottom: "env(safe-area-inset-bottom)",
+        }}
+      >
         {/*
           z-20 / z-10 on these two wrappers is load-bearing, not decoration.
 
@@ -489,8 +504,15 @@ export function Discover({
               </button>
             )}
 
+            {/*
+              Scrolls rather than overflowing. In landscape on a phone the full
+              set of controls is taller than the window, and the Search button
+              is the last of them — it was rendered 9 points below the bottom
+              of the screen with no way to reach it.
+            */}
             <div
-              className={`${filtersOpen ? "grid" : "hidden"} gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-5 [&>*]:min-w-0`}
+              className={`${filtersOpen ? "grid" : "hidden"} gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-5 [&>*]:min-w-0
+                max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain`}
             >
               {/* Says the panel moves, and gives the thumb something to aim at. */}
               <div className="sm:col-span-2 lg:col-span-5 -mt-1 mb-0.5 flex justify-center">
@@ -590,41 +612,51 @@ export function Discover({
                   Gold shops
                 </button>
 
-                <label className="inline-flex items-center gap-2">
-                  <span className="text-footnote text-secondary">Sort</span>
+                {/*
+                  Sort and Search travel together, pushed to the trailing edge.
+
+                  They were separate flex items in a wrapping row, and Search
+                  was full-width below the small breakpoint, so it claimed a
+                  line of its own and pushed itself off the bottom of a phone
+                  held sideways. Kept as one group they stay on the same line as
+                  the sort, and the panel is a row shorter everywhere.
+
+                  The visible labels are single words; the full meaning is on
+                  the select's accessible name, where it does not cost width.
+                */}
+                <div className="flex items-center gap-2 ml-auto">
                   <select
                     value={sort}
                     onChange={(e) => setSort(e.target.value as typeof sort)}
-                    aria-label="Sort results"
-                    className="min-h-11 rounded-full bg-black/[0.06] px-4 pr-8 text-subhead font-medium"
+                    aria-label="Sort results by"
+                    className="min-h-11 rounded-full bg-black/[0.06] pl-4 pr-8 text-subhead font-medium"
                   >
                     {/* Relevance is the only one that reads the filters. */}
-                    <option value="relevant">Most relevant</option>
-                    <option value="price">Price, lowest first</option>
-                    <option value="rating">Best reviewed</option>
-                    <option value="distance">Nearest first</option>
+                    <option value="relevant">Relevance</option>
+                    <option value="price">Price</option>
+                    <option value="rating">Rating</option>
+                    <option value="distance">Distance</option>
                   </select>
-                </label>
 
-                <span className="flex-1" />
+                  <button
+                    type="button"
+                    onClick={() => setFiltersOpen(false)}
+                    aria-label="Hide the filters"
+                    className="min-h-11 px-3 rounded-full text-subhead font-medium text-secondary hover:text-label whitespace-nowrap"
+                  >
+                    Hide
+                  </button>
 
-                {/* The one primary action in this context gets the colour. */}
-                <button
-                  type="button"
-                  onClick={() => setFiltersOpen(false)}
-                  className="min-h-11 px-4 rounded-full text-subhead font-medium text-secondary hover:text-label"
-                >
-                  Hide filters
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => void runSearch()}
-                  disabled={loading}
-                  className="min-h-11 px-7 rounded-full bg-accent-fill text-on-accent text-subhead font-semibold shadow-sm disabled:opacity-50 w-full sm:w-auto"
-                >
-                  {loading ? "Searching…" : "Search"}
-                </button>
+                  {/* The one primary action in this context gets the colour. */}
+                  <button
+                    type="button"
+                    onClick={() => void runSearch()}
+                    disabled={loading}
+                    className="min-h-11 px-6 rounded-full bg-accent-fill text-on-accent text-subhead font-semibold shadow-sm disabled:opacity-50 whitespace-nowrap"
+                  >
+                    {loading ? "Searching…" : "Search"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -856,9 +888,14 @@ export function Discover({
           )}
         </div>
 
-        {/* Place card for the selected pin. Sits clear of the attribution. */}
+        {/*
+          The card for the pin just tapped. z-30 puts it above the filter bar:
+          it is the answer to a deliberate action, so it should never be the
+          thing that ends up underneath. Anchored to the trailing edge so it
+          does not fight the results list on the leading one.
+        */}
         {selected && (
-          <div className="pointer-events-auto absolute left-3 right-3 bottom-10 sm:left-auto sm:right-4 sm:w-80">
+          <div className="pointer-events-auto absolute left-3 right-3 bottom-10 sm:left-auto sm:right-4 sm:w-80 z-30">
             <div className="glass rounded-glass p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>

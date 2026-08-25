@@ -365,3 +365,20 @@ body:has(.map-root) footer {
   height: 54px;
   font-size: 15px;
 }
+
+/*
+  Leaflet positions its controls itself, outside React, so they cannot be given
+  the safe-area padding the rest of the map layer receives. On a phone held
+  sideways the zoom buttons sat under the Dynamic Island.
+*/
+.leaflet-left {
+  margin-left: env(safe-area-inset-left);
+}
+
+.leaflet-right {
+  margin-right: env(safe-area-inset-right);
+}
+
+.leaflet-bottom {
+  margin-bottom: env(safe-area-inset-bottom);
+}
