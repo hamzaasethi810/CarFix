@@ -137,16 +137,52 @@ production — registration, login, submissions, uploads, and search are all lim
 | Database | Neon | self-hosted Postgres (`DATABASE_URL` only) |
 | Storage | Cloudflare R2 | MinIO or AWS S3 (`S3_ENDPOINT` only) |
 | Rate limiting | Upstash Redis | self-hosted Redis via `lib/rate-limit.ts` |
+| Email | Resend | any SMTP/API provider via `lib/providers/email.ts` |
 
 Nothing is tied to a proprietary SDK — storage goes through `@aws-sdk/client-s3` and the database
 through a standard `DATABASE_URL`, so self-hosting later is a config change, not a rewrite.
 
-1. Create a Neon project and copy its connection string.
-2. Create two **private** R2 buckets and an API token.
-3. Create an Upstash Redis database.
-4. Import the repo into Vercel and add every variable from `.env.example` as an environment
-   variable. Generate `AUTH_SECRET` with `openssl rand -base64 32`.
-5. Run `npm run db:deploy` and `npm run db:seed` against the production database.
+### What is required, and what is not
+
+Required — the app will not boot without them:
+
+`DATABASE_URL`, `AUTH_SECRET`, `APP_URL`, and the six `S3_*` variables.
+
+Optional — each degrades to a stated behaviour rather than crashing:
+
+| Missing | What happens |
+|---|---|
+| `STRIPE_*` | Subscriptions are hidden. The shop console says they are not configured. Everything else works. |
+| `RESEND_API_KEY` / `EMAIL_FROM` | Password reset links are written to the server log instead of sent, and an error is logged in production. Nobody locked out can recover unaided. |
+| `UPSTASH_REDIS_REST_*` | **Rate limiting stops working properly.** It falls back to counting per process, and each serverless instance counts separately — so the brute-force protection largely evaporates under load. An error is logged at boot. Do not run a public deployment without this. |
+
+### Order to provision
+
+Do it in this order so the site is never live and half-configured.
+
+1. **Neon.** Create the project. Create two roles, not one — a migration role that owns the schema
+   and an application role that only reads and writes. `prisma/roles.sql` does this; run it once
+   as the owner. `DATABASE_URL` is the application role, `MIGRATE_DATABASE_URL` the migration role.
+2. **Cloudflare R2.** Two **private** buckets, one for photos and one for receipts, and an API
+   token scoped to them. Public buckets would expose receipts.
+3. **Upstash Redis.** Copy the REST URL and token.
+4. **Resend.** Verify a sending domain and copy the API key.
+5. **Migrate before the first deploy**, using the migration role:
+   `MIGRATE_DATABASE_URL=... npm run db:deploy && npm run db:seed`
+6. **Vercel.** Import the repo, add every variable above, deploy. Generate `AUTH_SECRET` with
+   `openssl rand -base64 32` — a fresh one, not the development value.
+7. **Check the boot log.** A missing Redis or mail sender says so explicitly. If either warning is
+   there, fix it before sharing the URL.
+8. **Make yourself an administrator** (see below), then enrol a second factor immediately; the
+   review queues stay shut until you do.
+
+### Adding Stripe later
+
+`npm run stripe:setup` creates the product and price. Add `STRIPE_SECRET_KEY`,
+`STRIPE_PRICE_ID`, and `STRIPE_WEBHOOK_SECRET`, and point a Stripe webhook at
+`/api/billing/webhook`. One thing to know before you do: **Vercel's Hobby tier is for
+non-commercial use.** Without payments a deployment is fine there; the day it starts taking
+subscriptions it needs a paid plan.
 
 Never expose any of these to the client. There are no `NEXT_PUBLIC_` secrets.
 
@@ -154,12 +190,17 @@ Never expose any of these to the client. There are no `NEXT_PUBLIC_` secrets.
 
 There is deliberately no self-service path to the admin role:
 
-```sql
-UPDATE "User" SET role = 'ADMIN' WHERE email = 'you@example.com';
+```bash
+npm run admin -- grant you@example.com
 ```
 
-The session revalidates against the database on every request, so the change takes effect on the
-user's next request — and revoking it is equally immediate.
+Use the script rather than a direct `UPDATE`. It also stamps `sessionsValidFrom`, which is what
+actually signs the account out everywhere so the new role takes effect on a fresh login — a raw
+SQL update changes the role while leaving old sessions running under the old one.
+
+If you lose your authenticator, `npm run admin -- reset-mfa you@example.com` clears it so you can
+enrol again. It is the only way back in: an administrator cannot turn their own second factor off,
+and a password reset on an account that has one still asks for a code.
 
 ---
 
@@ -169,7 +210,7 @@ user's next request — and revoking it is equally immediate.
 npm test
 ```
 
-43 tests cover the security-critical behavior: cross-user vehicle and experience access, admin-only
+197 tests cover the security-critical behaviour: cross-user vehicle and experience access, admin-only
 endpoints, self-verification attempts, rating and price bounds, upload content-sniffing, receipt
 destruction on decision, audit logging, and generation-level aggregation.
 
