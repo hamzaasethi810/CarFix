@@ -57,6 +57,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
           >
             Prices are reported by owners, not quotes from shops.{" "}
+            <a href="/policies/terms" className="text-accent">
+              Terms and ground rules
+            </a>
+            {" · "}
             <a href="/policies/receipts" className="text-accent">
               How we handle receipts
             </a>

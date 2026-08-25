@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DocumentViewer } from "@/components/document-viewer";
 import { useRouter } from "next/navigation";
 import { Card, ErrorText, buttonStyles } from "@/components/ui";
 
@@ -20,13 +21,12 @@ export function ClaimRow({ item }: { item: Claim }) {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [confirming, setConfirming] = useState<"APPROVED" | "REJECTED" | null>(null);
+  const [viewing, setViewing] = useState(false);
 
-  async function viewDocument() {
+  /* Shown in a dialog rather than opened as a link — see DocumentViewer. */
+  function viewDocument() {
     setError(null);
-    const res = await fetch(`/api/admin/claims/${item.id}/document`);
-    if (!res.ok) return setError("That document is no longer available.");
-    const { url } = await res.json();
-    window.open(url, "_blank", "noopener,noreferrer");
+    setViewing(true);
   }
 
   async function decide(decision: "APPROVED" | "REJECTED") {
@@ -40,10 +40,32 @@ export function ClaimRow({ item }: { item: Claim }) {
     setPending(false);
     setConfirming(null);
     if (!res.ok) return setError("That decision could not be recorded.");
+    setViewing(false);
     router.refresh();
   }
 
   return (
+    <>
+    {viewing && (
+      <DocumentViewer
+        src={`/api/admin/claims/${item.id}/document`}
+        title={`Trading document — ${item.businessName}`}
+        onClose={() => setViewing(false)}
+      >
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-footnote text-secondary flex-1 min-w-[12rem]">
+            {item.claimant} is claiming {item.shop.name}. Deciding deletes this
+            document permanently.
+          </span>
+          <button type="button" onClick={() => decide("APPROVED")} disabled={pending} className={buttonStyles.primary}>
+            {pending ? "Working…" : "Approve"}
+          </button>
+          <button type="button" onClick={() => decide("REJECTED")} disabled={pending} className={buttonStyles.destructive}>
+            Reject
+          </button>
+        </div>
+      </DocumentViewer>
+    )}
     <Card className="space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <h2 className="text-headline font-semibold">{item.businessName}</h2>
@@ -101,5 +123,6 @@ export function ClaimRow({ item }: { item: Claim }) {
 
       {error && <ErrorText>{error}</ErrorText>}
     </Card>
+    </>
   );
 }

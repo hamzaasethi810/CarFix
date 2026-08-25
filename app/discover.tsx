@@ -59,6 +59,42 @@ export function Discover({
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
+
+  /*
+    Stowing the shop list off the left edge, so the map underneath it can be
+    seen. Two ways in — drag the header, or the button beside it — because a
+    gesture that is the only route to something is a gesture most people never
+    find, and no route at all for anyone using a keyboard.
+  */
+  const [panelStowed, setPanelStowed] = useState(false);
+  /** Live finger/pointer offset mid-drag; null when not dragging. */
+  const [dragOffset, setDragOffset] = useState<number | null>(null);
+  const dragStartX = useRef<number | null>(null);
+
+  /** Far enough that a scroll or a stray tap is not mistaken for a dismissal. */
+  const STOW_THRESHOLD = 64;
+
+  function onDragStart(e: React.PointerEvent) {
+    // Only a primary press, and never a drag that begins on a real control.
+    if (e.button !== 0) return;
+    dragStartX.current = e.clientX;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+
+  function onDragMove(e: React.PointerEvent) {
+    if (dragStartX.current === null) return;
+    const dx = e.clientX - dragStartX.current;
+    // Leftward only, and it does not rubber-band past its own width.
+    setDragOffset(Math.min(0, Math.max(dx, -400)));
+  }
+
+  function onDragEnd(e: React.PointerEvent) {
+    if (dragStartX.current === null) return;
+    const dx = e.clientX - dragStartX.current;
+    dragStartX.current = null;
+    setDragOffset(null);
+    if (dx < -STOW_THRESHOLD) setPanelStowed(true);
+  }
   const listRef = useRef<HTMLUListElement>(null);
 
   // Anchor point for the radius. Null until the reader shares a location or
@@ -256,7 +292,20 @@ export function Discover({
         the map itself is the content layer.
       */}
       <div className="pointer-events-none absolute inset-0 flex flex-col">
-        <div className="pointer-events-auto p-3 sm:p-4">
+        {/*
+          z-20 / z-10 on these two wrappers is load-bearing, not decoration.
+
+          Both the filter bar and the results panel use .glass, and
+          backdrop-filter creates a stacking context. That trapped the area
+          picker's menu inside the bar's own context, so its z-50 could not
+          lift it above the results panel — the two contexts both sat at
+          z-index auto and painted in DOM order, which put the later one
+          (results) on top. Ordering the wrappers is what actually decides it.
+          Verified against a reduction: with backdrop-filter removed the menu
+          won, with it present the panel won, and ordering the wrappers fixed
+          it while keeping the glass.
+        */}
+        <div className="pointer-events-auto p-3 sm:p-4 relative z-20">
           <div className="glass rounded-glass p-3 sm:p-4 max-w-4xl mx-auto">
             <div className="grid gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-5 [&>*]:min-w-0">
               <Picker label="Make" value={makeId} onChange={chooseMake} options={makes} anyLabel="Any make" />
@@ -369,18 +418,28 @@ export function Discover({
         </div>
 
         {/* Results share the flex column with the bar, so they never overlap it. */}
-        <div className="flex-1 min-h-0 flex flex-col sm:flex-row sm:items-stretch">
-          <div className="pointer-events-auto px-3 pb-3 sm:px-4 sm:pb-4 w-full sm:w-96 mt-auto sm:mt-0 flex flex-col min-h-0">
+        <div className="flex-1 min-h-0 flex flex-col sm:flex-row sm:items-stretch relative z-10">
           <div
-            className={`glass rounded-glass overflow-hidden flex flex-col ${
+            className={`pointer-events-auto px-3 pb-3 sm:px-4 sm:pb-4 w-full sm:w-96 mt-auto sm:mt-0 flex flex-col min-h-0 motion-safe:transition-transform motion-safe:duration-300 ${
+              panelStowed ? "-translate-x-[calc(100%+1rem)]" : "translate-x-0"
+            }`}
+            style={dragOffset !== null ? { transform: `translateX(${dragOffset}px)`, transition: "none" } : undefined}
+            aria-hidden={panelStowed}
+          >
+          <div
+            className={`relative glass rounded-glass overflow-hidden flex flex-col ${
               panelOpen ? "max-h-[45vh]" : "max-h-16"
             } sm:max-h-none sm:flex-1 transition-[max-height] duration-300`}
           >
             <button
               type="button"
               onClick={() => setPanelOpen((v) => !v)}
+              onPointerDown={onDragStart}
+              onPointerMove={onDragMove}
+              onPointerUp={onDragEnd}
+              onPointerCancel={onDragEnd}
               aria-expanded={panelOpen}
-              className="flex items-center justify-between w-full px-4 min-h-14 text-left sm:cursor-default"
+              className="flex items-center justify-between w-full px-4 min-h-14 text-left sm:cursor-default touch-pan-y select-none"
             >
               <span className="text-headline font-semibold">
                 {locating
@@ -396,6 +455,16 @@ export function Discover({
               <span className="text-subhead text-secondary sm:hidden" aria-hidden="true">
                 {panelOpen ? "Hide" : "Show"}
               </span>
+            </button>
+
+            {/* The tap-and-keyboard equivalent of dragging it away. */}
+            <button
+              type="button"
+              onClick={() => setPanelStowed(true)}
+              className="absolute right-2 top-2 hidden sm:grid size-9 place-items-center rounded-full text-secondary hover:text-label hover:bg-black/[0.06]"
+              aria-label="Move the shop list aside"
+            >
+              <span aria-hidden="true" className="text-headline">&lsaquo;</span>
             </button>
 
             {/* Look up one shop among the results. */}
@@ -498,6 +567,22 @@ export function Discover({
             </ul>
           </div>
           </div>
+
+          {/*
+            The way back. A gesture must never be the only route to something,
+            so stowing has a button as well as a drag, and this tab is a real
+            focusable control rather than a hit area on the map.
+          */}
+          {panelStowed && (
+            <button
+              type="button"
+              onClick={() => setPanelStowed(false)}
+              className="pointer-events-auto self-start mt-2 ml-0 glass rounded-r-glass h-14 w-9 grid place-items-center text-secondary hover:text-label shadow-sm"
+              aria-label={`Show the shop list (${visible.length} ${visible.length === 1 ? "shop" : "shops"})`}
+            >
+              <span aria-hidden="true" className="text-headline">&rsaquo;</span>
+            </button>
+          )}
         </div>
 
         {/* Place card for the selected pin. Sits clear of the attribution. */}

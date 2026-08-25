@@ -14,6 +14,9 @@ const bodySchema = z
     zip: z.string().max(20).nullable().optional(),
     phone: z.string().max(40).nullable().optional(),
     website: z.string().max(500).nullable().optional(),
+    // Sent on the second attempt, after the person has seen the possible
+    // duplicate and said it is a different business.
+    confirmDistinct: z.boolean().optional(),
   })
   .strict();
 

@@ -35,7 +35,12 @@ export function toErrorResponse(error: unknown) {
   );
 }
 
-export function route(fn: () => Promise<NextResponse>) {
+/*
+  Accepts a plain Response as well as a NextResponse, because not every handler
+  returns JSON — a reviewer's document is served as raw bytes with headers that
+  keep it from being cached or downloaded.
+*/
+export function route(fn: () => Promise<NextResponse | Response>) {
   return fn().catch(toErrorResponse);
 }
 

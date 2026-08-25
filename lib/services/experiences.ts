@@ -20,7 +20,7 @@ import { mechanicExists, pricingStats } from "../repositories/mechanic";
 import { writeAuditLog } from "../repositories/moderation";
 import { serviceExists } from "../repositories/taxonomy";
 import { vehicleBelongsTo } from "../repositories/vehicle";
-import { deleteObject, putObject, signedReadUrl } from "../storage/objects";
+import { deleteObject, getObjectBytes, putObject, signedReadUrl } from "../storage/objects";
 import { inspectReceipt, randomKey } from "../storage/files";
 import { toExperienceView } from "./dto";
 import { reconsiderListing } from "./shop-submissions";
@@ -295,6 +295,32 @@ export async function getVerificationQueue(limit: number, offset: number) {
 
 // Admin-only: mints a short-lived URL for one receipt. The key itself is never
 // returned to any client, and the privileged read is audited.
+/**
+ * The receipt itself, for display inside the review desk.
+ *
+ * Returns bytes rather than a link on purpose: a link is a download, and a
+ * download survives both the 120-second expiry and the destruction of the
+ * record. The reviewer sees the document without a copy of it landing in their
+ * Downloads folder.
+ */
+export async function readReceiptForReview(experienceId: string, reviewerId: string) {
+  const receipt = await findReceiptForExperience(experienceId);
+  if (!receipt?.storageKey || receipt.deletedAt) throw notFound();
+
+  const { bytes, contentType } = await getObjectBytes("receipts", receipt.storageKey);
+
+  // Logged on the same terms as before: looking is an action, recorded against
+  // the account that took it.
+  await writeAuditLog({
+    actorId: reviewerId,
+    action: "receipt.viewed",
+    targetType: "MechanicExperience",
+    targetId: experienceId,
+  });
+
+  return { bytes, contentType };
+}
+
 export async function getReceiptViewUrl(experienceId: string, adminId: string) {
   const receipt = await findReceiptForExperience(experienceId);
   if (!receipt?.storageKey) throw notFound();

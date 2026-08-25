@@ -16,7 +16,7 @@ import {
 import { mechanicExists } from "../repositories/mechanic";
 import { serviceExists } from "../repositories/taxonomy";
 import { writeAuditLog } from "../repositories/moderation";
-import { deleteObject, putObject, signedReadUrl } from "../storage/objects";
+import { deleteObject, getObjectBytes, putObject, signedReadUrl } from "../storage/objects";
 import { inspectReceipt, randomKey } from "../storage/files";
 
 /** One person cannot tie up the review queue with claims on many shops. */
@@ -95,6 +95,23 @@ export async function getClaimQueue(limit: number, offset: number) {
 }
 
 /** Admin-only, short-lived, and audited — same treatment as a receipt. */
+/** The trading document itself, shown in the desk rather than downloaded. */
+export async function readClaimDocumentForReview(claimId: string, reviewerId: string) {
+  const claim = await findClaimById(claimId);
+  if (!claim?.documentKey) throw notFound();
+
+  const { bytes, contentType } = await getObjectBytes("receipts", claim.documentKey);
+
+  await writeAuditLog({
+    actorId: reviewerId,
+    action: "shopclaim.document.viewed",
+    targetType: "ShopClaim",
+    targetId: claimId,
+  });
+
+  return { bytes, contentType };
+}
+
 export async function getClaimDocumentUrl(claimId: string, adminId: string) {
   const claim = await findClaimById(claimId);
   if (!claim?.documentKey) throw notFound();
