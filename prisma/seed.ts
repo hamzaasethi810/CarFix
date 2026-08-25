@@ -2,7 +2,6 @@ import "dotenv/config";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../lib/generated/prisma/client";
 import { DRIVETRAINS, ENGINES, MAKES, SERVICES } from "./seed-data/vehicles";
-import { MECHANICS } from "./seed-data/mechanics";
 
 const prisma = new PrismaClient({
   adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
@@ -86,38 +85,22 @@ async function main() {
     }
   }
 
-  for (const shop of MECHANICS) {
-    const { specialties, ...data } = shop;
-    const existing = await prisma.mechanic.findFirst({
-      where: { name: data.name, city: data.city },
-      select: { id: true },
-    });
+  /*
+    No shops are seeded.
 
-    const mechanic = existing
-      ? await prisma.mechanic.update({ where: { id: existing.id }, data, select: { id: true } })
-      : await prisma.mechanic.create({ data, select: { id: true } });
-
-    for (const serviceName of specialties) {
-      const service = await prisma.service.findUnique({
-        where: { name: serviceName },
-        select: { id: true },
-      });
-      if (!service) {
-        console.warn(`  ! unknown service "${serviceName}" on ${data.name}`);
-        continue;
-      }
-      await prisma.mechanicSpecialty.upsert({
-        where: { mechanicId_serviceId: { mechanicId: mechanic.id, serviceId: service.id } },
-        create: { mechanicId: mechanic.id, serviceId: service.id },
-        update: {},
-      });
-    }
-  }
+    Shops come from OpenStreetMap the first time somebody searches an area, so
+    seeding a fixed set would put a handful of invented places on the map for
+    everybody regardless of where they are — and quietly occupy the database
+    with rows nobody asked for. The taxonomy above is different: makes, models,
+    generations and services are reference data the app cannot work without,
+    and no amount of searching produces them.
+  */
 
   const models = MAKES.reduce((n, m) => n + m.models.length, 0);
   console.log(
     `Seed complete: ${MAKES.length} makes, ${models} models, ${generations} generations, ` +
-      `${trims} trims, ${MECHANICS.length} mechanics, ${SERVICES.length} services.`,
+      `${trims} trims, ${SERVICES.length} services. No shops — the map fills ` +
+      `itself from OpenStreetMap as people search.`,
   );
 }
 

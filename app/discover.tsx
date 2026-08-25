@@ -67,6 +67,34 @@ export function Discover({
     gesture that is the only route to something is a gesture most people never
     find, and no route at all for anyone using a keyboard.
   */
+  /*
+    On a phone the filter panel is the whole screen — every control stacked
+    vertically leaves no map at all, which is the one thing this page is for.
+    It collapses to a single summary line once a search has run, and swiping
+    it up or tapping the summary moves between the two. Desktop has the room,
+    so it stays open there.
+  */
+  const [filtersOpen, setFiltersOpen] = useState(true);
+  const filterDragY = useRef<number | null>(null);
+  const filterBarRef = useRef<HTMLDivElement>(null);
+
+  /*
+    Whether the panel is taking too much of the screen to leave a usable map.
+
+    The first version of this asked whether the screen was narrow, which is the
+    wrong question: a phone held sideways is 852 points wide and 393 tall, so
+    it passed the width test and got the full panel — 444 points of controls in
+    a 393 point window, taller than the screen it was drawn in. A tablet in
+    portrait had the same problem for the same reason.
+
+    Height is what actually matters, and measuring the panel against the window
+    settles it for every device without naming any of them.
+  */
+  const filtersCrowdTheMap = useCallback(() => {
+    const bar = filterBarRef.current?.getBoundingClientRect().height ?? 0;
+    return bar > window.innerHeight * 0.35;
+  }, []);
+
   const [manuallyStowed, setManuallyStowed] = useState(false);
 
   /*
@@ -84,29 +112,71 @@ export function Discover({
   /** Live finger/pointer offset mid-drag; null when not dragging. */
   const [dragOffset, setDragOffset] = useState<number | null>(null);
   const dragStartX = useRef<number | null>(null);
+  const dragStartY = useRef<number | null>(null);
+  /*
+    A drag ends in a click too. Without this the swipe sets the sheet closed
+    and the click that follows immediately toggles it back open, so the gesture
+    appears to do nothing at all.
+  */
+  const draggedRef = useRef(false);
 
   /** Far enough that a scroll or a stray tap is not mistaken for a dismissal. */
   const STOW_THRESHOLD = 64;
+
+  function onFilterPointerDown(e: React.PointerEvent) {
+    filterDragY.current = e.clientY;
+  }
+
+  function onFilterPointerUp(e: React.PointerEvent) {
+    if (filterDragY.current === null) return;
+    const dy = e.clientY - filterDragY.current;
+    filterDragY.current = null;
+    // Far enough to be a deliberate swipe rather than a tap that wandered.
+    if (dy < -40) setFiltersOpen(false);
+    else if (dy > 40) setFiltersOpen(true);
+  }
 
   function onDragStart(e: React.PointerEvent) {
     // Only a primary press, and never a drag that begins on a real control.
     if (e.button !== 0) return;
     dragStartX.current = e.clientX;
+    dragStartY.current = e.clientY;
+    draggedRef.current = false;
     e.currentTarget.setPointerCapture(e.pointerId);
   }
 
   function onDragMove(e: React.PointerEvent) {
-    if (dragStartX.current === null) return;
+    if (dragStartX.current === null || dragStartY.current === null) return;
     const dx = e.clientX - dragStartX.current;
+    // A vertical swipe is a collapse, not a slide, so do not track it sideways.
+    if (Math.abs(e.clientY - dragStartY.current) > Math.abs(dx)) return;
     // Leftward only, and it does not rubber-band past its own width.
     setDragOffset(Math.min(0, Math.max(dx, -400)));
   }
 
+  /*
+    One gesture, two meanings, decided by direction.
+
+    Dragging sideways pushes the list off the edge, which is what there is room
+    for on a wide screen. Dragging up or down collapses and expands it, which is
+    what a phone needs — the list and the map cannot both have the screen, and
+    flicking a sheet down to see what is under it is the motion people already
+    expect there.
+  */
   function onDragEnd(e: React.PointerEvent) {
-    if (dragStartX.current === null) return;
+    if (dragStartX.current === null || dragStartY.current === null) return;
     const dx = e.clientX - dragStartX.current;
+    const dy = e.clientY - dragStartY.current;
     dragStartX.current = null;
+    dragStartY.current = null;
     setDragOffset(null);
+    draggedRef.current = Math.abs(dx) > 8 || Math.abs(dy) > 8;
+
+    if (Math.abs(dy) > Math.abs(dx)) {
+      if (dy > STOW_THRESHOLD) setPanelOpen(false);
+      else if (dy < -STOW_THRESHOLD) setPanelOpen(true);
+      return;
+    }
     if (dx < -STOW_THRESHOLD) setManuallyStowed(true);
   }
   const listRef = useRef<HTMLUListElement>(null);
@@ -119,6 +189,19 @@ export function Discover({
   const [locationNote, setLocationNote] = useState<string | null>(null);
   // Filters the visible results by name, for looking up one specific shop.
   const [shopQuery, setShopQuery] = useState("");
+
+  /** What the collapsed bar says is being searched for. */
+  const filterSummary = useMemo(() => {
+    const parts = [
+      makes.find((m) => m.id === makeId)?.name,
+      models.find((m) => m.id === modelId)?.name,
+      serviceId ? "a service" : null,
+      verifiedOnly ? "verified" : null,
+      subscribedOnly ? "gold" : null,
+    ].filter(Boolean);
+    return parts.length ? parts.join(" · ") : `Any shop within ${radiusMiles} mi`;
+  }, [makes, makeId, models, modelId, serviceId, verifiedOnly, subscribedOnly, radiusMiles]);
+
   const [areaLabel, setAreaLabel] = useState<string | null>(null);
 
   /*
@@ -222,8 +305,11 @@ export function Discover({
       setResults(body.items ?? []);
       setSelectedId(null);
       setPanelOpen(true);
+      // Get out of the way once there is something to look at, but only where
+      // the panel would otherwise leave no map worth showing.
+      if (typeof window !== "undefined" && filtersCrowdTheMap()) setFiltersOpen(false);
     },
-    [serviceId, makeId, modelId, genValue, verifiedOnly, subscribedOnly, sort, center, radiusMiles],
+    [serviceId, makeId, modelId, genValue, verifiedOnly, subscribedOnly, sort, center, radiusMiles, filtersCrowdTheMap],
   );
 
   /*
@@ -341,8 +427,40 @@ export function Discover({
           it while keeping the glass.
         */}
         <div className="pointer-events-auto p-3 sm:p-4 relative z-20">
-          <div className="glass rounded-glass p-3 sm:p-4 max-w-4xl mx-auto">
-            <div className="grid gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-5 [&>*]:min-w-0">
+          <div
+            ref={filterBarRef}
+            className="glass rounded-glass p-3 sm:p-4 max-w-4xl mx-auto"
+            onPointerDown={onFilterPointerDown}
+            onPointerUp={onFilterPointerUp}
+          >
+            {/*
+              What is being searched for, and a way back to change it. Offered
+              at every size: a laptop window can be short, and a tablet held
+              sideways has less height than a phone held upright.
+            */}
+            {!filtersOpen && (
+              <button
+                type="button"
+                onClick={() => setFiltersOpen(true)}
+                className="flex items-center justify-between w-full gap-3 min-h-11 text-left"
+                aria-expanded={false}
+              >
+                <span className="min-w-0 flex-1 truncate text-subhead">
+                  <span className="font-semibold">{filterSummary}</span>
+                  {areaLabel && <span className="text-secondary"> · {areaLabel}</span>}
+                </span>
+                <span className="shrink-0 text-footnote font-medium text-accent">Filters</span>
+              </button>
+            )}
+
+            <div
+              className={`${filtersOpen ? "grid" : "hidden"} gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-5 [&>*]:min-w-0`}
+            >
+              {/* Says the panel moves, and gives the thumb something to aim at. */}
+              <div className="sm:col-span-2 lg:col-span-5 -mt-1 mb-0.5 flex justify-center">
+                <span aria-hidden="true" className="h-1 w-9 rounded-full bg-black/15" />
+              </div>
+
               <Picker label="Make" value={makeId} onChange={chooseMake} options={makes} anyLabel="Any make" />
               <Picker
                 label="Model"
@@ -457,6 +575,14 @@ export function Discover({
                 {/* The one primary action in this context gets the colour. */}
                 <button
                   type="button"
+                  onClick={() => setFiltersOpen(false)}
+                  className="min-h-11 px-4 rounded-full text-subhead font-medium text-secondary hover:text-label"
+                >
+                  Hide filters
+                </button>
+
+                <button
+                  type="button"
                   onClick={() => void runSearch()}
                   disabled={loading}
                   className="min-h-11 px-7 rounded-full bg-accent-fill text-on-accent text-subhead font-semibold shadow-sm disabled:opacity-50 w-full sm:w-auto"
@@ -482,9 +608,22 @@ export function Discover({
               panelOpen ? "max-h-[45vh]" : "max-h-16"
             } sm:max-h-none sm:flex-1 transition-[max-height] duration-300`}
           >
+            {/* Signals the sheet can be dragged, the way sheets usually do. */}
+            <span
+              aria-hidden="true"
+              className="sm:hidden mx-auto mt-2 h-1 w-9 rounded-full bg-black/15"
+            />
+
             <button
               type="button"
-              onClick={() => setPanelOpen((v) => !v)}
+              onClick={() => {
+                // The gesture already decided; do not undo it.
+                if (draggedRef.current) {
+                  draggedRef.current = false;
+                  return;
+                }
+                setPanelOpen((v) => !v);
+              }}
               onPointerDown={onDragStart}
               onPointerMove={onDragMove}
               onPointerUp={onDragEnd}
@@ -559,11 +698,28 @@ export function Discover({
                 </li>
               )}
 
-              {results.length === 0 && !loading && (
+              {/*
+                Nothing has been searched for yet. The map starts empty and
+                fills from OpenStreetMap once there is somewhere to centre it
+                on, so this is the ordinary first view rather than a failure —
+                and it should ask for the one thing it needs instead of
+                reporting that nothing matched.
+              */}
+              {results.length === 0 && !loading && !center && (
+                <li className="px-2 py-6 text-subhead text-secondary text-center">
+                  <p className="text-label font-medium">Where are you looking?</p>
+                  <p className="mt-1 text-pretty">
+                    Allow location, or use <strong>Near you</strong> to name a town,
+                    postcode or city. Shops in that area load automatically.
+                  </p>
+                </li>
+              )}
+
+              {results.length === 0 && !loading && center && (
                 <li className="px-2 py-6 text-subhead text-secondary text-center">
                   <p>
-                    No shops matched.
-                    {center && radiusMiles < 200
+                    No shops found here.
+                    {radiusMiles < 200
                       ? " Try a wider radius."
                       : " Try clearing some filters."}
                   </p>

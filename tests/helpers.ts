@@ -32,11 +32,34 @@ export async function makeUser(role: "USER" | "ADMIN" = "USER") {
   return { id: user.id, role: user.role as "USER" | "ADMIN", username };
 }
 
+/*
+  No shops are seeded any more — the map fills itself from OpenStreetMap as
+  people search — so a test that needs one has to make it rather than assume
+  the seed left one lying about.
+*/
+async function ensureMechanic() {
+  const existing = await prisma.mechanic.findFirst({ where: { deletedAt: null } });
+  if (existing) return existing;
+  return prisma.mechanic.create({
+    data: {
+      name: "Test Motor Works",
+      address: "1 Test Street",
+      city: "Austin",
+      state: "TX",
+      country: "US",
+      zip: "78701",
+      lat: 30.2672,
+      lng: -97.7431,
+      source: "USER",
+    },
+  });
+}
+
 export async function fixtures() {
   const [make, service, mechanic] = await Promise.all([
     prisma.make.findFirstOrThrow({ where: { name: "BMW" } }),
     prisma.service.findFirstOrThrow({ where: { name: "Brake pads + rotors" } }),
-    prisma.mechanic.findFirstOrThrow(),
+    ensureMechanic(),
   ]);
   const model = await prisma.model.findFirstOrThrow({ where: { makeId: make.id, name: "M3" } });
   return { make, model, service, mechanic };
