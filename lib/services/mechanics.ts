@@ -7,18 +7,28 @@ import {
   type MechanicSearchParams,
 } from "../repositories/mechanic";
 import { countExperiences } from "../repositories/experience";
-import { ensureAreaCovered } from "./ingest";
+import { areaIsCovered } from "./ingest";
 import { toMechanicView } from "./dto";
 
 export async function search(params: MechanicSearchParams) {
   /*
-    When the search is anchored to a place, make sure that place has shop
-    records before querying. The first search in a new area pulls it from
-    OpenStreetMap; later searches hit the cached rows.
+    The search never waits for OpenStreetMap.
+
+    It used to call ingestion first and block on it, which meant the first
+    person to look anywhere new waited for Overpass — measured at 34 seconds
+    against a live deployment, and answering with nothing, because the rows
+    landed after the query had already run. Overpass is donated infrastructure
+    and is regularly that slow; a page cannot be built on it responding
+    quickly.
+
+    So this answers from what is stored, and reports whether the area still
+    needs pulling in. The caller does that after the response has gone out, and
+    the client asks again once it has had a moment.
   */
-  if (params.lat !== undefined && params.lng !== undefined) {
-    await ensureAreaCovered(params.lat, params.lng, params.radiusMiles ?? 20);
-  }
+  const needsIngest =
+    params.lat !== undefined &&
+    params.lng !== undefined &&
+    !(await areaIsCovered(params.lat, params.lng, params.radiusMiles ?? 20));
 
   const rows = await searchMechanics(params);
   return {
@@ -38,6 +48,12 @@ export async function search(params: MechanicSearchParams) {
       subscribed: r.subscribed,
       confirmed: r.confirmed,
     })),
+    /*
+      True while shops for this area are still being fetched. The client shows
+      that it is still looking and asks again shortly, rather than presenting
+      an empty area as though it had been searched.
+    */
+    ingesting: needsIngest,
     sort: params.sort,
     limit: params.limit,
     offset: params.offset,

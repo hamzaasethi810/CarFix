@@ -187,6 +187,20 @@ export function Discover({
   const [radiusMiles, setRadiusMiles] = useState(20);
   const [locating, setLocating] = useState(false);
   const [locationNote, setLocationNote] = useState<string | null>(null);
+  /*
+    True while the server is still pulling this area in from OpenStreetMap.
+    An area that has never been searched genuinely has no shops yet, and
+    showing "none found" would be a wrong answer rather than an empty one.
+  */
+  const [ingesting, setIngesting] = useState(false);
+  const ingestTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /*
+    The retry has to call the search, and the search schedules the retry, so one
+    of them has to reach the other through a ref rather than by name.
+  */
+  const runSearchRef = useRef<
+    ((o?: { lat: number; lng: number; radiusMiles?: number }) => Promise<void>) | null
+  >(null);
   // Filters the visible results by name, for looking up one specific shop.
   const [shopQuery, setShopQuery] = useState("");
 
@@ -305,11 +319,33 @@ export function Discover({
       setResults(body.items ?? []);
       setSelectedId(null);
       setPanelOpen(true);
+
+      /*
+        The area is being fetched behind this response. Ask again shortly —
+        once — rather than leaving somebody looking at an empty map they have
+        no reason to think will fill in.
+      */
+      setIngesting(Boolean(body.ingesting));
+      if (ingestTimer.current) clearTimeout(ingestTimer.current);
+      if (body.ingesting) {
+        ingestTimer.current = setTimeout(() => void runSearchRef.current?.(override), 9000);
+      }
       // Get out of the way once there is something to look at, but only where
       // the panel would otherwise leave no map worth showing.
       if (typeof window !== "undefined" && filtersCrowdTheMap()) setFiltersOpen(false);
     },
     [serviceId, makeId, modelId, genValue, verifiedOnly, subscribedOnly, sort, center, radiusMiles, filtersCrowdTheMap],
+  );
+
+  useEffect(() => {
+    runSearchRef.current = runSearch;
+  }, [runSearch]);
+
+  useEffect(
+    () => () => {
+      if (ingestTimer.current) clearTimeout(ingestTimer.current);
+    },
+    [],
   );
 
   /*
@@ -634,7 +670,9 @@ export function Discover({
               <span className="text-headline font-semibold">
                 {locating
                   ? "Finding you…"
-                  : `${visible.length} ${visible.length === 1 ? "shop" : "shops"}`}
+                  : ingesting && visible.length === 0
+                    ? "Looking up this area…"
+                    : `${visible.length} ${visible.length === 1 ? "shop" : "shops"}`}
                 {shopQuery.trim() !== "" && results.length !== visible.length && (
                   <span className="text-secondary font-normal"> of {results.length}</span>
                 )}
@@ -715,7 +753,17 @@ export function Discover({
                 </li>
               )}
 
-              {results.length === 0 && !loading && center && (
+              {results.length === 0 && !loading && center && ingesting && (
+                <li className="px-2 py-6 text-subhead text-secondary text-center">
+                  <p className="text-label font-medium">Looking up this area…</p>
+                  <p className="mt-1 text-pretty">
+                    Shops here have not been fetched before. This takes a few
+                    seconds the first time, then it is instant for everyone.
+                  </p>
+                </li>
+              )}
+
+              {results.length === 0 && !loading && center && !ingesting && (
                 <li className="px-2 py-6 text-subhead text-secondary text-center">
                   <p>
                     No shops found here.

@@ -13,7 +13,16 @@ const MILES_TO_METRES = 1609.34;
   Failures are swallowed on purpose. Ingestion is an enhancement to a search
   that must still return whatever is already stored.
 */
-export async function ensureAreaCovered(lat: number, lng: number, radiusMiles: number) {
+/** Whether this area already has shops, so a search need not wait on anything. */
+export const areaIsCovered = (lat: number, lng: number, radiusMiles: number) =>
+  hasFreshCoverage(lat, lng, radiusMiles);
+
+/*
+  Pulls an area in. Slow by nature — Overpass is donated infrastructure that
+  regularly takes tens of seconds — so no request should ever be made to wait
+  for it. Callers run this after the response has already been sent.
+*/
+export async function ingestArea(lat: number, lng: number, radiusMiles: number) {
   if (await hasFreshCoverage(lat, lng, radiusMiles)) {
     return { ingested: false as const, created: 0 };
   }
@@ -28,3 +37,6 @@ export async function ensureAreaCovered(lat: number, lng: number, radiusMiles: n
     return { ingested: false as const, created: 0 };
   }
 }
+
+/** Kept for callers that genuinely need the data before continuing. */
+export const ensureAreaCovered = ingestArea;
