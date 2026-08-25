@@ -1,5 +1,6 @@
 import "server-only";
 import { AppError, conflict, validation } from "../errors";
+import { addressQuery, isKnownCountry, isKnownUsState, usesStates } from "../geo/regions";
 import { geocode } from "../providers/nominatim";
 import {
   countSubmissionsSince,
@@ -126,6 +127,7 @@ export type SubmissionInput = {
   city: string;
   state: string;
   zip?: string | null;
+  country: string;
   phone?: string | null;
   website?: string | null;
 };
@@ -142,7 +144,24 @@ export async function submitShop(userId: string, input: SubmissionInput) {
     Layer 1: the address has to be a real place. Nominatim is the same free
     geocoder the area picker uses, so this costs nothing.
   */
-  const query = [input.address, input.city, input.state, input.zip].filter(Boolean).join(", ");
+  if (!isKnownCountry(input.country)) throw validation("Choose a country from the list.");
+  /*
+    A US address without a state is ambiguous — there is a Springfield in most
+    of them — so it is required where it applies and refused where it does not.
+  */
+  if (usesStates(input.country)) {
+    if (!isKnownUsState(input.state)) throw validation("Choose a state.");
+  } else if (input.state.trim() !== "") {
+    throw validation("That country does not use states.");
+  }
+
+  const query = addressQuery({
+    address: input.address,
+    city: input.city,
+    state: input.state,
+    zip: input.zip,
+    country: input.country,
+  });
   const matches = await geocode(query, 1);
   if (matches.length === 0)
     throw validation(
@@ -170,7 +189,8 @@ export async function submitShop(userId: string, input: SubmissionInput) {
     description: input.description?.trim() || null,
     address: input.address.trim(),
     city: input.city.trim(),
-    state: input.state.trim(),
+    state: usesStates(input.country) ? input.state.trim() : "",
+    country: input.country,
     zip: input.zip?.trim() ?? "",
     // The geocoded point, not one the browser supplied — a submitted pin could
     // put a shop anywhere.

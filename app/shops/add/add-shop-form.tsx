@@ -4,6 +4,8 @@ import { useState } from "react";
 import Link from "next/link";
 import { Card, ErrorText } from "@/components/ui";
 import { Field, SubmitButton, TextArea, TextInput } from "@/components/form";
+import { AddressFields, emptyAddress, type AddressValue } from "@/components/address-fields";
+import { usesStates } from "@/lib/geo/regions";
 
 type Added = { id: string; name: string; resolvedTo: string; message: string };
 type Duplicate = { id: string; name: string };
@@ -19,6 +21,7 @@ export function AddShopForm() {
   */
   const [duplicate, setDuplicate] = useState<Duplicate | null>(null);
   const [lastSubmission, setLastSubmission] = useState<Record<string, unknown> | null>(null);
+  const [where, setWhere] = useState<AddressValue>(emptyAddress());
 
   async function send(payload: Record<string, unknown>) {
     setPending(true);
@@ -58,12 +61,18 @@ export function AddShopForm() {
       return v === "" ? null : v;
     };
 
+    if (usesStates(where.country) && where.state === "") {
+      setPending(false);
+      return setError("Choose a state.");
+    }
+
     await send({
       name: String(formData.get("name") ?? ""),
       address: String(formData.get("address") ?? ""),
-      city: String(formData.get("city") ?? ""),
-      state: String(formData.get("state") ?? ""),
-      zip: text("zip"),
+      city: where.city,
+      state: where.state,
+      country: where.country,
+      zip: where.zip.trim() || null,
       phone: text("phone"),
       website: text("website"),
       description: text("description"),
@@ -117,16 +126,10 @@ export function AddShopForm() {
           )}
         </Field>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Field label="Town or city">
-            {({ id }) => <TextInput id={id} name="city" required maxLength={100} />}
-          </Field>
-          <Field label="State or region">
-            {({ id }) => <TextInput id={id} name="state" required maxLength={100} />}
-          </Field>
-          <Field label="Postcode">
-            {({ id }) => <TextInput id={id} name="zip" maxLength={20} placeholder="Optional" />}
-          </Field>
+        {/* Country decides whether a state is asked for at all. */}
+        <div>
+          <span className="block text-subhead font-medium text-label mb-1.5">Where it is</span>
+          <AddressFields value={where} onChange={setWhere} />
         </div>
       </Card>
 

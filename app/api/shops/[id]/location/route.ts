@@ -9,7 +9,10 @@ const bodySchema = z
     name: z.string().min(2).max(200),
     address: z.string().min(3).max(200),
     city: z.string().min(1).max(100),
-    state: z.string().min(1).max(100),
+    // Empty outside the US; the service decides whether that is allowed for
+    // the country given, because only it knows which countries use states.
+    state: z.string().max(100).default(""),
+    country: z.string().length(2).toUpperCase(),
     zip: z.string().max(20).nullable().optional(),
     phone: z.string().max(40).nullable().optional(),
     website: z.string().max(500).nullable().optional(),

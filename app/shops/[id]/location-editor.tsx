@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card, ErrorText, SectionTitle, buttonStyles } from "@/components/ui";
 import { Field, TextInput } from "@/components/form";
+import { AddressFields, type AddressValue } from "@/components/address-fields";
+import { usesStates } from "@/lib/geo/regions";
 
 type Shop = {
   name: string;
@@ -11,6 +13,7 @@ type Shop = {
   city: string;
   state: string;
   zip: string | null;
+  country: string;
   phone: string | null;
   website: string | null;
 };
@@ -29,6 +32,12 @@ export function LocationEditor({ mechanicId, shop }: { mechanicId: string; shop:
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resolved, setResolved] = useState<string | null>(null);
+  const [where, setWhere] = useState<AddressValue>({
+    city: shop.city,
+    state: shop.state,
+    country: shop.country,
+    zip: shop.zip ?? "",
+  });
 
   async function onSubmit(formData: FormData) {
     setPending(true);
@@ -39,15 +48,21 @@ export function LocationEditor({ mechanicId, shop }: { mechanicId: string; shop:
       return v === "" ? null : v;
     };
 
+    if (usesStates(where.country) && where.state === "") {
+      setPending(false);
+      return setError("Choose a state.");
+    }
+
     const res = await fetch(`/api/shops/${mechanicId}/location`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         name: String(formData.get("name") ?? ""),
         address: String(formData.get("address") ?? ""),
-        city: String(formData.get("city") ?? ""),
-        state: String(formData.get("state") ?? ""),
-        zip: text("zip"),
+        city: where.city,
+        state: where.state,
+        country: where.country,
+        zip: where.zip.trim() || null,
         phone: text("phone"),
         website: text("website"),
       }),
@@ -101,16 +116,9 @@ export function LocationEditor({ mechanicId, shop }: { mechanicId: string; shop:
                 defaultValue={shop.address} required maxLength={200} />
             )}
           </Field>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Town or city">
-              {({ id }) => <TextInput id={id} name="city" defaultValue={shop.city} required maxLength={100} />}
-            </Field>
-            <Field label="State or region">
-              {({ id }) => <TextInput id={id} name="state" defaultValue={shop.state} required maxLength={100} />}
-            </Field>
-            <Field label="Postcode">
-              {({ id }) => <TextInput id={id} name="zip" defaultValue={shop.zip ?? ""} maxLength={20} />}
-            </Field>
+          <div>
+            <span className="block text-subhead font-medium text-label mb-1.5">Where it is</span>
+            <AddressFields value={where} onChange={setWhere} />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Phone">

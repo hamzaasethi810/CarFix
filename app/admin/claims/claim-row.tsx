@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { DocumentViewer } from "@/components/document-viewer";
 import { useRouter } from "next/navigation";
-import { Card, ErrorText, buttonStyles } from "@/components/ui";
+import { Card, ErrorText, buttonStyles, formatDate } from "@/components/ui";
 
 type Claim = {
   id: string;
@@ -77,7 +77,7 @@ export function ClaimRow({ item }: { item: Claim }) {
         {item.shop.city && ` — ${item.shop.city}, ${item.shop.state}`}
         {item.contactPhone && ` · ${item.contactPhone}`} ·{" "}
         <time dateTime={item.submittedAt}>
-          {new Date(item.submittedAt).toLocaleDateString()}
+          {formatDate(item.submittedAt)}
         </time>
       </p>
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Card, PageTitle, Stars, VerifiedBadge, miles, money } from "@/components/ui";
+import { Card, PageTitle, Stars, VerifiedBadge, miles, money, formatDate } from "@/components/ui";
 import { currentUser } from "@/lib/auth/guards";
 import { getExperience } from "@/lib/services/experiences";
 import { AppError } from "@/lib/errors";
@@ -51,7 +51,7 @@ export default async function ExperiencePage({ params }: { params: Promise<{ id:
             {e.mechanic.name}
           </Link>{" "}
           ·{" "}
-          <time dateTime={e.serviceDate}>{new Date(e.serviceDate).toLocaleDateString()}</time> ·{" "}
+          <time dateTime={e.serviceDate}>{formatDate(e.serviceDate)}</time> ·{" "}
           {miles(e.mileageAtService)}
         </p>
 

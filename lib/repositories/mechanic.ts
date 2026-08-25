@@ -210,6 +210,7 @@ export const findMechanicById = (id: string) =>
       address: true,
       city: true,
       state: true,
+      country: true,
       zip: true,
       lat: true,
       lng: true,

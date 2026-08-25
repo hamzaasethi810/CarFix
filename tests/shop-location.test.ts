@@ -17,7 +17,8 @@ const DETAILS = {
   name: "Corrected Motors",
   address: "1 Real Street",
   city: "London",
-  state: "England",
+  state: "",
+  country: "GB",
 };
 
 async function makeShop(ownerId?: string) {

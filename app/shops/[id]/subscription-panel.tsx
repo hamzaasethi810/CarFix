@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, ErrorText } from "@/components/ui";
+import { Card, ErrorText, formatDate } from "@/components/ui";
 
 type Status = "NONE" | "ACTIVE" | "PAST_DUE" | "CANCELED";
 
@@ -73,7 +73,7 @@ export function SubscriptionPanel({
 
       {endsAt && (
         <p className="text-footnote text-secondary">
-          {active ? "Renews" : "Access ends"} {new Date(endsAt).toLocaleDateString()}.
+          {active ? "Renews" : "Access ends"} {formatDate(endsAt)}.
         </p>
       )}
 

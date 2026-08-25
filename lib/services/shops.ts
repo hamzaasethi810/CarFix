@@ -1,5 +1,6 @@
 import "server-only";
 import { geocode } from "../providers/nominatim";
+import { addressQuery, isKnownCountry, isKnownUsState, usesStates } from "../geo/regions";
 import { conflict, forbidden, notFound, validation } from "../errors";
 import {
   countPendingClaimsForUser,
@@ -212,13 +213,27 @@ export async function updateShopDetails(
     city: string;
     state: string;
     zip?: string | null;
+    country: string;
     phone?: string | null;
     website?: string | null;
   },
 ) {
   if (!(await shopClaimedBy(mechanicId, userId))) throw forbidden();
 
-  const query = [input.address, input.city, input.state, input.zip].filter(Boolean).join(", ");
+  if (!isKnownCountry(input.country)) throw validation("Choose a country from the list.");
+  if (usesStates(input.country)) {
+    if (!isKnownUsState(input.state)) throw validation("Choose a state.");
+  } else if (input.state.trim() !== "") {
+    throw validation("That country does not use states.");
+  }
+
+  const query = addressQuery({
+    address: input.address,
+    city: input.city,
+    state: input.state,
+    zip: input.zip,
+    country: input.country,
+  });
   const matches = await geocode(query, 1);
   if (matches.length === 0)
     throw validation("We could not find that address. Check the street, town, and postcode.");
@@ -228,7 +243,8 @@ export async function updateShopDetails(
     name: input.name.trim(),
     address: input.address.trim(),
     city: input.city.trim(),
-    state: input.state.trim(),
+    state: usesStates(input.country) ? input.state.trim() : "",
+    country: input.country,
     zip: input.zip?.trim() ?? "",
     lat: place.lat,
     lng: place.lng,

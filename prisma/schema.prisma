@@ -347,7 +347,14 @@ model Mechanic {
   description String?
   address     String
   city        String
+  /** Empty outside the United States, where the concept does not apply. */
   state       String
+  /*
+    ISO 3166-1 alpha-2. Defaults to US because every listing that existed
+    before this column was added came from a US-only ingest, so backfilling
+    them to anything else would be inventing data.
+  */
+  country     String  @default("US")
   zip         String
   lat         Float
   lng         Float

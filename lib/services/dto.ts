@@ -153,6 +153,7 @@ type MechanicRow = {
   address: string;
   city: string;
   state: string;
+  country: string;
   zip: string;
   lat: number;
   lng: number;
@@ -171,6 +172,7 @@ export const toMechanicView = (m: MechanicRow) => ({
   address: m.address,
   city: m.city,
   state: m.state,
+  country: m.country,
   zip: m.zip,
   lat: m.lat,
   lng: m.lng,

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Card, ErrorText, buttonStyles, num } from "@/components/ui";
+import { Card, ErrorText, buttonStyles, num, formatDate } from "@/components/ui";
 
 type Listing = {
   id: string;
@@ -51,7 +51,7 @@ export function ListingRow({ item }: { item: Listing }) {
       <p className="text-subhead text-secondary">
         {item.place}
         {item.phone && ` · ${item.phone}`}
-        {item.submittedAt && ` · ${new Date(item.submittedAt).toLocaleDateString()}`}
+        {item.submittedAt && ` · ${formatDate(item.submittedAt)}`}
       </p>
 
       <p className="text-footnote text-secondary">

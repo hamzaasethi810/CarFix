@@ -96,6 +96,31 @@ export const money = (n: number | null | undefined) =>
       });
 
 /** Whole numbers: mileage, counts, distances. */
+/*
+  Dates, formatted the same on the server and in the browser.
+
+  `toLocaleDateString()` with no arguments uses whatever locale and time zone
+  the runtime happens to have. That is one thing in Node and another in a
+  visitor's browser, so the server-rendered HTML and the first client render
+  can disagree — which is exactly the "some attributes of the server rendered
+  HTML didn't match" hydration error, and React does not patch it up.
+
+  The zone is pinned as well as the locale. These are calendar dates: a service
+  date stored at midnight UTC renders as the day before for anyone west of
+  Greenwich if it is formatted in local time.
+*/
+export const formatDate = (value: string | Date | null | undefined) => {
+  if (value === null || value === undefined) return "—";
+  const date = typeof value === "string" ? new Date(value) : value;
+  if (Number.isNaN(date.getTime())) return "—";
+  return date.toLocaleDateString("en-US", {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+};
+
 export const num = (n: number | null | undefined) =>
   n === null || n === undefined ? "—" : n.toLocaleString("en-US");
 

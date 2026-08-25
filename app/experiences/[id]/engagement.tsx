@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, ErrorText, buttonStyles, num } from "@/components/ui";
+import { Card, ErrorText, buttonStyles, num, formatDate } from "@/components/ui";
 import { TextArea } from "@/components/form";
 
 type Reply = { id: string; body: string; createdAt: string; edited: boolean; shop: { id: string; name: string } } | null;
@@ -99,7 +99,7 @@ export function Engagement({
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-subhead font-semibold">{reply.shop.name} replied</h2>
             <span className="text-footnote text-secondary">
-              {new Date(reply.createdAt).toLocaleDateString()}
+              {formatDate(reply.createdAt)}
               {reply.edited && " · edited"}
             </span>
           </div>

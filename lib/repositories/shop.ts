@@ -278,6 +278,7 @@ export const updateShopLocation = (
     address: string;
     city: string;
     state: string;
+    country: string;
     zip: string;
     lat: number;
     lng: number;
@@ -297,6 +298,7 @@ export const createSubmittedShop = (data: {
   address: string;
   city: string;
   state: string;
+  country: string;
   zip: string;
   lat: number;
   lng: number;

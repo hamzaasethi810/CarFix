@@ -55,6 +55,7 @@ export default async function ShopAdminPage({ params }: { params: Promise<{ id: 
           city: shop.city,
           state: shop.state,
           zip: shop.zip,
+          country: shop.country,
           phone: shop.phone,
           website: shop.website,
         }}

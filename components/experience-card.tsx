@@ -65,7 +65,14 @@ export function ExperienceCard({
 
       <p className="mt-4 pt-3 border-t border-separator text-footnote text-secondary">
         <time dateTime={e.serviceDate}>
+          {/*
+            The zone is pinned as well as the locale. Service dates are stored
+            at midnight, so formatting them in local time moves them back a day
+            for anyone west of Greenwich — and on the first of a month that
+            changes the month this shows, not just the day.
+          */}
           {new Date(e.serviceDate).toLocaleDateString("en-US", {
+            timeZone: "UTC",
             year: "numeric",
             month: "short",
           })}

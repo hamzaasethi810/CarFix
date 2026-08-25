@@ -2,6 +2,8 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { popoverSurface } from "@/components/ui";
+import { AddressFields, emptyAddress, type AddressValue } from "@/components/address-fields";
+import { usesStates } from "@/lib/geo/regions";
 
 type Suggestion = { id: string; name: string; place: string };
 
@@ -241,13 +243,8 @@ function AddShopInline({
   onAdded: (s: Suggestion) => void;
   onCancel: () => void;
 }) {
-  const [fields, setFields] = useState({
-    name: initialName,
-    address: "",
-    city: "",
-    state: "",
-    zip: "",
-  });
+  const [fields, setFields] = useState({ name: initialName, address: "" });
+  const [where, setWhere] = useState<AddressValue>(emptyAddress());
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState<{ id: string; name: string } | null>(null);
@@ -288,20 +285,22 @@ function AddShopInline({
 
   function submit() {
     // No form element, so the required checks happen here.
-    const missing = (["name", "address", "city", "state"] as const).filter(
-      (k) => fields[k].trim() === "",
-    );
-    if (missing.length > 0) {
-      setError("Fill in the name, street address, town, and state.");
+    if (fields.name.trim() === "" || fields.address.trim() === "" || where.city.trim() === "") {
+      setError("Fill in the name, street address, and town.");
+      return;
+    }
+    if (usesStates(where.country) && where.state === "") {
+      setError("Choose a state.");
       return;
     }
 
     void send({
       name: fields.name.trim(),
       address: fields.address.trim(),
-      city: fields.city.trim(),
-      state: fields.state.trim(),
-      zip: fields.zip.trim() || null,
+      city: where.city.trim(),
+      state: where.state,
+      country: where.country,
+      zip: where.zip.trim() || null,
     });
   }
 
@@ -338,14 +337,7 @@ function AddShopInline({
           aria-label="Shop name" placeholder="Shop name" className={field} />
         <input value={fields.address} onChange={set("address")} maxLength={200}
           aria-label="Street address" placeholder="Street address" className={field} />
-        <div className="grid grid-cols-3 gap-2">
-          <input value={fields.city} onChange={set("city")} maxLength={100}
-            aria-label="Town or city" placeholder="Town" className={field} />
-          <input value={fields.state} onChange={set("state")} maxLength={100}
-            aria-label="State or region" placeholder="State" className={field} />
-          <input value={fields.zip} onChange={set("zip")} maxLength={20}
-            aria-label="Postcode" placeholder="Postcode" className={field} />
-        </div>
+        <AddressFields value={where} onChange={setWhere} inputClassName={field} />
       </div>
 
       {duplicate && (

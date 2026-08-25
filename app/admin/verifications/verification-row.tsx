@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, ErrorText, buttonStyles, miles, money } from "@/components/ui";
+import { Card, ErrorText, buttonStyles, miles, money, formatDate } from "@/components/ui";
 import { DocumentViewer } from "@/components/document-viewer";
 
 type QueueItem = {
@@ -101,7 +101,7 @@ export function VerificationRow({ item }: { item: QueueItem }) {
         {item.service.name} · <span className="tabular-nums">{money(item.totalPrice)}</span> ·{" "}
         {item.mechanic.name} ({item.mechanic.city}, {item.mechanic.state}) ·{" "}
         <time dateTime={item.serviceDate}>
-          {new Date(item.serviceDate).toLocaleDateString()}
+          {formatDate(item.serviceDate)}
         </time>{" "}
         · {miles(item.mileageAtService)}
       </p>
