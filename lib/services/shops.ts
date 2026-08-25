@@ -1,4 +1,5 @@
 import "server-only";
+import { geocode } from "../providers/nominatim";
 import { conflict, forbidden, notFound, validation } from "../errors";
 import {
   countPendingClaimsForUser,
@@ -11,6 +12,7 @@ import {
   listShopPrices,
   listShopsForOwner,
   shopClaimedBy,
+  updateShopLocation,
   upsertShopPrice,
 } from "../repositories/shop";
 import { mechanicExists } from "../repositories/mechanic";
@@ -190,6 +192,58 @@ export async function setShopPrice(
   });
 
   return getShopPrices(mechanicId);
+}
+
+/*
+  Correcting where a shop actually is.
+
+  Listings arrive from OpenStreetMap or from whoever added them, and both can
+  put a business on the wrong side of the road or at an old unit. Only the
+  owner who claimed it can correct it, and the new pin comes from geocoding
+  the address they give — never from coordinates the browser sends, which
+  would let a claimed listing be dragged anywhere on the map.
+*/
+export async function updateShopDetails(
+  mechanicId: string,
+  userId: string,
+  input: {
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+    zip?: string | null;
+    phone?: string | null;
+    website?: string | null;
+  },
+) {
+  if (!(await shopClaimedBy(mechanicId, userId))) throw forbidden();
+
+  const query = [input.address, input.city, input.state, input.zip].filter(Boolean).join(", ");
+  const matches = await geocode(query, 1);
+  if (matches.length === 0)
+    throw validation("We could not find that address. Check the street, town, and postcode.");
+
+  const place = matches[0];
+  const updated = await updateShopLocation(mechanicId, {
+    name: input.name.trim(),
+    address: input.address.trim(),
+    city: input.city.trim(),
+    state: input.state.trim(),
+    zip: input.zip?.trim() ?? "",
+    lat: place.lat,
+    lng: place.lng,
+    phone: input.phone?.trim() || null,
+    website: input.website?.trim() || null,
+  });
+
+  await writeAuditLog({
+    actorId: userId,
+    action: "shop.location.updated",
+    targetType: "Mechanic",
+    targetId: mechanicId,
+  });
+
+  return { ...updated, resolvedTo: place.label };
 }
 
 export async function removeShopPrice(mechanicId: string, userId: string, serviceId: string) {

@@ -7,6 +7,7 @@ import { billingConfigured } from "@/lib/providers/stripe";
 import { AppError } from "@/lib/errors";
 import { SubscriptionPanel } from "./subscription-panel";
 import { PriceEditor } from "./price-editor";
+import { LocationEditor } from "./location-editor";
 import { getServices } from "@/lib/services/taxonomy";
 
 // The owner's console for a shop they have had approved.
@@ -39,6 +40,24 @@ export default async function ShopAdminPage({ params }: { params: Promise<{ id: 
         status={owned.subscriptionStatus}
         endsAt={owned.subscriptionEndsAt}
         billingAvailable={billingConfigured()}
+      />
+
+      {/*
+        Placed above pricing because a listing at the wrong address is the
+        thing an owner most often arrives here to fix — listings come from
+        OpenStreetMap or from whoever added them, and both get it wrong.
+      */}
+      <LocationEditor
+        mechanicId={id}
+        shop={{
+          name: shop.name,
+          address: shop.address,
+          city: shop.city,
+          state: shop.state,
+          zip: shop.zip,
+          phone: shop.phone,
+          website: shop.website,
+        }}
       />
 
       <PriceEditor mechanicId={id} initial={prices} services={services} />

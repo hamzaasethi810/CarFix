@@ -32,6 +32,15 @@ export function MechanicPicker({
   const [chosen, setChosen] = useState<Suggestion | null>(null);
   const [loading, setLoading] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
+  /*
+    Somewhere to put a shop that is not listed yet.
+
+    Without this the search was a dead end: a mechanic claiming a business the
+    map had never heard of, or an owner reporting work at a new place, simply
+    could not proceed. Adding it here creates the listing, drops its pin, and
+    selects it — so the form they were already filling in carries on.
+  */
+  const [adding, setAdding] = useState(false);
 
   // Debounced so typing does not fire a request per keystroke.
   useEffect(() => {
@@ -176,11 +185,170 @@ export function MechanicPicker({
       {loading && query.trim().length >= 2 && !chosen && (
         <p className="mt-1 text-footnote text-secondary">Searching…</p>
       )}
-      {!loading && !chosen && query.trim().length >= 2 && items.length === 0 && (
-        <p className="mt-1 text-footnote text-secondary">
-          No shops matched. Search the map first to pull shops into your area.
-        </p>
+      {!loading && !chosen && query.trim().length >= 2 && items.length === 0 && !adding && (
+        <div className="mt-1.5 flex flex-wrap items-center gap-2">
+          <p className="text-footnote text-secondary">Not listed yet?</p>
+          <button
+            type="button"
+            onClick={() => setAdding(true)}
+            className="text-footnote font-medium text-accent underline underline-offset-2"
+          >
+            Add &ldquo;{query.trim()}&rdquo; to the map
+          </button>
+        </div>
       )}
+
+      {adding && (
+        <AddShopInline
+          initialName={query.trim()}
+          onCancel={() => setAdding(false)}
+          onAdded={(s) => {
+            setAdding(false);
+            pick(s);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+/*
+  A shop being created from inside another form.
+
+  It writes through the same endpoint as the full "Add a shop" page, so the
+  listing it produces is identical: geocoded from the address, pinned at the
+  geocoded point rather than anything the browser supplied, and marked
+  unconfirmed until people corroborate it or its owner claims it.
+*/
+function AddShopInline({
+  initialName,
+  onAdded,
+  onCancel,
+}: {
+  initialName: string;
+  onAdded: (s: Suggestion) => void;
+  onCancel: () => void;
+}) {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [duplicate, setDuplicate] = useState<{ id: string; name: string } | null>(null);
+  const [payload, setPayload] = useState<Record<string, unknown> | null>(null);
+
+  async function send(body: Record<string, unknown>) {
+    setPending(true);
+    setError(null);
+
+    const res = await fetch("/api/shops/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    const data = await res.json().catch(() => null);
+    setPending(false);
+
+    if (res.ok) {
+      onAdded({
+        id: data.id,
+        name: data.name,
+        place: String(data.resolvedTo ?? "").split(",").slice(0, 2).join(",").trim(),
+      });
+      return;
+    }
+
+    const found = data?.error?.details?.duplicate;
+    if (found && data?.error?.details?.canOverride) {
+      setDuplicate(found);
+      setPayload(body);
+      return;
+    }
+    setError(data?.error?.message ?? "That shop could not be added.");
+  }
+
+  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    // Nested inside another form in the DOM sense would be invalid, so this
+    // reads its own fields rather than relying on form submission.
+    const f = new FormData(e.currentTarget);
+    const text = (k: string) => {
+      const v = String(f.get(k) ?? "").trim();
+      return v === "" ? null : v;
+    };
+    void send({
+      name: String(f.get("newName") ?? "").trim(),
+      address: String(f.get("newAddress") ?? "").trim(),
+      city: String(f.get("newCity") ?? "").trim(),
+      state: String(f.get("newState") ?? "").trim(),
+      zip: text("newZip"),
+    });
+  }
+
+  const field =
+    "w-full min-h-11 rounded-control bg-elevated text-label text-body px-3.5 py-2.5 " +
+    "border border-separator placeholder:text-tertiary-label";
+
+  return (
+    <div className="mt-2 rounded-control border border-separator bg-fill p-3 space-y-3">
+      <div>
+        <h3 className="text-subhead font-semibold">Add this shop</h3>
+        <p className="text-footnote text-secondary mt-0.5">
+          We look the address up to place its pin, so it needs to be the real one.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <input name="newName" defaultValue={initialName} required maxLength={200}
+          aria-label="Shop name" placeholder="Shop name" className={field} form="add-shop-inline" />
+        <input name="newAddress" required maxLength={200}
+          aria-label="Street address" placeholder="Street address" className={field} form="add-shop-inline" />
+        <div className="grid grid-cols-3 gap-2">
+          <input name="newCity" required maxLength={100} aria-label="Town or city"
+            placeholder="Town" className={field} form="add-shop-inline" />
+          <input name="newState" required maxLength={100} aria-label="State or region"
+            placeholder="State" className={field} form="add-shop-inline" />
+          <input name="newZip" maxLength={20} aria-label="Postcode"
+            placeholder="Postcode" className={field} form="add-shop-inline" />
+        </div>
+      </div>
+
+      {duplicate && (
+        <div className="rounded-control bg-elevated p-3 space-y-2">
+          <p className="text-footnote text-pretty">
+            <strong>{duplicate.name}</strong> is already listed at that address.
+            If that is the same business, pick it instead of adding it twice.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <button type="button" disabled={pending}
+              onClick={() => onAdded({ id: duplicate.id, name: duplicate.name, place: "" })}
+              className="text-footnote font-medium text-accent underline underline-offset-2">
+              Use {duplicate.name}
+            </button>
+            <button type="button" disabled={pending}
+              onClick={() => payload && send({ ...payload, confirmDistinct: true })}
+              className="text-footnote font-medium text-accent underline underline-offset-2">
+              It is a different shop — add it
+            </button>
+          </div>
+        </div>
+      )}
+
+      {error && <p role="alert" className="text-footnote text-destructive">{error}</p>}
+
+      <div className="flex flex-wrap gap-2">
+        {/*
+          A separate form element, referenced by the inputs above, because this
+          control lives inside the caller's own form and nesting one form in
+          another is invalid HTML.
+        */}
+        <form id="add-shop-inline" onSubmit={onSubmit} className="contents" />
+        <button type="submit" form="add-shop-inline" disabled={pending}
+          className="inline-flex items-center min-h-11 px-4 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold disabled:opacity-50">
+          {pending ? "Adding…" : "Add and select"}
+        </button>
+        <button type="button" onClick={onCancel} disabled={pending}
+          className="inline-flex items-center min-h-11 px-4 rounded-control bg-elevated text-accent text-subhead font-semibold">
+          Cancel
+        </button>
+      </div>
     </div>
   );
 }

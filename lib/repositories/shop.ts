@@ -270,6 +270,27 @@ export const nearbyByName = (lat: number, lng: number) => {
   });
 };
 
+/** Moves a listing's pin and postal details. Owner-only; checked in the service. */
+export const updateShopLocation = (
+  mechanicId: string,
+  data: {
+    name: string;
+    address: string;
+    city: string;
+    state: string;
+    zip: string;
+    lat: number;
+    lng: number;
+    phone: string | null;
+    website: string | null;
+  },
+) =>
+  prisma.mechanic.update({
+    where: { id: mechanicId },
+    data,
+    select: { id: true, name: true, address: true, city: true, state: true, zip: true, lat: true, lng: true },
+  });
+
 export const createSubmittedShop = (data: {
   name: string;
   description: string | null;
