@@ -21,6 +21,17 @@ export type Email = {
   html: string;
 };
 
+/**
+ * Whether this deployment can actually send anything.
+ *
+ * The reset flow is deliberately vague about whether an address exists, which
+ * means it always answers "if that address has an account, a link is on its
+ * way". With no sender configured that sentence is simply untrue for everyone,
+ * so the entry point is hidden rather than left promising something that will
+ * never arrive.
+ */
+export const mailConfigured = () => Boolean(env.RESEND_API_KEY && env.EMAIL_FROM);
+
 export async function sendEmail(message: Email): Promise<{ delivered: boolean }> {
   if (!env.RESEND_API_KEY || !env.EMAIL_FROM) {
     if (isProd) {

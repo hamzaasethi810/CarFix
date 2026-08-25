@@ -8,7 +8,7 @@ import { SIGNIN_ERROR } from "@/lib/auth/credentials";
 import { Field, SubmitButton, TextInput } from "@/components/form";
 import { Card, ErrorText } from "@/components/ui";
 
-export function LoginForm() {
+export function LoginForm({ canResetPassword }: { canResetPassword: boolean }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -164,11 +164,17 @@ export function LoginForm() {
 
       <SubmitButton pending={pending}>Sign in</SubmitButton>
 
-      <p className="text-subhead text-center">
-        <Link href="/forgot-password" className="text-accent font-medium">
-          Forgot your password?
-        </Link>
-      </p>
+      {/*
+        Only offered when this deployment can send the email. Otherwise the
+        link leads to a page that promises something nothing will deliver.
+      */}
+      {canResetPassword && (
+        <p className="text-subhead text-center">
+          <Link href="/forgot-password" className="text-accent font-medium">
+            Forgot your password?
+          </Link>
+        </p>
+      )}
 
       <p className="text-subhead text-secondary text-center">
         No account?{" "}
