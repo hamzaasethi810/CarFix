@@ -20,7 +20,7 @@ import {
   upsertReply,
 } from "../repositories/engagement";
 import { experienceBelongsTo } from "../repositories/experience";
-import { deleteObject, putObject, signedReadUrl } from "../storage/objects";
+import { deleteObject, putObject, getObjectBytes } from "../storage/objects";
 import { inspectImage, randomKey } from "../storage/files";
 
 const MAX_SAVED_SEARCHES = 20;
@@ -164,10 +164,11 @@ export async function removeWorkPhoto(photoId: string, userId: string) {
   await deleteObject("photos", photo.storageKey);
 }
 
-export async function workPhotoUrl(photoId: string) {
+/** Served through this origin for the reasons in services/media.ts. */
+export async function workPhotoBytes(photoId: string) {
   const photo = await findWorkPhoto(photoId);
   if (!photo) throw notFound();
-  return signedReadUrl("photos", photo.storageKey, 300);
+  return getObjectBytes("photos", photo.storageKey);
 }
 
 /** Helpful count and whether this viewer has voted, for one report. */

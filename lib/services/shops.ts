@@ -19,7 +19,7 @@ import {
 import { mechanicExists } from "../repositories/mechanic";
 import { serviceExists } from "../repositories/taxonomy";
 import { writeAuditLog } from "../repositories/moderation";
-import { deleteObject, getObjectBytes, putObject, signedReadUrl } from "../storage/objects";
+import {deleteObject, getObjectBytes, putObject } from "../storage/objects";
 import { inspectReceipt, randomKey } from "../storage/files";
 
 /** One person cannot tie up the review queue with claims on many shops. */
@@ -113,21 +113,6 @@ export async function readClaimDocumentForReview(claimId: string, reviewerId: st
   });
 
   return { bytes, contentType };
-}
-
-export async function getClaimDocumentUrl(claimId: string, adminId: string) {
-  const claim = await findClaimById(claimId);
-  if (!claim?.documentKey) throw notFound();
-
-  const url = await signedReadUrl("receipts", claim.documentKey, 120);
-  await writeAuditLog({
-    actorId: adminId,
-    action: "shopclaim.document.viewed",
-    targetType: "ShopClaim",
-    targetId: claimId,
-  });
-
-  return { url, expiresInSeconds: 120 };
 }
 
 export async function decideShopClaim(params: {

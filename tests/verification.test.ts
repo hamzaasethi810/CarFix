@@ -4,7 +4,7 @@ import { deleteObject } from "../lib/storage/objects";
 import { AppError } from "../lib/errors";
 import {
   decideReceiptVerification,
-  getReceiptViewUrl,
+  readReceiptForReview,
   submitExperience,
   uploadReceipt,
 } from "../lib/services/experiences";
@@ -120,7 +120,7 @@ describe("receipt verification", () => {
       decision: "VERIFIED",
     });
 
-    await expect(getReceiptViewUrl(experience.id, admin.id)).rejects.toSatisfy(
+    await expect(readReceiptForReview(experience.id, admin.id)).rejects.toSatisfy(
       (e: unknown) => e instanceof AppError && e.code === "NOT_FOUND",
     );
   });
@@ -128,7 +128,7 @@ describe("receipt verification", () => {
   it("viewing a receipt is itself audited", async () => {
     const { owner, admin, experience } = await scenario();
     await uploadReceipt(experience.id, owner.id, fakeFile(PNG_BYTES));
-    await getReceiptViewUrl(experience.id, admin.id);
+    await readReceiptForReview(experience.id, admin.id);
 
     const logs = await prisma.auditLog.findMany({
       where: { targetId: experience.id, action: "receipt.viewed" },

@@ -46,10 +46,16 @@ export async function getObjectBytes(bucket: Bucket, key: string) {
   return { bytes, contentType: result.ContentType ?? "application/octet-stream" };
 }
 
-// Buckets are private. Every read goes through a short-lived signed URL minted
-// by the server for a caller it has already authorized.
-export function signedReadUrl(bucket: Bucket, key: string, expiresInSeconds = 120) {
-  return getSignedUrl(s3, new GetObjectCommand({ Bucket: BUCKETS[bucket], Key: key }), {
-    expiresIn: expiresInSeconds,
-  });
-}
+/*
+  Nothing signs a bucket URL any more.
+
+  Every user-supplied file is now read into memory and served through this
+  application's own origin, so the protections that live on our responses —
+  a pinned content type, nosniff, and a sandboxing policy — apply to all of
+  them. Handing a browser a signed URL put the file on the storage provider's
+  origin, outside all of that, and left a working link in the network tab for
+  as long as it had not expired.
+
+  If a signed URL is ever needed again, add it back deliberately rather than
+  finding it here and assuming it is safe to use.
+*/

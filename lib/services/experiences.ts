@@ -20,7 +20,7 @@ import { mechanicExists, pricingStats } from "../repositories/mechanic";
 import { writeAuditLog } from "../repositories/moderation";
 import { serviceExists } from "../repositories/taxonomy";
 import { vehicleBelongsTo } from "../repositories/vehicle";
-import { deleteObject, getObjectBytes, putObject, signedReadUrl } from "../storage/objects";
+import {deleteObject, getObjectBytes, putObject } from "../storage/objects";
 import { inspectReceipt, randomKey } from "../storage/files";
 import { toExperienceView } from "./dto";
 import { reconsiderListing } from "./shop-submissions";
@@ -319,21 +319,6 @@ export async function readReceiptForReview(experienceId: string, reviewerId: str
   });
 
   return { bytes, contentType };
-}
-
-export async function getReceiptViewUrl(experienceId: string, adminId: string) {
-  const receipt = await findReceiptForExperience(experienceId);
-  if (!receipt?.storageKey) throw notFound();
-
-  const url = await signedReadUrl("receipts", receipt.storageKey, 120);
-  await writeAuditLog({
-    actorId: adminId,
-    action: "receipt.viewed",
-    targetType: "MechanicExperience",
-    targetId: experienceId,
-  });
-
-  return { url, expiresInSeconds: 120 };
 }
 
 export async function decideReceiptVerification(params: {

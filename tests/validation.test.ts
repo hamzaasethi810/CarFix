@@ -134,12 +134,14 @@ describe("upload inspection", () => {
   });
 
   it("does not accept a PDF as a vehicle photo", async () => {
-    const pdf = [0x25, 0x50, 0x44, 0x46, 0x2d, 0x31];
+    // "%PDF-1" ... "%%EOF" — a PDF that does not close is refused as damaged.
+    const pdf = [...Buffer.from("%PDF-1.4 body %%EOF")];
     await expect(inspectImage(fakeFile(pdf, "x.pdf", "application/pdf"))).rejects.toThrow();
   });
 
   it("does accept a PDF as a receipt", async () => {
-    const pdf = [0x25, 0x50, 0x44, 0x46, 0x2d, 0x31];
+    // "%PDF-1" ... "%%EOF" — a PDF that does not close is refused as damaged.
+    const pdf = [...Buffer.from("%PDF-1.4 body %%EOF")];
     await expect(inspectReceipt(fakeFile(pdf, "x.pdf", "application/pdf"))).resolves.toMatchObject({
       mime: "application/pdf",
     });

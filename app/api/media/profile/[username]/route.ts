@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
 import { route } from "@/lib/api/handler";
 import { currentUser } from "@/lib/auth/guards";
 import { clientIdentifier, enforceRateLimit } from "@/lib/rate-limit";
-import { profilePhotoUrl } from "@/lib/services/media";
+import { profilePhotoBytes } from "@/lib/services/media";
+import { documentResponse } from "@/lib/api/document-response";
 
 type Params = { params: Promise<{ username: string }> };
 
@@ -12,6 +12,8 @@ export async function GET(req: Request, { params }: Params) {
     // Each call mints a signed storage URL, so it is not free to serve.
     await enforceRateLimit("read", clientIdentifier(req, user?.id));
     const { username } = await params;
-    return NextResponse.redirect(await profilePhotoUrl(username), 307);
+    const { bytes, contentType } = await profilePhotoBytes(username);
+    // Cached briefly: a profile photo is public content, unlike a receipt.
+    return documentResponse(bytes, contentType, { cacheControl: "private, max-age=300" });
   });
 }

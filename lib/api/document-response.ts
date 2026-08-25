@@ -22,7 +22,16 @@ const RENDERABLE = new Set([
   "application/pdf",
 ]);
 
-export function documentResponse(bytes: Uint8Array, contentType: string) {
+export function documentResponse(
+  bytes: Uint8Array,
+  contentType: string,
+  /*
+    Receipts must never be cached — they are meant to stop existing. A profile
+    photo is ordinary public content and re-fetching it on every render is
+    waste, so callers can opt into a short private cache.
+  */
+  options: { cacheControl?: string } = {},
+) {
   const safe = RENDERABLE.has(contentType);
 
   return new Response(bytes as BodyInit, {
@@ -36,7 +45,7 @@ export function documentResponse(bytes: Uint8Array, contentType: string) {
       "Content-Security-Policy":
         "default-src 'none'; img-src 'self' data:; object-src 'none'; sandbox",
       // Never cached anywhere: the file is meant to stop existing on decision.
-      "Cache-Control": "no-store, no-cache, must-revalidate, private",
+      "Cache-Control": options.cacheControl ?? "no-store, no-cache, must-revalidate, private",
       Pragma: "no-cache",
       "Referrer-Policy": "no-referrer",
     },

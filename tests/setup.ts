@@ -12,5 +12,13 @@ process.env.DATABASE_URL = process.env.TEST_DATABASE_URL;
 vi.mock("../lib/storage/objects", () => ({
   putObject: vi.fn(async () => undefined),
   deleteObject: vi.fn(async () => undefined),
-  signedReadUrl: vi.fn(async (_b: string, key: string) => `https://signed.invalid/${key}`),
+  /*
+    Files are read back through the app now rather than handed out as signed
+    bucket URLs, so the mock returns bytes. A one-pixel PNG stands in for
+    whatever was stored.
+  */
+  getObjectBytes: vi.fn(async () => ({
+    bytes: new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    contentType: "image/png",
+  })),
 }));
