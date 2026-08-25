@@ -63,9 +63,12 @@ export const validExperience = (over: Record<string, unknown> = {}) => ({
 export const fakeFile = (bytes: number[], name = "receipt.png", type = "image/png") =>
   new File([new Uint8Array(bytes)], name, { type });
 
-export const PNG_BYTES = Buffer.concat([
-  Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-  Buffer.from("IHDR-fixture"),
-  // Real PNGs close with IEND; uploads without it are refused.
-  Buffer.from([0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82]),
-]);
+/** A minimal but complete PNG: signature, a chunk, and the IEND terminator. */
+export const PNG_BYTES = [
+  ...Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    Buffer.from("IHDR-fixture"),
+    // Real PNGs close with IEND; an upload without it is refused as damaged.
+    Buffer.from([0x49, 0x45, 0x4e, 0x44, 0xae, 0x42, 0x60, 0x82]),
+  ]),
+];
