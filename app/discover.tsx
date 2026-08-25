@@ -209,7 +209,9 @@ export function Discover({
         params.set("lng", String(anchor.lng));
         params.set("radiusMiles", String(override?.radiusMiles ?? radiusMiles));
       }
-      params.set("limit", "50");
+      // High enough that a city-wide search shows every shop it found, rather
+      // than the nearest handful. The pins cluster, so density is not an issue.
+      params.set("limit", "500");
 
       const res = await fetch(`/api/mechanics?${params.toString()}`);
       const body = await res.json().catch(() => null);

@@ -120,7 +120,20 @@ export const mechanicSearchSchema = z
       .transform((v) => v === "true"),
     minRating: z.coerce.number().min(1).max(5).optional(),
     maxPrice: money.optional(),
-    limit: z.coerce.number().int().min(1).max(50).default(20),
+    /*
+      Map pins, not a page of text results.
+
+      This was capped at 50, which quietly truncated the map: an ordinary
+      search around a city centre matches several hundred shops, so the nearest
+      50 were drawn and the rest were simply absent. Anyone who added a shop
+      and then went looking for it found nothing unless it happened to be one
+      of the fifty closest.
+
+      The query filters by bounding box on an index before it measures any
+      distances, and the markers cluster once they are drawn, so a few hundred
+      rows costs little at either end.
+    */
+    limit: z.coerce.number().int().min(1).max(500).default(20),
     offset: z.coerce.number().int().min(0).max(10_000).default(0),
   })
   .strict()
