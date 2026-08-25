@@ -228,15 +228,19 @@ export function Discover({
 
   /*
     A sort is not a filter: changing it re-orders what is already on screen and
-    should not need the Search button pressed again. Skipped on first render so
-    the initial load does not fire two identical searches.
+    should not need the Search button pressed again.
+
+    It compares the previous sort value rather than tracking whether the effect
+    has run before. runSearch is rebuilt whenever the centre or radius changes,
+    which re-runs this effect for reasons that have nothing to do with sorting,
+    and a "have I run yet" flag also survives the remount React does in Strict
+    Mode. Between them that fired two extra searches on every page load — one
+    before the location was even known.
   */
-  const sortedOnce = useRef(false);
+  const lastSort = useRef(sort);
   useEffect(() => {
-    if (!sortedOnce.current) {
-      sortedOnce.current = true;
-      return;
-    }
+    if (lastSort.current === sort) return;
+    lastSort.current = sort;
     void runSearch();
   }, [sort, runSearch]);
 
