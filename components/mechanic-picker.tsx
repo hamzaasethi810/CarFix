@@ -216,6 +216,17 @@ export function MechanicPicker({
 /*
   A shop being created from inside another form.
 
+  Deliberately not a <form> element. This is rendered inside the caller's form
+  — the shop claim form and the new-report form both embed the picker — and a
+  form cannot contain another form. React refuses it outright, and a browser
+  parsing that markup drops the inner one, which leaves its fields belonging to
+  the outer form and Enter submitting a half-filled report.
+
+  So it is a group of fields with its own submit path: Enter is caught here and
+  never reaches the surrounding form, every button is type="button", and the
+  required checks are done in code because there is no form element to run
+  native validation for us.
+
   It writes through the same endpoint as the full "Add a shop" page, so the
   listing it produces is identical: geocoded from the address, pinned at the
   geocoded point rather than anything the browser supplied, and marked
@@ -230,10 +241,20 @@ function AddShopInline({
   onAdded: (s: Suggestion) => void;
   onCancel: () => void;
 }) {
+  const [fields, setFields] = useState({
+    name: initialName,
+    address: "",
+    city: "",
+    state: "",
+    zip: "",
+  });
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [duplicate, setDuplicate] = useState<{ id: string; name: string } | null>(null);
   const [payload, setPayload] = useState<Record<string, unknown> | null>(null);
+
+  const set = (k: keyof typeof fields) => (e: React.ChangeEvent<HTMLInputElement>) =>
+    setFields((f) => ({ ...f, [k]: e.target.value }));
 
   async function send(body: Record<string, unknown>) {
     setPending(true);
@@ -265,22 +286,35 @@ function AddShopInline({
     setError(data?.error?.message ?? "That shop could not be added.");
   }
 
-  function onSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    // Nested inside another form in the DOM sense would be invalid, so this
-    // reads its own fields rather than relying on form submission.
-    const f = new FormData(e.currentTarget);
-    const text = (k: string) => {
-      const v = String(f.get(k) ?? "").trim();
-      return v === "" ? null : v;
-    };
+  function submit() {
+    // No form element, so the required checks happen here.
+    const missing = (["name", "address", "city", "state"] as const).filter(
+      (k) => fields[k].trim() === "",
+    );
+    if (missing.length > 0) {
+      setError("Fill in the name, street address, town, and state.");
+      return;
+    }
+
     void send({
-      name: String(f.get("newName") ?? "").trim(),
-      address: String(f.get("newAddress") ?? "").trim(),
-      city: String(f.get("newCity") ?? "").trim(),
-      state: String(f.get("newState") ?? "").trim(),
-      zip: text("newZip"),
+      name: fields.name.trim(),
+      address: fields.address.trim(),
+      city: fields.city.trim(),
+      state: fields.state.trim(),
+      zip: fields.zip.trim() || null,
     });
+  }
+
+  /*
+    Enter has to be caught. Without a form of its own these inputs belong to
+    the surrounding one, so an unhandled Enter would submit the report the
+    person is still filling in.
+  */
+  function onKeyDown(e: React.KeyboardEvent) {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    e.stopPropagation();
+    if (!pending) submit();
   }
 
   const field =
@@ -288,7 +322,10 @@ function AddShopInline({
     "border border-separator placeholder:text-tertiary-label";
 
   return (
-    <div className="mt-2 rounded-control border border-separator bg-fill p-3 space-y-3">
+    <div
+      className="mt-2 rounded-control border border-separator bg-fill p-3 space-y-3"
+      onKeyDown={onKeyDown}
+    >
       <div>
         <h3 className="text-subhead font-semibold">Add this shop</h3>
         <p className="text-footnote text-secondary mt-0.5">
@@ -297,17 +334,17 @@ function AddShopInline({
       </div>
 
       <div className="space-y-2">
-        <input name="newName" defaultValue={initialName} required maxLength={200}
-          aria-label="Shop name" placeholder="Shop name" className={field} form="add-shop-inline" />
-        <input name="newAddress" required maxLength={200}
-          aria-label="Street address" placeholder="Street address" className={field} form="add-shop-inline" />
+        <input value={fields.name} onChange={set("name")} maxLength={200}
+          aria-label="Shop name" placeholder="Shop name" className={field} />
+        <input value={fields.address} onChange={set("address")} maxLength={200}
+          aria-label="Street address" placeholder="Street address" className={field} />
         <div className="grid grid-cols-3 gap-2">
-          <input name="newCity" required maxLength={100} aria-label="Town or city"
-            placeholder="Town" className={field} form="add-shop-inline" />
-          <input name="newState" required maxLength={100} aria-label="State or region"
-            placeholder="State" className={field} form="add-shop-inline" />
-          <input name="newZip" maxLength={20} aria-label="Postcode"
-            placeholder="Postcode" className={field} form="add-shop-inline" />
+          <input value={fields.city} onChange={set("city")} maxLength={100}
+            aria-label="Town or city" placeholder="Town" className={field} />
+          <input value={fields.state} onChange={set("state")} maxLength={100}
+            aria-label="State or region" placeholder="State" className={field} />
+          <input value={fields.zip} onChange={set("zip")} maxLength={20}
+            aria-label="Postcode" placeholder="Postcode" className={field} />
         </div>
       </div>
 
@@ -335,13 +372,7 @@ function AddShopInline({
       {error && <p role="alert" className="text-footnote text-destructive">{error}</p>}
 
       <div className="flex flex-wrap gap-2">
-        {/*
-          A separate form element, referenced by the inputs above, because this
-          control lives inside the caller's own form and nesting one form in
-          another is invalid HTML.
-        */}
-        <form id="add-shop-inline" onSubmit={onSubmit} className="contents" />
-        <button type="submit" form="add-shop-inline" disabled={pending}
+        <button type="button" onClick={submit} disabled={pending}
           className="inline-flex items-center min-h-11 px-4 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold disabled:opacity-50">
           {pending ? "Adding…" : "Add and select"}
         </button>
