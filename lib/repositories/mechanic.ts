@@ -13,13 +13,24 @@ export type MechanicSearchRow = {
   experienceCount: number;
   verifiedCount: number;
   avgRating: number | null;
-  medianPrice: number | null;
+  /** The lowest price this shop lists, for the filtered service if one is set. */
+  fromPrice: number | null;
   wouldReturnPct: number | null;
   /** True for a shop with an active subscription — the golden mark. */
   subscribed: boolean;
   /** False while a publicly submitted listing is still unconfirmed. */
   confirmed: boolean;
 };
+
+/*
+  How the results are ordered.
+
+  "relevant" is the only one that weighs several things at once, and the only
+  one where a subscribing shop is lifted. The explicit sorts are literal: if
+  someone asks for cheapest first, the cheapest is first, because a paid
+  placement dressed up as a price sort is a lie about the data.
+*/
+export type MechanicSort = "relevant" | "price" | "rating" | "distance";
 
 export type MechanicSearchParams = {
   serviceId?: string;
@@ -38,6 +49,7 @@ export type MechanicSearchParams = {
   subscribedOnly?: boolean;
   minRating?: number;
   maxPrice?: number;
+  sort?: MechanicSort;
   limit: number;
   offset: number;
 };
@@ -146,54 +158,125 @@ export async function searchMechanics(p: MechanicSearchParams) {
         })()
       : Prisma.empty;
 
+  /*
+    Vehicle and Generation are only needed when the search is narrowed by car.
+    Joining them regardless meant every search hashed the whole vehicle table
+    against every experience row for nothing.
+  */
+  const needsVehicleJoin = Boolean(
+    p.generationId || p.platformId || p.makeId || p.modelId || p.year !== undefined,
+  );
+  const vehicleJoins = needsVehicleJoin
+    ? Prisma.sql`
+        JOIN "Vehicle" v ON v.id = e."vehicleId"
+        JOIN "Generation" g ON g.id = v."generationId"`
+    : Prisma.empty;
+
+  /*
+    The shop's own asking price, for the service being filtered on if there is
+    one. This is what the price sort orders by — the figure the shop publishes,
+    not an average of what owners happened to report.
+  */
+  const priceScope = p.serviceId
+    ? Prisma.sql`AND sp."serviceId" = ${p.serviceId}`
+    : Prisma.empty;
+
+  const orderBy = (() => {
+    const distanceFirst = hasGeo
+      ? Prisma.sql`"distanceMiles" ASC NULLS LAST,`
+      : Prisma.empty;
+
+    switch (p.sort) {
+      case "price":
+        // A shop that publishes no price cannot be ranked by price, so it goes
+        // last rather than being treated as free.
+        return Prisma.sql`"fromPrice" ASC NULLS LAST, ${distanceFirst} "avgRating" DESC NULLS LAST`;
+      case "rating":
+        // Ties on rating break towards the shop with more reports behind it.
+        return Prisma.sql`"avgRating" DESC NULLS LAST, "experienceCount" DESC, ${distanceFirst} name ASC`;
+      case "distance":
+        return Prisma.sql`${distanceFirst} "experienceCount" DESC, "avgRating" DESC NULLS LAST`;
+      default:
+        /*
+          Relevance, which is the only ordering that reads the filters.
+
+          Shops that have actually been reported on for the chosen service rank
+          above shops that merely list it, because a report is evidence and a
+          specialty is a claim. Everything else being equal it prefers nearer,
+          better-evidenced, better-rated shops, and a subscribing shop is
+          lifted — here and nowhere else.
+        */
+        return Prisma.sql`
+          subscribed DESC,
+          "matchesFilter" DESC,
+          ${distanceFirst}
+          "experienceCount" DESC,
+          "avgRating" DESC NULLS LAST`;
+    }
+  })();
+
+  /** Whether this shop has reported work for the service asked about. */
+  const matchesFilter = p.serviceId
+    ? Prisma.sql`(COALESCE(s.experience_count, 0) > 0)`
+    : Prisma.sql`false`;
+
   const rows = await prisma.$queryRaw<MechanicSearchRow[]>(Prisma.sql`
-    WITH stats AS (
+    /*
+      Narrow to the shops in range FIRST, then aggregate only their reports.
+
+      The aggregate used to run across the whole experience table and every
+      shop in the database before the geography was applied, so a search of one
+      city paid for every report ever filed. Scoping it to the candidates keeps
+      the cost tied to the size of the area being looked at rather than the
+      size of the site.
+    */
+    WITH candidates AS (
+      SELECT
+        m.id, m.name, m.city, m.state, m.lat, m.lng,
+        (m."subscriptionStatus" = 'ACTIVE') AS subscribed,
+        (m."listingStatus" = 'CONFIRMED') AS confirmed,
+        ${distance} AS "distanceMiles"
+      FROM "Mechanic" m
+      WHERE m."deletedAt" IS NULL${boundingBox}${subscribedFilter}${serviceFilter}
+    ),
+    in_range AS (
+      SELECT * FROM candidates ${radiusFilter}
+    ),
+    stats AS (
       SELECT
         e."mechanicId" AS mechanic_id,
         COUNT(*)::int AS experience_count,
         COUNT(*) FILTER (WHERE e."verificationStatus" = 'VERIFIED')::int AS verified_count,
         AVG(e."overallRating")::float AS avg_rating,
-        PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY e."totalPrice")::float AS median_price,
         (COUNT(*) FILTER (WHERE e."wouldReturn")::float / NULLIF(COUNT(*), 0) * 100) AS would_return_pct
       FROM "MechanicExperience" e
-      JOIN "Vehicle" v ON v.id = e."vehicleId"
-      JOIN "Generation" g ON g.id = v."generationId"
+      JOIN in_range r ON r.id = e."mechanicId"
+      ${vehicleJoins}
       WHERE ${Prisma.join(expFilters, " AND ")}
       GROUP BY e."mechanicId"
       ${havingFilters.length ? Prisma.sql`HAVING ${Prisma.join(havingFilters, " AND ")}` : Prisma.empty}
     )
-    SELECT * FROM (
-      SELECT
-        m.id,
-        m.name,
-        m.city,
-        m.state,
-        m.lat,
-        m.lng,
-        (m."subscriptionStatus" = 'ACTIVE') AS subscribed,
-        (m."listingStatus" = 'CONFIRMED') AS confirmed,
-        ${distance} AS "distanceMiles",
-        COALESCE(s.experience_count, 0) AS "experienceCount",
-        COALESCE(s.verified_count, 0) AS "verifiedCount",
-        s.avg_rating AS "avgRating",
-        s.median_price AS "medianPrice",
-        s.would_return_pct AS "wouldReturnPct"
-      FROM "Mechanic" m
-      ${
-        // Any experience filter narrows the result set to mechanics that have
-        // matching work; with no filters, mechanics with no experiences still list.
-        hasExperienceFilter
-          ? Prisma.sql`JOIN stats s ON s.mechanic_id = m.id`
-          : Prisma.sql`LEFT JOIN stats s ON s.mechanic_id = m.id`
-      }
-      WHERE m."deletedAt" IS NULL${boundingBox}${subscribedFilter}${serviceFilter}
-    ) AS ranked
-    ${radiusFilter}
-    ORDER BY
-      subscribed DESC,
-      ${hasGeo ? Prisma.sql`"distanceMiles" ASC NULLS LAST,` : Prisma.empty}
-      "experienceCount" DESC,
-      "avgRating" DESC NULLS LAST
+    SELECT
+      r.id, r.name, r.city, r.state, r.lat, r.lng,
+      r.subscribed, r.confirmed, r."distanceMiles",
+      COALESCE(s.experience_count, 0) AS "experienceCount",
+      COALESCE(s.verified_count, 0) AS "verifiedCount",
+      s.avg_rating AS "avgRating",
+      price.from_price AS "fromPrice",
+      s.would_return_pct AS "wouldReturnPct",
+      ${matchesFilter} AS "matchesFilter"
+    FROM in_range r
+    ${
+      hasExperienceFilter
+        ? Prisma.sql`JOIN stats s ON s.mechanic_id = r.id`
+        : Prisma.sql`LEFT JOIN stats s ON s.mechanic_id = r.id`
+    }
+    LEFT JOIN LATERAL (
+      SELECT MIN(sp."minPrice") AS from_price
+      FROM "ShopServicePrice" sp
+      WHERE sp."mechanicId" = r.id ${priceScope}
+    ) price ON true
+    ORDER BY ${orderBy}
     LIMIT ${p.limit} OFFSET ${p.offset}
   `);
 

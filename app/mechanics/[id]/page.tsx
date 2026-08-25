@@ -63,7 +63,23 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
           value={String(mechanic.experienceCount)}
           hint={`${mechanic.verifiedCount} verified`}
         />
-        <Stat label="Owner-reported median" value={money(pricing.median)} hint={pricing.label} />
+        {/*
+          The reported range, not a median. A median needs a decent number of
+          reports before it means anything, and on a shop with three it reads
+          as a precise figure while being nearly noise. A range says what was
+          actually seen without implying more than the data supports.
+        */}
+        <Stat
+          label="Reported prices"
+          value={
+            pricing.min === null || pricing.max === null
+              ? "—"
+              : pricing.min === pricing.max
+                ? money(pricing.min)
+                : `${money(pricing.min)}–${money(pricing.max)}`
+          }
+          hint={pricing.label}
+        />
         <Card>
           <p className="text-footnote text-secondary uppercase tracking-wide">Specialties</p>
           <p className="text-subhead mt-2">

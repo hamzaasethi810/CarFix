@@ -15,7 +15,7 @@ export type MapMechanic = {
   experienceCount: number;
   verifiedCount: number;
   avgRating: number | null;
-  medianPrice: number | null;
+  fromPrice: number | null;
 };
 
 /*

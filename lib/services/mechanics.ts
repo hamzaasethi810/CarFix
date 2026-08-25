@@ -33,11 +33,12 @@ export async function search(params: MechanicSearchParams) {
       experienceCount: r.experienceCount,
       verifiedCount: r.verifiedCount,
       avgRating: r.avgRating === null ? null : Math.round(r.avgRating * 10) / 10,
-      medianPrice: r.medianPrice === null ? null : Math.round(r.medianPrice),
+      fromPrice: r.fromPrice === null ? null : Math.round(r.fromPrice),
       wouldReturnPct: r.wouldReturnPct === null ? null : Math.round(r.wouldReturnPct),
       subscribed: r.subscribed,
       confirmed: r.confirmed,
     })),
+    sort: params.sort,
     limit: params.limit,
     offset: params.offset,
   };

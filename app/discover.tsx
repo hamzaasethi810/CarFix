@@ -54,6 +54,7 @@ export function Discover({
   const [serviceId, setServiceId] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [subscribedOnly, setSubscribedOnly] = useState(false);
+  const [sort, setSort] = useState<"relevant" | "price" | "rating" | "distance">("relevant");
 
   const [results, setResults] = useState<Result[]>(initial);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -211,6 +212,7 @@ export function Discover({
       }
       // High enough that a city-wide search shows every shop it found, rather
       // than the nearest handful. The pins cluster, so density is not an issue.
+      params.set("sort", sort);
       params.set("limit", "500");
 
       const res = await fetch(`/api/mechanics?${params.toString()}`);
@@ -221,8 +223,22 @@ export function Discover({
       setSelectedId(null);
       setPanelOpen(true);
     },
-    [serviceId, makeId, modelId, genValue, verifiedOnly, subscribedOnly, center, radiusMiles],
+    [serviceId, makeId, modelId, genValue, verifiedOnly, subscribedOnly, sort, center, radiusMiles],
   );
+
+  /*
+    A sort is not a filter: changing it re-orders what is already on screen and
+    should not need the Search button pressed again. Skipped on first render so
+    the initial load does not fire two identical searches.
+  */
+  const sortedOnce = useRef(false);
+  useEffect(() => {
+    if (!sortedOnce.current) {
+      sortedOnce.current = true;
+      return;
+    }
+    void runSearch();
+  }, [sort, runSearch]);
 
   /*
     Ask once on load. Permission may be denied or unavailable, so this only
@@ -416,6 +432,22 @@ export function Discover({
                   Gold shops
                 </button>
 
+                <label className="inline-flex items-center gap-2">
+                  <span className="text-footnote text-secondary">Sort</span>
+                  <select
+                    value={sort}
+                    onChange={(e) => setSort(e.target.value as typeof sort)}
+                    aria-label="Sort results"
+                    className="min-h-11 rounded-full bg-black/[0.06] px-4 pr-8 text-subhead font-medium"
+                  >
+                    {/* Relevance is the only one that reads the filters. */}
+                    <option value="relevant">Most relevant</option>
+                    <option value="price">Price, lowest first</option>
+                    <option value="rating">Best reviewed</option>
+                    <option value="distance">Nearest first</option>
+                  </select>
+                </label>
+
                 <span className="flex-1" />
 
                 {/* The one primary action in this context gets the colour. */}
@@ -574,7 +606,7 @@ export function Discover({
                       {m.verifiedCount > 0 && (
                         <span className="text-success"> · {m.verifiedCount} verified</span>
                       )}
-                      {m.medianPrice !== null && ` · median ${money(m.medianPrice)}`}
+                      {m.fromPrice !== null && ` · from ${money(m.fromPrice)}`}
                     </span>
                   </button>
                 </li>
@@ -645,7 +677,7 @@ export function Discover({
               <dl className="mt-3 grid grid-cols-3 gap-2 text-center">
                 <Stat label="Rating" value={selected.avgRating !== null ? `${selected.avgRating}` : "—"} />
                 <Stat label="Reports" value={num(selected.experienceCount)} />
-                <Stat label="Median" value={money(selected.medianPrice)} />
+                <Stat label="From" value={money(selected.fromPrice)} />
               </dl>
 
               <Link

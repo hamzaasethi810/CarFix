@@ -121,6 +121,12 @@ export const mechanicSearchSchema = z
     minRating: z.coerce.number().min(1).max(5).optional(),
     maxPrice: money.optional(),
     /*
+      How to order. "relevant" is the only one that weighs the filters and the
+      only one that lifts a subscribing shop; the rest are literal, because a
+      paid placement dressed as a price sort misreports the data.
+    */
+    sort: z.enum(["relevant", "price", "rating", "distance"]).default("relevant"),
+    /*
       Map pins, not a page of text results.
 
       This was capped at 50, which quietly truncated the map: an ordinary
