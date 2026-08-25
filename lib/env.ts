@@ -41,5 +41,28 @@ const serverEnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 
-export const env = serverEnvSchema.parse(process.env);
+/*
+  Vercel's marketplace integrations inject their own variable names, and they
+  do not all match the ones this app was written against.
+
+  Upstash for Redis arrives as KV_REST_API_URL and KV_REST_API_TOKEN. Nothing
+  fails when those go unrecognised — rate limiting simply falls back to
+  counting inside a single process, which on serverless means every instance
+  counts separately and brute-force protection quietly stops working. A silent
+  downgrade of a security control is the worst possible failure mode, so the
+  provider's names are accepted directly rather than relying on somebody
+  remembering to copy them across by hand.
+
+  Neon does inject DATABASE_URL, so that one needs no help; the unpooled
+  variant is mapped through because migrations want a direct connection rather
+  than the pooler.
+*/
+const withVercelAliases = (raw: NodeJS.ProcessEnv) => ({
+  ...raw,
+  UPSTASH_REDIS_REST_URL: raw.UPSTASH_REDIS_REST_URL || raw.KV_REST_API_URL,
+  UPSTASH_REDIS_REST_TOKEN: raw.UPSTASH_REDIS_REST_TOKEN || raw.KV_REST_API_TOKEN,
+  MIGRATE_DATABASE_URL: raw.MIGRATE_DATABASE_URL || raw.DATABASE_URL_UNPOOLED,
+});
+
+export const env = serverEnvSchema.parse(withVercelAliases(process.env));
 export const isProd = env.NODE_ENV === "production";
