@@ -15,7 +15,7 @@ export const metadata = {
 */
 export default function ReceiptPolicyPage() {
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <PageTitle
         title="What happens to your receipt"
         subtitle="Short version: we look at it once, then it is gone."

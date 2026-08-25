@@ -33,7 +33,7 @@ export default async function ExperiencePage({ params }: { params: Promise<{ id:
   ]);
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <PageTitle
         title={`${e.service.name} — ${money(e.totalPrice)}`}
         subtitle={`${e.vehicle.year} ${e.vehicle.make} ${e.vehicle.model} ${e.vehicle.generation}`}

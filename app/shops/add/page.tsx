@@ -8,7 +8,7 @@ export default async function AddShopPage() {
   if (!user) redirect("/login");
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-xl mx-auto">
       <PageTitle
         title="Add a shop"
         subtitle="For places the map does not know about yet."

@@ -32,7 +32,7 @@ export default async function SetupTwoFactorPage() {
 
   if (status.enabled) {
     return (
-      <div className="max-w-xl">
+      <div className="max-w-xl mx-auto">
         <PageTitle
           title="You're all set"
           subtitle="Two-factor authentication is on for this account."
@@ -52,7 +52,7 @@ export default async function SetupTwoFactorPage() {
   }
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-xl mx-auto">
       <PageTitle
         title="Set up your authenticator"
         subtitle="Your account has been granted review access. One more step."

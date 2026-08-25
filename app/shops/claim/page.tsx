@@ -8,7 +8,7 @@ export default async function ClaimShopPage() {
   if (!user) redirect("/login");
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-xl mx-auto">
       <PageTitle
         title="Claim your shop"
         subtitle="Find your listing, then show us you trade under that name."

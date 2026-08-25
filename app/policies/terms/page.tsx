@@ -18,7 +18,7 @@ export const metadata: Metadata = {
 */
 export default function TermsPage() {
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <PageTitle
         title="Terms and ground rules"
         subtitle="The short version: this is owners reporting their own experiences, and we do not vouch for any of it."

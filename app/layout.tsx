@@ -26,7 +26,13 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
   return (
     <html lang="en" className="h-full">
-      <body className="min-h-full flex flex-col">
+      {/*
+        The grouped tone (#f5f5f7) rather than pure white. White cards need
+        something marginally darker behind them or they do not read as cards at
+        all — which is why every panel looked like plain text on a page. The
+        map route paints its own full-bleed background over this.
+      */}
+      <body className="min-h-full flex flex-col bg-grouped">
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:z-100 focus:m-3 focus:rounded-control focus:bg-elevated focus:px-4 focus:py-3 focus:shadow-raised"

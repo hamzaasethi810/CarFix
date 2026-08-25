@@ -11,7 +11,7 @@ export default async function SecurityPage() {
   const status = await getMfaStatus(user.id);
 
   return (
-    <div className="max-w-xl">
+    <div className="max-w-xl mx-auto">
       <PageTitle title="Security" subtitle="Protect your account with a second factor." />
       <MfaPanel initial={status} />
     </div>

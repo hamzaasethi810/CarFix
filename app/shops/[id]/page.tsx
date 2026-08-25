@@ -32,7 +32,7 @@ export default async function ShopAdminPage({ params }: { params: Promise<{ id: 
   ]);
 
   return (
-    <div className="max-w-3xl space-y-4">
+    <div className="max-w-3xl mx-auto space-y-4">
       <PageTitle title={shop.name} subtitle={owned.place || "Your shop"} />
 
       <SubscriptionPanel

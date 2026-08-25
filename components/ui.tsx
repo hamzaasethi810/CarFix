@@ -12,10 +12,47 @@ export function Card({ children, className = "" }: { children: ReactNode; classN
 
 export function PageTitle({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
-    <div className="mb-6">
-      <h1 className="text-large-title font-bold">{title}</h1>
-      {subtitle && <p className="text-secondary text-callout mt-1">{subtitle}</p>}
+    /*
+      title1 rather than large-title. Every page opening at the largest size in
+      the scale means nothing on the page is ever bigger than anything else,
+      which is the opposite of hierarchy — the size stops meaning "important"
+      and starts meaning "a page happened".
+    */
+    <div className="mb-6 sm:mb-8">
+      <h1 className="text-title1 font-bold tracking-tight text-balance">{title}</h1>
+      {subtitle && (
+        <p className="text-secondary text-callout mt-1.5 max-w-prose text-pretty">{subtitle}</p>
+      )}
     </div>
+  );
+}
+
+/*
+  A single figure with its label.
+
+  Sentence case, not upper case. Shouting a label does not make it more
+  important — weight and size already carry the hierarchy, and setting every
+  label in capitals flattens it while making the words harder to scan.
+
+  There were two copies of this, one per page, drifting apart in size and
+  colour. One definition keeps the figures looking like they belong to the
+  same product.
+*/
+export function Stat({
+  label,
+  value,
+  hint,
+}: {
+  label: string;
+  value: string;
+  hint?: string;
+}) {
+  return (
+    <Card>
+      <p className="text-footnote text-secondary">{label}</p>
+      <p className="text-title2 font-semibold mt-0.5 tabular-nums tracking-tight">{value}</p>
+      {hint && <p className="text-footnote text-secondary mt-1">{hint}</p>}
+    </Card>
   );
 }
 

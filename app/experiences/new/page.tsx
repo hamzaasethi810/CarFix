@@ -23,7 +23,7 @@ export default async function NewExperiencePage() {
   }
 
   return (
-    <div className="max-w-2xl">
+    <div className="max-w-2xl mx-auto">
       <PageTitle
         title="Log a service"
         subtitle="Report what you paid and how it went. A receipt is optional."

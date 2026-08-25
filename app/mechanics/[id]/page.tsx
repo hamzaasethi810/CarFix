@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { Card, EmptyState, SectionTitle, money } from "@/components/ui";
+import { Card, EmptyState, SectionTitle, Stat, money } from "@/components/ui";
 import { ExperienceCard } from "@/components/experience-card";
 import { currentUser } from "@/lib/auth/guards";
 import { getMechanic } from "@/lib/services/mechanics";
@@ -7,16 +7,6 @@ import { browseExperiences, getPricing } from "@/lib/services/experiences";
 import { AppError } from "@/lib/errors";
 import { getShopPrices } from "@/lib/services/shops";
 import { GoldCar } from "@/app/shops/[id]/subscription-panel";
-
-function Stat({ label, value, hint }: { label: string; value: string; hint?: string }) {
-  return (
-    <Card>
-      <p className="text-footnote text-secondary uppercase tracking-wide">{label}</p>
-      <p className="text-title1 font-semibold mt-1 tabular-nums">{value}</p>
-      {hint && <p className="text-footnote text-secondary mt-1">{hint}</p>}
-    </Card>
-  );
-}
 
 export default async function MechanicPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -57,6 +47,17 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
         </Card>
       )}
 
+      {/*
+        A description belongs with the name it describes. Sitting between the
+        figures and the contact card it read as a stray sentence nobody had
+        found a home for.
+      */}
+      {mechanic.description && (
+        <p className="-mt-2 mb-5 text-body text-secondary text-pretty max-w-prose">
+          {mechanic.description}
+        </p>
+      )}
+
       <div className="grid gap-3 sm:grid-cols-3">
         <Stat
           label="Experiences"
@@ -73,30 +74,51 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
           label="Reported prices"
           value={
             pricing.min === null || pricing.max === null
-              ? "—"
+              ? "None yet"
               : pricing.min === pricing.max
                 ? money(pricing.min)
                 : `${money(pricing.min)}–${money(pricing.max)}`
           }
           hint={pricing.label}
         />
+        {/*
+          Sits beside the two figures, so it matches their label treatment.
+          Chips rather than a comma list: these are the things somebody scans
+          for, and a run-on sentence is the hardest shape to scan.
+        */}
         <Card>
-          <p className="text-footnote text-secondary uppercase tracking-wide">Specialties</p>
-          <p className="text-subhead mt-2">
-            {mechanic.specialties.length
-              ? mechanic.specialties.map((s) => s.name).join(", ")
-              : "Not listed"}
-          </p>
+          <p className="text-footnote text-secondary">Specialties</p>
+          {mechanic.specialties.length ? (
+            <ul className="flex flex-wrap gap-1.5 mt-2">
+              {mechanic.specialties.map((sp) => (
+                <li
+                  key={sp.id ?? sp.name}
+                  className="rounded-full bg-fill px-2.5 py-1 text-footnote font-medium"
+                >
+                  {sp.name}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-subhead text-secondary mt-2">Not listed</p>
+          )}
         </Card>
       </div>
 
-      {mechanic.description && <p className="mt-6 text-body text-pretty">{mechanic.description}</p>}
 
       <Card className="mt-6">
         <h2 className="text-headline font-semibold mb-3">Contact</h2>
         <address className="not-italic text-subhead text-secondary space-y-2">
           <p>
-            {mechanic.address}, {mechanic.city}, {mechanic.state} {mechanic.zip}
+            {/*
+              Joined rather than punctuated by hand: an ingested listing can be
+              missing a town or a state, and hard-coded commas rendered that as
+              "Address not listed, ,".
+            */}
+            {[mechanic.address, mechanic.city, [mechanic.state, mechanic.zip].filter(Boolean).join(" ")]
+              .map((part) => part?.trim())
+              .filter(Boolean)
+              .join(", ") || "Address not listed"}
           </p>
           {mechanic.phone && (
             <p>
