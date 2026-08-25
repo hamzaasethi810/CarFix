@@ -14,15 +14,23 @@ export type Area = { label: string; lat: number; lng: number; suggestedRadiusMil
 export function AreaPicker({
   current,
   onChoose,
+  onOpenChange,
 }: {
   current: string | null;
   onChoose: (area: Area) => void;
+  /** Lets the page move things out of the way while this is open. */
+  onOpenChange?: (open: boolean) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Area[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Announced rather than inferred, so the page never has to guess.
+  useEffect(() => {
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
   const popRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 

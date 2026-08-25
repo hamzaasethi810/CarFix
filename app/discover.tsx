@@ -66,7 +66,20 @@ export function Discover({
     gesture that is the only route to something is a gesture most people never
     find, and no route at all for anyone using a keyboard.
   */
-  const [panelStowed, setPanelStowed] = useState(false);
+  const [manuallyStowed, setManuallyStowed] = useState(false);
+
+  /*
+    How many of the filter menus are open. They overlay the shop list, so the
+    list steps aside while one is showing and comes straight back when it
+    closes — the person does not have to move it themselves to read a menu.
+  */
+  const [openMenus, setOpenMenus] = useState(0);
+  const noteMenu = useCallback((open: boolean) => {
+    setOpenMenus((n) => Math.max(0, n + (open ? 1 : -1)));
+  }, []);
+
+  // Either reason stows it; a menu closing only undoes the menu's own stow.
+  const panelStowed = manuallyStowed || openMenus > 0;
   /** Live finger/pointer offset mid-drag; null when not dragging. */
   const [dragOffset, setDragOffset] = useState<number | null>(null);
   const dragStartX = useRef<number | null>(null);
@@ -93,7 +106,7 @@ export function Discover({
     const dx = e.clientX - dragStartX.current;
     dragStartX.current = null;
     setDragOffset(null);
-    if (dx < -STOW_THRESHOLD) setPanelStowed(true);
+    if (dx < -STOW_THRESHOLD) setManuallyStowed(true);
   }
   const listRef = useRef<HTMLUListElement>(null);
 
@@ -346,7 +359,7 @@ export function Discover({
                 </select>
               </label>
 
-              <ServicePicker value={serviceId} onChange={setServiceId} />
+              <ServicePicker value={serviceId} onChange={setServiceId} onOpenChange={noteMenu} />
 
               <label className="block">
                 <span className="block text-footnote font-medium mb-1">
@@ -368,7 +381,7 @@ export function Discover({
               </label>
 
               <div className="sm:col-span-2 lg:col-span-5 flex flex-wrap items-center gap-3 pt-1">
-                <AreaPicker current={areaLabel} onChoose={chooseArea} />
+                <AreaPicker current={areaLabel} onChoose={chooseArea} onOpenChange={noteMenu} />
 
                 {/* Verified reads as a toggle chip rather than a bare checkbox. */}
                 <button
@@ -460,7 +473,7 @@ export function Discover({
             {/* The tap-and-keyboard equivalent of dragging it away. */}
             <button
               type="button"
-              onClick={() => setPanelStowed(true)}
+              onClick={() => setManuallyStowed(true)}
               className="absolute right-2 top-2 hidden sm:grid size-9 place-items-center rounded-full text-secondary hover:text-label hover:bg-black/[0.06]"
               aria-label="Move the shop list aside"
             >
@@ -573,14 +586,30 @@ export function Discover({
             so stowing has a button as well as a drag, and this tab is a real
             focusable control rather than a hit area on the map.
           */}
+          {/*
+            The edge the list went behind. Clicking it also counts as a click
+            outside the menus, so they close on their own and the list returns
+            without needing to be told twice.
+          */}
           {panelStowed && (
             <button
               type="button"
-              onClick={() => setPanelStowed(false)}
-              className="pointer-events-auto self-start mt-2 ml-0 glass rounded-r-glass h-14 w-9 grid place-items-center text-secondary hover:text-label shadow-sm"
+              onClick={() => setManuallyStowed(false)}
+              /*
+                Grey mixed from --label rather than hardcoded, so it tracks the
+                palette if the ink colour is ever retuned. The app is light-only
+                today, so this is about staying in the token system, not about
+                dark mode.
+              */
+              className="pointer-events-auto absolute left-0 top-0 bottom-0 w-8 sm:w-9 grid place-items-center
+                bg-[color-mix(in_srgb,var(--label)_14%,transparent)]
+                hover:bg-[color-mix(in_srgb,var(--label)_22%,transparent)]
+                backdrop-blur-md border-r border-separator
+                text-label motion-safe:transition-colors"
               aria-label={`Show the shop list (${visible.length} ${visible.length === 1 ? "shop" : "shops"})`}
             >
-              <span aria-hidden="true" className="text-headline">&rsaquo;</span>
+              {/* Big enough to read as a control at a glance. */}
+              <span aria-hidden="true" className="text-title3 leading-none font-semibold">&rsaquo;</span>
             </button>
           )}
         </div>

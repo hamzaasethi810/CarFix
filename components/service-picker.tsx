@@ -19,11 +19,14 @@ export type ServiceOption = { id: string; name: string; category: string };
 export function ServicePicker({
   value,
   onChange,
+  onOpenChange,
   label = "Service",
   anyLabel = "Any service",
 }: {
   value: string;
   onChange: (id: string) => void;
+  /** Lets the page move things out of the way while this is open. */
+  onOpenChange?: (open: boolean) => void;
   label?: string;
   anyLabel?: string;
 }) {
@@ -33,6 +36,10 @@ export function ServicePicker({
   const [all, setAll] = useState<ServiceOption[]>([]);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    onOpenChange?.(open);
+  }, [open, onOpenChange]);
   const [active, setActive] = useState(-1);
   const boxRef = useRef<HTMLDivElement>(null);
 
