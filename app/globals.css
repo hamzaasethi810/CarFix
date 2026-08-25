@@ -34,9 +34,15 @@
     Interactive blue, darkened to clear 4.5:1 as link text on white and behind
     white button text. Apple's #007AFF is 4.02:1 on white and fails that bar.
   */
-  --accent: #006be0;
-  --accent-fill: #006be0;
-  --accent-hover: #0059bb;
+  /*
+    Forest green, matching the car in the mark. Every button draws from these,
+    so there is one accent in the product rather than a blue that had nothing
+    to do with the brand sitting next to a green logo.
+    #1E5631 on white is about 8:1, comfortably past the 4.5:1 minimum.
+  */
+  --accent: #1E5631;
+  --accent-fill: #1E5631;
+  --accent-hover: #163F24;
   --on-accent: #ffffff;
 
   --destructive: #d70015;
@@ -90,8 +96,8 @@
     --label-secondary: rgba(29, 29, 31, 0.92);
     --label-tertiary: rgba(29, 29, 31, 0.78);
     --separator: rgba(0, 0, 0, 0.32);
-    --accent: #0040dd;
-    --accent-fill: #0040dd;
+    --accent: #2E7D4F;
+    --accent-fill: #2E7D4F;
     --destructive: #a20009;
     --success: #17651f;
     /* Glass becomes near-opaque so text never fights the background. */

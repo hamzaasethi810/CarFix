@@ -81,7 +81,7 @@ export function Engagement({
             type="button"
             onClick={toggle}
             aria-pressed={vote.voted}
-            className={`inline-flex items-center gap-2 min-h-11 px-4 rounded-full text-subhead font-medium transition-colors duration-150 ${
+            className={`inline-flex items-center gap-2 min-h-11 px-4 rounded-control text-subhead font-medium transition-colors duration-150 ${
               vote.voted ? "bg-accent-fill/12 text-accent" : "bg-black/[0.06] text-secondary hover:bg-black/10"
             }`}
           >

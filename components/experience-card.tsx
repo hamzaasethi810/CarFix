@@ -37,7 +37,7 @@ export function ExperienceCard({
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <span className="text-subhead font-medium rounded-full bg-fill px-2.5 py-1">
+        <span className="text-subhead font-medium rounded-control bg-fill px-2.5 py-1">
           {e.service.name}
         </span>
         <span className="text-title3 font-semibold tabular-nums">{money(e.totalPrice)}</span>

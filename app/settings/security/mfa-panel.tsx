@@ -165,7 +165,7 @@ export function MfaPanel({ initial }: { initial: Status }) {
           </p>
         </div>
         {status.enabled && (
-          <span className="text-footnote font-medium rounded-full px-2.5 py-1 bg-[color-mix(in_srgb,var(--success)_12%,transparent)] text-success">
+          <span className="text-footnote font-medium rounded-control px-2.5 py-1 bg-[color-mix(in_srgb,var(--success)_12%,transparent)] text-success">
             ✓ On
           </span>
         )}
@@ -220,7 +220,7 @@ export function MfaPanel({ initial }: { initial: Status }) {
             <button
               type="submit"
               disabled={pending}
-              className="inline-flex items-center min-h-11 px-4 rounded-full bg-transparent text-destructive text-headline font-semibold hover:bg-[color-mix(in_srgb,var(--destructive)_8%,transparent)]"
+              className="inline-flex items-center min-h-11 px-4 rounded-control bg-transparent text-destructive text-headline font-semibold hover:bg-[color-mix(in_srgb,var(--destructive)_8%,transparent)]"
             >
               {pending ? "Working…" : "Turn off two-factor"}
             </button>

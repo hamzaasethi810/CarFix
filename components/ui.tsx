@@ -108,11 +108,11 @@ export function Stars({ value }: { value: number }) {
 */
 export function VerifiedBadge({ verified }: { verified: boolean }) {
   return verified ? (
-    <span className="inline-flex items-center gap-1 text-footnote font-medium rounded-full px-2 py-1 text-success bg-[color-mix(in_srgb,var(--success)_12%,transparent)]">
+    <span className="inline-flex items-center gap-1 text-footnote font-medium rounded-control px-2 py-1 text-success bg-[color-mix(in_srgb,var(--success)_12%,transparent)]">
       <span aria-hidden="true">✓</span> Verified
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1 text-footnote font-medium rounded-full px-2 py-1 text-secondary bg-fill">
+    <span className="inline-flex items-center gap-1 text-footnote font-medium rounded-control px-2 py-1 text-secondary bg-fill">
       <span aria-hidden="true">○</span> Unverified
     </span>
   );

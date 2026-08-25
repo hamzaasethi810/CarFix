@@ -65,7 +65,7 @@ export function SubscriptionPanel({
         </div>
 
         {active && (
-          <span className="inline-flex items-center gap-1.5 text-footnote font-semibold rounded-full px-3 py-1.5 bg-[color-mix(in_srgb,#b8860b_15%,transparent)] text-[#8a6508]">
+          <span className="inline-flex items-center gap-1.5 text-footnote font-semibold rounded-control px-3 py-1.5 bg-[color-mix(in_srgb,#b8860b_15%,transparent)] text-[#8a6508]">
             <GoldCar className="size-4" /> Subscribed
           </span>
         )}
@@ -93,7 +93,7 @@ export function SubscriptionPanel({
                 type="button"
                 onClick={() => go("manage")}
                 disabled={pending !== null}
-                className="inline-flex items-center justify-center min-h-11 px-4 rounded-full bg-transparent text-destructive text-headline font-semibold hover:bg-[color-mix(in_srgb,var(--destructive)_8%,transparent)] transition-colors duration-150 disabled:opacity-50"
+                className="inline-flex items-center justify-center min-h-11 px-4 rounded-control bg-transparent text-destructive text-headline font-semibold hover:bg-[color-mix(in_srgb,var(--destructive)_8%,transparent)] transition-colors duration-150 disabled:opacity-50"
               >
                 {pending === "manage" ? "Opening…" : "Cancel subscription"}
               </button>
@@ -106,7 +106,7 @@ export function SubscriptionPanel({
               type="button"
               onClick={() => go("subscribe")}
               disabled={pending !== null}
-              className="inline-flex items-center justify-center min-h-11 px-6 rounded-full bg-accent-fill text-on-accent text-headline font-semibold hover:bg-accent-hover transition-colors duration-150 disabled:opacity-50"
+              className="inline-flex items-center justify-center min-h-11 px-6 rounded-control bg-accent-fill text-on-accent text-headline font-semibold hover:bg-accent-hover transition-colors duration-150 disabled:opacity-50"
             >
               {pending === "subscribe" ? "Opening…" : "Subscribe"}
             </button>

@@ -28,8 +28,12 @@ export function SiteHeader({
           href="/"
           className="inline-flex items-center gap-2 min-h-11 pr-2 sm:pr-4 text-title3 font-bold tracking-tight"
         >
-          <GaariMark className="h-7 w-auto shrink-0" />
-          <span>Gaari</span>
+          {/*
+            The mark alone. It has the name on its plate, so setting the word
+            beside it would say the same thing twice.
+          */}
+          <GaariMark className="h-9 w-auto shrink-0" />
+          <span className="sr-only">Gaari</span>
         </Link>
 
         {isAuthed && (

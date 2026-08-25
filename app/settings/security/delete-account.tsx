@@ -56,7 +56,7 @@ export function DeleteAccount() {
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="inline-flex items-center min-h-11 px-4 rounded-full text-destructive text-subhead font-semibold hover:bg-[color-mix(in_srgb,var(--destructive)_8%,transparent)]"
+            className="inline-flex items-center min-h-11 px-4 rounded-control text-destructive text-subhead font-semibold hover:bg-[color-mix(in_srgb,var(--destructive)_8%,transparent)]"
           >
             Delete my account
           </button>
@@ -85,7 +85,7 @@ export function DeleteAccount() {
                 type="button"
                 onClick={remove}
                 disabled={pending || confirm !== "DELETE"}
-                className="inline-flex items-center min-h-11 px-5 rounded-full bg-destructive text-white text-subhead font-semibold disabled:opacity-40"
+                className="inline-flex items-center min-h-11 px-5 rounded-control bg-destructive text-white text-subhead font-semibold disabled:opacity-40"
               >
                 {pending ? "Deleting…" : "Delete permanently"}
               </button>
@@ -97,7 +97,7 @@ export function DeleteAccount() {
                   setError(null);
                 }}
                 disabled={pending}
-                className="inline-flex items-center min-h-11 px-5 rounded-full bg-fill text-accent text-subhead font-semibold"
+                className="inline-flex items-center min-h-11 px-5 rounded-control bg-fill text-accent text-subhead font-semibold"
               >
                 Keep my account
               </button>

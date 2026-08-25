@@ -93,7 +93,7 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
               {mechanic.specialties.map((sp) => (
                 <li
                   key={sp.id ?? sp.name}
-                  className="rounded-full bg-fill px-2.5 py-1 text-footnote font-medium"
+                  className="rounded-control bg-fill px-2.5 py-1 text-footnote font-medium"
                 >
                   {sp.name}
                 </li>

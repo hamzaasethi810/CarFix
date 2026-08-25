@@ -1,7 +1,7 @@
 import { Card, PageTitle } from "@/components/ui";
 
 export const metadata = {
-  title: "How we handle receipts and documents — Gaari",
+  title: "How we handle receipts and documents",
   description:
     "Receipts and business documents are deleted the moment a decision is made. Reviewers have 120 seconds to look.",
 };

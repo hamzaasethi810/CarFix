@@ -527,7 +527,7 @@ export function Discover({
             >
               {/* Says the panel moves, and gives the thumb something to aim at. */}
               <div className="col-span-2 lg:col-span-5 -mt-1 mb-0.5 flex justify-center">
-                <span aria-hidden="true" className="h-1 w-9 rounded-full bg-black/15" />
+                <span aria-hidden="true" className="h-1 w-9 rounded-control bg-black/15" />
               </div>
 
               <Picker label="Make" value={makeId} onChange={chooseMake} options={makes} anyLabel="Any make" />
@@ -598,7 +598,7 @@ export function Discover({
                   role="switch"
                   aria-checked={verifiedOnly}
                   onClick={() => setVerifiedOnly((v) => !v)}
-                  className={`inline-flex items-center gap-2 min-h-11 px-4 rounded-full text-subhead font-medium transition-colors duration-150 ${
+                  className={`inline-flex items-center gap-2 min-h-11 px-4 rounded-control text-subhead font-medium transition-colors duration-150 ${
                     verifiedOnly
                       ? "bg-success/15 text-success"
                       : "bg-black/[0.06] text-secondary hover:bg-black/10"
@@ -613,7 +613,7 @@ export function Discover({
                   role="switch"
                   aria-checked={subscribedOnly}
                   onClick={() => setSubscribedOnly((v) => !v)}
-                  className={`inline-flex items-center gap-2 min-h-11 px-4 rounded-full text-subhead font-medium transition-colors duration-150 ${
+                  className={`inline-flex items-center gap-2 min-h-11 px-4 rounded-control text-subhead font-medium transition-colors duration-150 ${
                     subscribedOnly
                       ? "bg-[color-mix(in_srgb,#b8860b_18%,transparent)] text-[#8a6508]"
                       : "bg-black/[0.06] text-secondary hover:bg-black/10"
@@ -640,7 +640,7 @@ export function Discover({
                     value={sort}
                     onChange={(e) => setSort(e.target.value as typeof sort)}
                     aria-label="Sort results by"
-                    className="min-h-11 rounded-full bg-black/[0.06] pl-4 pr-8 text-subhead font-medium"
+                    className="min-h-11 rounded-control bg-black/[0.06] pl-4 pr-8 text-subhead font-medium"
                   >
                     {/* Relevance is the only one that reads the filters. */}
                     <option value="relevant">Relevance</option>
@@ -653,7 +653,7 @@ export function Discover({
                     type="button"
                     onClick={() => setFiltersOpen(false)}
                     aria-label="Hide the filters"
-                    className="min-h-11 px-3 rounded-full text-subhead font-medium text-secondary hover:text-label whitespace-nowrap inline-flex items-center gap-1"
+                    className="min-h-11 px-3 rounded-control text-subhead font-medium text-secondary hover:text-label whitespace-nowrap inline-flex items-center gap-1"
                   >
                     Hide
                     {/* Points up: this is the way back. */}
@@ -665,7 +665,7 @@ export function Discover({
                     type="button"
                     onClick={() => void runSearch()}
                     disabled={loading}
-                    className="min-h-11 px-6 rounded-full bg-accent-fill text-on-accent text-subhead font-semibold shadow-sm disabled:opacity-50 whitespace-nowrap"
+                    className="min-h-11 px-6 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold shadow-sm disabled:opacity-50 whitespace-nowrap"
                   >
                     {loading ? "Searching…" : "Search"}
                   </button>
@@ -692,7 +692,7 @@ export function Discover({
             {/* Signals the sheet can be dragged, the way sheets usually do. */}
             <span
               aria-hidden="true"
-              className="sm:hidden mx-auto mt-2 h-1 w-9 rounded-full bg-black/15"
+              className="sm:hidden mx-auto mt-2 h-1 w-9 rounded-control bg-black/15"
             />
 
             <button
@@ -841,13 +841,13 @@ export function Discover({
                         setSubscribedOnly(false);
                         if (center) void runSearch({ ...center, radiusMiles: Math.min(200, radiusMiles * 2) });
                       }}
-                      className="inline-flex items-center min-h-11 px-4 rounded-full bg-accent-fill text-on-accent text-subhead font-semibold"
+                      className="inline-flex items-center min-h-11 px-4 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold"
                     >
                       Broaden the search
                     </button>
                     <Link
                       href="/shops/add"
-                      className="inline-flex items-center min-h-11 px-4 rounded-full bg-fill text-accent text-subhead font-semibold"
+                      className="inline-flex items-center min-h-11 px-4 rounded-control bg-fill text-accent text-subhead font-semibold"
                     >
                       Add a shop
                     </Link>
@@ -871,7 +871,7 @@ export function Discover({
                         {!m.confirmed && (
                           <span
                             title="Added by a member of the public and not yet confirmed"
-                            className="text-caption font-medium rounded-full px-1.5 py-0.5 bg-warning/12 text-warning"
+                            className="text-caption font-medium rounded-control px-1.5 py-0.5 bg-warning/12 text-warning"
                           >
                             Unconfirmed
                           </span>

@@ -1,53 +1,51 @@
 /*
-  The Gaari mark: a car in forest green, with the name on its plate.
+  The Gaari mark: the back of a car, with the name on its plate.
 
-  A side profile, because that silhouette still reads as a car at favicon size.
-  The plate sits on the rear overhang, clear of the wheel — the first version
-  had it across the middle of the door with the wheel drawn over the top of it,
-  which is not where a plate goes and cut the word in half.
-
-  It is larger than a real plate would be in proportion. At the size a header
-  logo renders, an accurate one would be a white smudge, and the word is the
-  whole point of it.
+  A rear view rather than a side profile because the plate is the whole idea —
+  from behind it sits square to the viewer and can be large enough to read,
+  where on a side profile it is a sliver on the bumper. The mark carries the
+  name on its own, so nothing needs to be set beside it.
 
   Flat fills, no gradients: gradients turn to mud below about twenty pixels.
 */
-export function GaariMark({ className = "h-8 w-auto" }: { className?: string }) {
+export function GaariMark({ className = "h-9 w-auto" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 108 40" className={className} role="img" aria-label="Gaari" fill="none">
-      {/* Body: one shape from rear bumper to bonnet. */}
+    <svg viewBox="0 0 96 76" className={className} role="img" aria-label="Gaari" fill="none">
+      {/* Tyres, behind the body so only the tread shows either side. */}
+      <rect x="6" y="54" width="12" height="16" rx="3" fill="#14181A" />
+      <rect x="78" y="54" width="12" height="16" rx="3" fill="#14181A" />
+
+      {/* Body: roof tapering into the shoulders, down to the bumper. */}
       <path
         fill="#1E5631"
-        d="M4 32v-9.6c0-2 1.4-3.8 3.4-4.2l12.2-2.6 8.2-8A6.4 6.4 0 0 1 32.3 5.7h30.9a6.4 6.4 0 0 1 4.5 1.9l8.2 8.2 12.6 2.7c2 .4 3.5 2.2 3.5 4.2V32a2.2 2.2 0 0 1-2.2 2.2H6.2A2.2 2.2 0 0 1 4 32Z"
+        d="M12 66V32c0-3.1 1.9-5.9 4.8-7L28.6 20A9 9 0 0 1 31.9 19.4h32.2a9 9 0 0 1 3.3.6l11.8 5c2.9 1.1 4.8 3.9 4.8 7v34a3 3 0 0 1-3 3H15a3 3 0 0 1-3-3Z"
       />
 
-      {/* Greenhouse, split by the B-pillar. */}
+      {/* Rear screen. Deep enough to read as glass rather than a stripe. */}
       <path
         fill="#BFD8C6"
-        d="M33.4 9.6h13v7.2H26l5.9-6.6a2 2 0 0 1 1.5-.6Zm17.3 0h11.6c.6 0 1.1.2 1.5.6l6.4 7.2H50.7V9.6Z"
+        d="M26.4 30.4l5.8-2.3a4 4 0 0 1 1.5-.3h28.6a4 4 0 0 1 1.5.3l5.8 2.3a2 2 0 0 1 1.3 1.9v6.6a1.6 1.6 0 0 1-1.6 1.6H26.7a1.6 1.6 0 0 1-1.6-1.6v-6.6a2 2 0 0 1 1.3-1.9Z"
       />
 
-      {/* Plate, on the rear overhang and clear of the wheel behind it. */}
-      <rect x="7.5" y="22" width="20" height="8.6" rx="1.7" fill="#F4F4EF" />
-      <rect x="7.5" y="22" width="20" height="8.6" rx="1.7" stroke="#143D23" strokeWidth="1.1" />
+      {/* Tail lights. */}
+      <rect x="17" y="44" width="15" height="8" rx="2.4" fill="#C7452F" />
+      <rect x="64" y="44" width="15" height="8" rx="2.4" fill="#C7452F" />
+
+      {/* The plate — the reason this view was chosen. */}
+      <rect x="25" y="53" width="46" height="15" rx="2.4" fill="#F4F4EF" />
+      <rect x="25" y="53" width="46" height="15" rx="2.4" stroke="#143D23" strokeWidth="1.8" />
       <text
-        x="17.5"
-        y="28.7"
+        x="48"
+        y="64.4"
         textAnchor="middle"
         fill="#143D23"
-        fontSize="6.2"
+        fontSize="11.5"
         fontWeight="700"
-        letterSpacing="0.2"
+        letterSpacing="0.3"
         fontFamily="ui-sans-serif, system-ui, -apple-system, sans-serif"
       >
         gaari
       </text>
-
-      {/* Wheels, on the body's baseline. */}
-      <circle cx="36" cy="34" r="6.6" fill="#14181A" />
-      <circle cx="36" cy="34" r="2.7" fill="#BFD8C6" />
-      <circle cx="79" cy="34" r="6.6" fill="#14181A" />
-      <circle cx="79" cy="34" r="2.7" fill="#BFD8C6" />
     </svg>
   );
 }

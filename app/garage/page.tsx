@@ -44,7 +44,7 @@ export default async function GaragePage() {
                               recognise, so it reads as a tag rather than as
                               trailing grey text easily mistaken for a caption.
                             */}
-                            <span className="shrink-0 rounded-full bg-fill px-2 py-0.5 text-footnote font-medium text-secondary tabular-nums">
+                            <span className="shrink-0 rounded-control bg-fill px-2 py-0.5 text-footnote font-medium text-secondary tabular-nums">
                               {v.generation}
                             </span>
                           </div>

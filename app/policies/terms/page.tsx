@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Card, PageTitle, SectionTitle } from "@/components/ui";
 
 export const metadata: Metadata = {
-  title: "Terms and ground rules · Gaari",
+  title: "Terms and ground rules",
   description:
     "What Gaari is, what it is not, and who is responsible for what people post.",
 };

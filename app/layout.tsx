@@ -5,7 +5,7 @@ import { SiteHeader } from "@/components/site-header";
 import { currentUser, isPrivileged } from "@/lib/auth/guards";
 
 export const metadata: Metadata = {
-  title: "Gaari — owner-reported mechanic pricing",
+  title: "Gaari",
   description:
     "Find local mechanics who have worked on cars like yours, and see what owners actually paid.",
 };

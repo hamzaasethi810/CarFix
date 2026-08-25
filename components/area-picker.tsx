@@ -89,7 +89,7 @@ export function AreaPicker({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="inline-flex items-center gap-2 min-h-11 px-4 rounded-full bg-black/[0.06] hover:bg-black/10 text-subhead font-medium transition-colors duration-150 max-w-full"
+        className="inline-flex items-center gap-2 min-h-11 px-4 rounded-control bg-black/[0.06] hover:bg-black/10 text-subhead font-medium transition-colors duration-150 max-w-full"
       >
         <span aria-hidden="true">◎</span>
         <span className="truncate">{current ?? "Select area"}</span>
