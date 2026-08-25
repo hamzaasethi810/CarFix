@@ -27,7 +27,7 @@ export function SiteHeader({
           href="/"
           className="inline-flex items-center min-h-11 pr-2 sm:pr-4 text-title3 font-bold tracking-tight"
         >
-          Car<span className="text-brand">Fix</span>
+          Garage<span className="text-brand">Intel</span>
         </Link>
 
         {isAuthed && (

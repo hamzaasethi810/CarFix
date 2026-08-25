@@ -6,7 +6,7 @@ import * as OTPAuth from "otpauth";
 /** Produces the code an authenticator app would show right now. */
 function currentCode(secret: string, label: string, offsetSteps = 0) {
   const totp = new OTPAuth.TOTP({
-    issuer: "CarFix",
+    issuer: "GarageIntel",
     label,
     algorithm: "SHA1",
     digits: 6,
@@ -91,7 +91,7 @@ describe("TOTP verification", () => {
     const secret = generateSecret();
     const uri = provisioningUri(secret, label);
     expect(uri).toMatch(/^otpauth:\/\/totp\//);
-    expect(uri).toContain("issuer=CarFix");
+    expect(uri).toContain("issuer=GarageIntel");
     expect(uri).toContain(secret);
   });
 });

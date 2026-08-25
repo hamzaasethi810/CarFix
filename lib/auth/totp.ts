@@ -12,7 +12,13 @@ import * as OTPAuth from "otpauth";
   entropy and the short validity window, both of which are set here.
 */
 
-const ISSUER = "CarFix";
+/*
+  What an authenticator app shows beside the account. Only read when a secret is
+  first enrolled, so entries already in someone's app keep the old name until
+  they enrol again — the codes themselves depend on the secret and the clock,
+  not on this.
+*/
+const ISSUER = "GarageIntel";
 const DIGITS = 6;
 const PERIOD = 30;
 

@@ -500,7 +500,11 @@ export function Discover({
                   <span className="font-semibold">{filterSummary}</span>
                   {areaLabel && <span className="text-secondary"> · {areaLabel}</span>}
                 </span>
-                <span className="shrink-0 text-footnote font-medium text-accent">Filters</span>
+                <span className="shrink-0 inline-flex items-center gap-1 text-footnote font-medium text-accent">
+                  Filters
+                  {/* Points down: this opens downwards. */}
+                  <span aria-hidden="true" className="text-subhead leading-none">&#9662;</span>
+                </span>
               </button>
             )}
 
@@ -511,11 +515,18 @@ export function Discover({
               of the screen with no way to reach it.
             */}
             <div
-              className={`${filtersOpen ? "grid" : "hidden"} gap-2.5 sm:gap-3 sm:grid-cols-2 lg:grid-cols-5 [&>*]:min-w-0
-                max-h-[calc(100dvh-8rem)] overflow-y-auto overscroll-contain`}
+              /*
+                Two columns from the smallest size up. In one column the five
+                pickers plus the actions were taller than a phone screen and
+                the last of them had to be scrolled to. Paired up they fit,
+                which matters more than how much map is visible while somebody
+                is actively choosing filters.
+              */
+              className={`${filtersOpen ? "grid" : "hidden"} gap-2.5 sm:gap-3 grid-cols-2 lg:grid-cols-5 [&>*]:min-w-0
+                max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain`}
             >
               {/* Says the panel moves, and gives the thumb something to aim at. */}
-              <div className="sm:col-span-2 lg:col-span-5 -mt-1 mb-0.5 flex justify-center">
+              <div className="col-span-2 lg:col-span-5 -mt-1 mb-0.5 flex justify-center">
                 <span aria-hidden="true" className="h-1 w-9 rounded-full bg-black/15" />
               </div>
 
@@ -578,7 +589,7 @@ export function Discover({
                 </select>
               </label>
 
-              <div className="sm:col-span-2 lg:col-span-5 flex flex-wrap items-center gap-3 pt-1">
+              <div className="col-span-2 lg:col-span-5 flex flex-wrap items-center gap-2 sm:gap-3 pt-1">
                 <AreaPicker current={areaLabel} onChoose={chooseArea} onOpenChange={noteMenu} />
 
                 {/* Verified reads as a toggle chip rather than a bare checkbox. */}
@@ -642,9 +653,11 @@ export function Discover({
                     type="button"
                     onClick={() => setFiltersOpen(false)}
                     aria-label="Hide the filters"
-                    className="min-h-11 px-3 rounded-full text-subhead font-medium text-secondary hover:text-label whitespace-nowrap"
+                    className="min-h-11 px-3 rounded-full text-subhead font-medium text-secondary hover:text-label whitespace-nowrap inline-flex items-center gap-1"
                   >
                     Hide
+                    {/* Points up: this is the way back. */}
+                    <span aria-hidden="true" className="leading-none">&#9652;</span>
                   </button>
 
                   {/* The one primary action in this context gets the colour. */}
@@ -795,20 +808,50 @@ export function Discover({
                 </li>
               )}
 
+              {/*
+                Nothing matched. Which filter is doing the excluding is knowable
+                here, so it says so rather than leaving somebody to guess which
+                of five controls to undo.
+              */}
               {results.length === 0 && !loading && center && !ingesting && (
                 <li className="px-2 py-6 text-subhead text-secondary text-center">
-                  <p>
-                    No shops found here.
-                    {radiusMiles < 200
-                      ? " Try a wider radius."
-                      : " Try clearing some filters."}
-                  </p>
-                  <Link
-                    href="/shops/add"
-                    className="inline-flex items-center min-h-11 px-4 mt-3 rounded-full bg-fill text-accent text-subhead font-semibold"
-                  >
-                    Add a shop we are missing
-                  </Link>
+                  <p className="text-label font-medium">No shops match these filters</p>
+                  <p className="mt-1 text-pretty">Try broadening your search:</p>
+                  <ul className="mt-2 space-y-1 text-footnote">
+                    {radiusMiles < 200 && (
+                      <li>Widen the distance beyond {radiusMiles} miles</li>
+                    )}
+                    {makeId && <li>Search any make, not just this one</li>}
+                    {serviceId && <li>Search any service</li>}
+                    {verifiedOnly && <li>Include shops without verified prices</li>}
+                    {subscribedOnly && <li>Include shops that are not gold</li>}
+                    {!makeId && !serviceId && !verifiedOnly && !subscribedOnly && radiusMiles >= 200 && (
+                      <li>Try a different area</li>
+                    )}
+                  </ul>
+                  <div className="flex flex-wrap justify-center gap-2 mt-3">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMakeId("");
+                        setModelId("");
+                        setGenValue("");
+                        setServiceId("");
+                        setVerifiedOnly(false);
+                        setSubscribedOnly(false);
+                        if (center) void runSearch({ ...center, radiusMiles: Math.min(200, radiusMiles * 2) });
+                      }}
+                      className="inline-flex items-center min-h-11 px-4 rounded-full bg-accent-fill text-on-accent text-subhead font-semibold"
+                    >
+                      Broaden the search
+                    </button>
+                    <Link
+                      href="/shops/add"
+                      className="inline-flex items-center min-h-11 px-4 rounded-full bg-fill text-accent text-subhead font-semibold"
+                    >
+                      Add a shop
+                    </Link>
+                  </div>
                 </li>
               )}
               {visible.map((m) => (

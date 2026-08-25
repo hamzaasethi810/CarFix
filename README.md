@@ -1,4 +1,4 @@
-# CarFix
+# GarageIntel
 
 A community platform for car enthusiasts. Owners record what a shop actually charged to work on
 their specific car, and other owners of the same generation can see real prices before they book.
