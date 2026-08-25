@@ -46,7 +46,7 @@ export const MECHANICS: MechanicSpec[] = [
     city: "Arlington", state: "VA", zip: "22202",
     lat: 38.8577, lng: -77.0524,
     phone: "703-555-0199", website: "https://example.com/torque",
-    specialties: ["Alignment", "Suspension", "Exhaust", "Brake pads"],
+    specialties: ["Alignment", "Suspension", "Exhaust installation", "Brake pads"],
   },
   {
     name: "Potomac German Auto",
@@ -73,7 +73,7 @@ export const MECHANICS: MechanicSpec[] = [
     city: "Washington", state: "DC", zip: "20018",
     lat: 38.9256, lng: -76.9711,
     phone: "202-555-0177", website: "https://example.com/capitol",
-    specialties: ["Turbocharger", "Exhaust", "Clutch", "Differential service"],
+    specialties: ["Turbocharger", "Exhaust installation", "Clutch", "Differential service"],
   },
   {
     name: "Navy Yard Auto Works",
@@ -154,7 +154,7 @@ export const MECHANICS: MechanicSpec[] = [
     city: "Herndon", state: "VA", zip: "20170",
     lat: 38.9696, lng: -77.3861,
     phone: "703-555-0193", website: null,
-    specialties: ["Differential service", "Suspension", "Exhaust", "Oil change"],
+    specialties: ["Differential service", "Suspension", "Exhaust installation", "Oil change"],
   },
   {
     name: "Manassas Motorworks",
@@ -163,7 +163,7 @@ export const MECHANICS: MechanicSpec[] = [
     city: "Manassas", state: "VA", zip: "20110",
     lat: 38.7509, lng: -77.4753,
     phone: "703-555-0147", website: "https://example.com/manassas",
-    specialties: ["Clutch", "Transmission service", "Motor mounts", "Exhaust"],
+    specialties: ["Clutch", "Transmission service", "Motor mounts", "Exhaust installation"],
   },
   {
     name: "Woodbridge Auto Center",
@@ -235,7 +235,7 @@ export const MECHANICS: MechanicSpec[] = [
     city: "Leesburg", state: "VA", zip: "20176",
     lat: 39.1157, lng: -77.5478,
     phone: "703-555-0190", website: null,
-    specialties: ["Brake pads + rotors", "Suspension", "Alignment", "Exhaust"],
+    specialties: ["Brake pads + rotors", "Suspension", "Alignment", "Exhaust installation"],
   },
   {
     name: "Fairfax Transmission Works",
