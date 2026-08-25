@@ -81,11 +81,16 @@ describe("an owner correcting their listing", () => {
     const owner = await makeUser();
     const shop = await makeShop(owner.id);
 
-    // A claimed listing must not be draggable anywhere on the map.
-    await updateShopDetails(shop.id, owner.id, {
-      ...DETAILS,
-      ...({ lat: 1.234, lng: 5.678 } as Record<string, never>),
-    });
+    /*
+      A claimed listing must not be draggable anywhere on the map, so
+      coordinates in the payload have to be ignored. They are not part of the
+      accepted shape at all — which is the point — so this goes through unknown
+      to post them the way a hand-rolled request would.
+    */
+    const withCoords = { ...DETAILS, lat: 1.234, lng: 5.678 } as unknown as Parameters<
+      typeof updateShopDetails
+    >[2];
+    await updateShopDetails(shop.id, owner.id, withCoords);
 
     const after = await prisma.mechanic.findUniqueOrThrow({ where: { id: shop.id } });
     expect(after.lat).toBe(51.5);

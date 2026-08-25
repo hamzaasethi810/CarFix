@@ -1,5 +1,6 @@
 "use client";
 
+import { popoverSurface } from "@/components/ui";
 import { useEffect, useRef, useState } from "react";
 
 export type Area = { label: string; lat: number; lng: number; suggestedRadiusMiles: number };
@@ -90,7 +91,7 @@ export function AreaPicker({
         <div
           role="dialog"
           aria-label="Choose an area"
-          className="absolute z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] glass rounded-glass p-4"
+          className={`absolute z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-glass p-4 ${popoverSurface}`}
         >
           <form onSubmit={submit} className="space-y-3">
             <label className="block">

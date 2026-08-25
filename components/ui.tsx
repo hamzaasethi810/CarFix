@@ -116,6 +116,18 @@ export const distance = (n: number | null | undefined) =>
 const BUTTON_BASE =
   "inline-flex items-center justify-center min-h-11 px-4 rounded-control text-headline font-semibold transition-[background-color,opacity] duration-150 disabled:opacity-40 disabled:cursor-not-allowed";
 
+/*
+  The surface a floating menu sits on.
+
+  Deliberately opaque. Menus open over the map and over the glass panels
+  floating on it, and a translucent menu on top of those stops being a surface
+  at all — the shop list's distance labels and the map's roads show straight
+  through it. Glass belongs to the panels anchored to the page; anything that
+  opens above them needs something solid to sit on.
+*/
+export const popoverSurface =
+  "bg-elevated shadow-raised border border-separator";
+
 export const buttonStyles = {
   primary: `${BUTTON_BASE} bg-accent-fill text-on-accent hover:bg-accent-hover`,
   secondary: `${BUTTON_BASE} bg-fill text-accent hover:opacity-80`,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
+import { popoverSurface } from "@/components/ui";
 
 type Suggestion = { id: string; name: string; place: string };
 
@@ -160,7 +161,7 @@ export function MechanicPicker({
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-50 mt-1 w-full max-h-64 overflow-y-auto rounded-control bg-elevated shadow-raised border border-separator py-1"
+          className={`absolute z-50 mt-1 w-full max-h-64 overflow-y-auto rounded-control py-1 ${popoverSurface}`}
         >
           {items.map((s, i) => (
             <li
