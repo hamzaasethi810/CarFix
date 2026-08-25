@@ -1,0 +1,14 @@
+<!--
+  Favicon. A simplified version of the mark rather than a scaled-down copy: at
+  sixteen pixels the plate lettering and the window split are noise, so this
+  keeps only what still reads — the forest green field, the car silhouette, and
+  a white bar where the plate is.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#1E5631"/>
+  <path fill="#F4F4EF" d="M4.5 21.5v-4.1c0-.9.6-1.6 1.4-1.8l4.3-.9 3-3a2.7 2.7 0 0 1 1.9-.8h8.2a2.7 2.7 0 0 1 1.9.8l3 3 4.3.9c.2 0 .3.1.5.2v5.7H4.5Z" transform="translate(-1 0) scale(0.94 1)"/>
+  <circle cx="11" cy="22" r="2.7" fill="#F4F4EF"/>
+  <circle cx="21.5" cy="22" r="2.7" fill="#F4F4EF"/>
+  <circle cx="11" cy="22" r="1.1" fill="#1E5631"/>
+  <circle cx="21.5" cy="22" r="1.1" fill="#1E5631"/>
+</svg>

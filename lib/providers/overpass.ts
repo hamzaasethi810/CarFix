@@ -107,7 +107,7 @@ export async function fetchNearbyShops(
         body: new URLSearchParams({ data: query }),
         signal: AbortSignal.timeout(TIMEOUT_MS),
         headers: {
-          "User-Agent": "GarageIntel/1.0 (owner-reported mechanic pricing)",
+          "User-Agent": "Gaari/1.0 (owner-reported mechanic pricing)",
           accept: "application/json",
         },
       });

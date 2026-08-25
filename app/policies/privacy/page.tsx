@@ -3,8 +3,8 @@ import type { Metadata } from "next";
 import { Card, PageTitle, SectionTitle } from "@/components/ui";
 
 export const metadata: Metadata = {
-  title: "Privacy · GarageIntel",
-  description: "What GarageIntel stores about you, why, and how to get rid of it.",
+  title: "Privacy · Gaari",
+  description: "What Gaari stores about you, why, and how to get rid of it.",
 };
 
 /*

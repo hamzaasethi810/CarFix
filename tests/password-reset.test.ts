@@ -179,7 +179,7 @@ describe("accounts with a second factor", () => {
 
   function codeFor(secret: string, label: string) {
     return new OTPAuth.TOTP({
-      issuer: "GarageIntel",
+      issuer: "Gaari",
       label,
       algorithm: "SHA1",
       digits: 6,

@@ -33,7 +33,7 @@ async function enrol(role: "USER" | "ADMIN" = "USER") {
 
 const codeFor = (secret: string, label: string, offsetSteps = 0) =>
   new OTPAuth.TOTP({
-    issuer: "GarageIntel", label, algorithm: "SHA1", digits: 6, period: 30,
+    issuer: "Gaari", label, algorithm: "SHA1", digits: 6, period: 30,
     secret: OTPAuth.Secret.fromBase32(secret),
   }).generate({ timestamp: Date.now() + offsetSteps * 30_000 });
 

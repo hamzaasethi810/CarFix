@@ -60,14 +60,14 @@ export async function requestReset(email: string, origin: string, ip: string | n
       const link = `${origin}/reset-password?token=${raw}`;
       await sendEmail({
         to: user.email,
-        subject: "Reset your GarageIntel password",
+        subject: "Reset your Gaari password",
         text:
-          `Someone asked to reset the password for this GarageIntel account.\n\n` +
+          `Someone asked to reset the password for this Gaari account.\n\n` +
           `Open this link within the hour to choose a new one:\n${link}\n\n` +
           `The link works once. If this was not you, ignore this message — ` +
           `nothing has changed and your password still works.\n`,
         html:
-          `<p>Someone asked to reset the password for this GarageIntel account.</p>` +
+          `<p>Someone asked to reset the password for this Gaari account.</p>` +
           `<p><a href="${link}">Choose a new password</a></p>` +
           `<p>The link works once and expires in an hour.</p>` +
           `<p>If this was not you, ignore this message — nothing has changed ` +

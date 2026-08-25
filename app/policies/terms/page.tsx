@@ -3,9 +3,9 @@ import type { Metadata } from "next";
 import { Card, PageTitle, SectionTitle } from "@/components/ui";
 
 export const metadata: Metadata = {
-  title: "Terms and ground rules · GarageIntel",
+  title: "Terms and ground rules · Gaari",
   description:
-    "What GarageIntel is, what it is not, and who is responsible for what people post.",
+    "What Gaari is, what it is not, and who is responsible for what people post.",
 };
 
 /*
@@ -24,10 +24,10 @@ export default function TermsPage() {
         subtitle="The short version: this is owners reporting their own experiences, and we do not vouch for any of it."
       />
 
-      <SectionTitle>What GarageIntel is</SectionTitle>
+      <SectionTitle>What Gaari is</SectionTitle>
       <Card className="space-y-3">
         <p className="text-subhead text-pretty">
-          GarageIntel collects what car owners say they paid, at which shop, on which
+          Gaari collects what car owners say they paid, at which shop, on which
           car. It exists so you can see what people with a car like yours were
           charged nearby, and how the work went.
         </p>

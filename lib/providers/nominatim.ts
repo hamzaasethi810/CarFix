@@ -62,7 +62,7 @@ export async function geocode(query: string, limit = 5): Promise<GeocodeResult[]
     response = await fetch(url, {
       signal: AbortSignal.timeout(TIMEOUT_MS),
       headers: {
-        "User-Agent": "GarageIntel/1.0 (owner-reported mechanic pricing)",
+        "User-Agent": "Gaari/1.0 (owner-reported mechanic pricing)",
         accept: "application/json",
       },
       // Places do not move, so a long cache keeps us well inside their limits.

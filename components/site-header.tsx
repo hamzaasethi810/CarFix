@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { signOut } from "@/lib/auth";
+import { GaariMark } from "@/components/gaari-mark";
 
 const navLink =
   "inline-flex items-center min-h-11 px-3 -mx-1 rounded-control text-subhead text-secondary hover:text-label hover:bg-fill transition-colors duration-150";
@@ -25,9 +26,10 @@ export function SiteHeader({
       >
         <Link
           href="/"
-          className="inline-flex items-center min-h-11 pr-2 sm:pr-4 text-title3 font-bold tracking-tight"
+          className="inline-flex items-center gap-2 min-h-11 pr-2 sm:pr-4 text-title3 font-bold tracking-tight"
         >
-          Garage<span className="text-brand">Intel</span>
+          <GaariMark className="h-7 w-auto shrink-0" />
+          <span>Gaari</span>
         </Link>
 
         {isAuthed && (
