@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { signOut } from "@/lib/auth";
-import { GaariMark } from "@/components/gaari-mark";
+import Image from "next/image";
 
 const navLink =
   "inline-flex items-center min-h-11 px-3 -mx-1 rounded-control text-subhead text-secondary hover:text-label hover:bg-fill transition-colors duration-150";
@@ -29,11 +29,24 @@ export function SiteHeader({
           className="inline-flex items-center gap-2 min-h-11 pr-2 sm:pr-4 text-title3 font-bold tracking-tight"
         >
           {/*
-            The mark alone. It has the name on its plate, so setting the word
-            beside it would say the same thing twice.
+            The plate carries the name, so no wordmark sits beside it.
+
+            The white it was drawn on has been cut away rather than left in:
+            this header is translucent and blurs whatever is behind it, which
+            on the map page is the map, so a white rectangle would have shown
+            as a white rectangle.
+
+            priority, because it is the first thing above the fold on every
+            page and lazy-loading it only buys a flash of empty header.
           */}
-          <GaariMark className="h-9 w-auto shrink-0" />
-          <span className="sr-only">Gaari</span>
+          <Image
+            src="/gaari-logo.png"
+            alt="Gaari"
+            width={284}
+            height={132}
+            priority
+            className="h-10 w-auto shrink-0"
+          />
         </Link>
 
         {isAuthed && (
