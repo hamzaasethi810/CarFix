@@ -67,6 +67,10 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
               Terms and ground rules
             </a>
             {" · "}
+            <a href="/policies/privacy" className="text-accent">
+              Privacy
+            </a>
+            {" · "}
             <a href="/policies/receipts" className="text-accent">
               How we handle receipts
             </a>
