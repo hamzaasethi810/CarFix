@@ -89,6 +89,8 @@ enum MechanicSource {
   SEED
   OSM
   USER
+  /// Bulk-imported from Overture Maps places.
+  OVERTURE
 }
 
 // ---------- Auth (Auth.js / NextAuth database session strategy) ----------
