@@ -47,3 +47,6 @@ next-env.d.ts
 
 # Generated knowledge graph (rebuild with /graphify)
 graphify-out/
+
+# Overture extracts — large, regenerable
+data/
