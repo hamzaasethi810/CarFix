@@ -878,23 +878,73 @@ set -a; source .env; set +a
 psql "$DATABASE_URL" -c "SELECT count(*) AS shops, pg_size_pretty(pg_total_relation_size('\"Mechanic\"')) AS size FROM \"Mechanic\";"
 ```
 
+**Read this before you interpret any size number.** The table is currently
+EMPTY but reports about 44 MB. That is dead space left by an earlier
+300,000-row benchmark, which Postgres has not returned to the OS. It cannot be
+reclaimed here — `VACUUM FULL` is blocked in this environment.
+
+The consequence: `pg_total_relation_size / count(*)` is meaningless on this
+table. The import will fill dead space rather than extend the file, so a size
+delta understates the true cost, while dividing the whole 44 MB across ~21,000
+new rows overstates it by an order of magnitude. Do not use either. Use the
+measurement in Step 3 instead, and do not "fix" a surprising number by
+switching back to the raw size.
+
 - [ ] **Step 2: Run the real import**
 
 ```bash
-npx tsx scripts/overture-import.ts data/va-places.json
+npm run overture:import -- data/va-places.json
 ```
+
+Use the npm script, NOT a bare `npx tsx scripts/overture-import.ts`. The module
+graph pulls in `server-only`, which throws unless Node resolves with the
+`react-server` export condition; the npm script sets
+`NODE_OPTIONS=--conditions=react-server` for you. A bare `tsx` run dies on
+import before reading a single record.
+
+Expect about 21,376 writes — that is the dry-run figure, confirmed twice
+independently. A materially different number means something changed upstream;
+report it rather than proceeding to the measurement.
+
+- [ ] **Step 2b: Run it a second time, unchanged**
+
+```bash
+npm run overture:import -- data/va-places.json
+```
+
+This is the test the dry run could not do: the database was empty, so nothing
+exercised the duplicate path against real data. The second run must write
+roughly zero new shops and report the rest as already listed. If it writes
+another 21,000, the upsert is keying on the wrong thing and the map now holds
+every Virginia shop twice — stop and report before measuring anything.
 
 - [ ] **Step 3: Measure the actual cost per shop**
 
+Bloat-immune: measures the live rows themselves rather than the file they sit in.
+
 ```bash
+psql "$DATABASE_URL" -c "VACUUM ANALYZE \"Mechanic\";"
+
 psql "$DATABASE_URL" -c "
 SELECT count(*) AS shops,
-       pg_size_pretty(pg_total_relation_size('\"Mechanic\"')) AS total,
-       round(pg_total_relation_size('\"Mechanic\"')::numeric / count(*)) AS bytes_per_shop
-FROM \"Mechanic\";"
+       round(avg(pg_column_size(m.*))) AS heap_bytes_per_shop,
+       round(avg(pg_column_size(m.*)) + 28) AS heap_with_overhead
+FROM \"Mechanic\" m WHERE source = 'OVERTURE';"
 ```
 
-Record the number. Whole-US is roughly 300,000 shops; multiply and compare against Neon's 512 MB free tier. If the projection exceeds ~400 MB, import by state rather than nationally and say so in the README.
+The `+ 28` is the per-tuple header and item pointer Postgres adds to every row.
+
+Then add the index cost. Indexes on this table are bloated too, so measure them
+against the row count they actually serve rather than trusting their raw size:
+
+```bash
+psql "$DATABASE_URL" -c "
+SELECT indexrelname, pg_size_pretty(pg_relation_size(indexrelid)) AS raw_size
+FROM pg_stat_user_indexes WHERE relname = 'Mechanic' ORDER BY 2;"
+```
+
+Report heap bytes/shop as the headline number, and say plainly that the index
+figures are upper bounds inflated by the earlier benchmark. Record the number. Whole-US is roughly 300,000 shops; multiply and compare against Neon's 512 MB free tier. If the projection exceeds ~400 MB, import by state rather than nationally and say so in the README.
 
 - [ ] **Step 4: Verify search still answers quickly**
 
