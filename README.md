@@ -186,6 +186,47 @@ subscriptions it needs a paid plan.
 
 Never expose any of these to the client. There are no `NEXT_PUBLIC_` secrets.
 
+### Importing shops
+
+Shops come from Overture Maps, which carries the small independents
+OpenStreetMap never mapped. Two steps, both run by an operator:
+
+```bash
+# 1. Pull an area out of Overture's public S3 bucket (needs duckdb)
+./scripts/overture-extract.sh -83.7 36.5 -75.2 39.5 data/va-places.json
+
+# 2. Load it, against whichever database you mean
+DATABASE_URL=... npx tsx scripts/overture-import.ts data/va-places.json --dry-run
+DATABASE_URL=... npx tsx scripts/overture-import.ts data/va-places.json
+```
+
+Idempotent: rows are keyed on `(source, sourceRef)`, so re-running an extract
+updates rather than duplicates. A shop already listed from another source is
+left alone — a similar name at effectively the same spot counts as the same
+business.
+
+Imported shops carry `source = 'OVERTURE'` and cannot hold a subscription or
+a gold badge — that is enforced by data, not by convention, so a shop that
+was scraped in can never look like one an owner claimed and paid for.
+
+**Measured cost, from a real Virginia import (21,279 shops, 25,520 places
+read):** about 255 bytes per shop on the heap (283 with Postgres's per-row
+overhead), measured with `avg(pg_column_size(m.*))` rather than dividing the
+table's file size by row count — the dev database carries about 44 MB of
+dead space from an earlier benchmark that `VACUUM FULL` cannot reclaim here,
+which makes a size-on-disk measurement meaningless. At that rate, the whole
+United States (roughly 300,000 shops) projects to around 300,000 × 283 bytes
+≈ 81 MB of heap, comfortably inside Neon's 512 MB free-tier limit even after
+accounting for indexes.
+
+That is well under the ~400 MB threshold this project uses to decide
+between a single national import and importing state by state, so **a
+national import fits the free tier and is not blocked on storage.**
+Operators may still prefer to run it state by state in practice — Overture's
+categories drift at the margins, and a per-state run keeps a bad extract
+from touching the whole map at once — but that is an operational choice, not
+one this data forces.
+
 ### Making an admin
 
 There is deliberately no self-service path to the admin role:
