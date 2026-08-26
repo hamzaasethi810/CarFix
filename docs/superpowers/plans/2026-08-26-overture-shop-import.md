@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - **Overture release path:** `s3://overturemaps-us-west-2/release/2026-08-19.0/theme=places/type=place/*`, region `us-west-2`.
-- **Do not use `categories.primary`.** Overture deprecated `categories` in favour of `basic_category` + `taxonomy`, with removal scheduled for the **September 2026** release. Read `basic_category`.
+- **Do not use `categories.primary`.** Overture deprecated `categories` in favour of `basic_category` + `taxonomy`, with removal scheduled for the **September 2026** release. Read **`taxonomy.primary`** for the shop's kind, and use `basic_category` only as a coarse prefilter. (Corrected during execution: `basic_category` is a rollup whose only automotive values are `automotive_service`, `vehicle_service`, `vehicle_parts_store`, `auto_dealer`, `vehicle_dealer` — the fine-grained workshop names live in `taxonomy.primary`. Keying the map on `basic_category`, as this plan originally said, matches zero records.)
 - **Never invent a service.** A category that maps to no name in the `Service` table is skipped, exactly as `lib/services/osm-specialties.ts` does. Dev and production catalogues have already drifted once (dev carries a stray `Exhaust`; production does not), so the code must tolerate a name being absent.
 - **Layering holds.** Prisma is reachable only from `lib/repositories/*`; scripts may construct their own client, as `scripts/admin.ts` already does.
 - **All 206 existing tests must still pass.**
@@ -187,7 +187,7 @@ import "server-only";
   filed under automotive, and none of them do work on your car. Importing them
   would fill the map with places nobody can get a price from.
 
-  Read `basic_category`, not `categories.primary`: Overture deprecated the
+  Read `taxonomy.primary`, not `categories.primary`: Overture deprecated the
   latter and removes it in the September 2026 release.
 */
 
@@ -294,7 +294,7 @@ import { normalisePlace, type OverturePlace } from "../lib/services/overture-imp
 const place = (over: Partial<OverturePlace> = {}): OverturePlace => ({
   id: "08f2ab...",
   name: "Redline Auto Service",
-  basic_category: "automotive_repair",
+  category: "automotive_repair",
   confidence: 0.91,
   lat: 38.8816,
   lng: -77.0910,
@@ -334,7 +334,7 @@ describe("turning an Overture place into a shop", () => {
   });
 
   it("drops a category that is not a workshop", () => {
-    expect(normalisePlace(place({ basic_category: "towing_service" }))).toBeNull();
+    expect(normalisePlace(place({ category: "towing_service" }))).toBeNull();
   });
 
   it("drops a place with no name", () => {
@@ -391,7 +391,7 @@ import { isAutomotive, servicesFromCategory } from "./overture-categories";
 export type OverturePlace = {
   id: string;
   name: string | null;
-  basic_category: string | null;
+  category: string | null;
   confidence: number | null;
   lat: number | null;
   lng: number | null;
@@ -452,7 +452,7 @@ export function normalisePlace(
   if (place.lat === null || place.lng === null) return null;
   if (place.confidence !== null && place.confidence < minConfidence) return null;
 
-  const category = place.basic_category ?? "";
+  const category = place.category ?? "";
   if (!isAutomotive(category)) return null;
 
   const country = (place.country ?? "US").toUpperCase();
@@ -547,7 +547,7 @@ COPY (
   SELECT
     id,
     names.primary                       AS name,
-    basic_category                      AS basic_category,
+    taxonomy.primary                    AS category,
     confidence                          AS confidence,
     ST_Y(ST_GeomFromWKB(geometry))      AS lat,
     ST_X(ST_GeomFromWKB(geometry))      AS lng,
@@ -564,6 +564,10 @@ COPY (
   )
   WHERE bbox.xmin BETWEEN ${WEST} AND ${EAST}
     AND bbox.ymin BETWEEN ${SOUTH} AND ${NORTH}
+    -- Coarse rollup prefilter. Overture files these two above every workshop
+    -- taxonomy; the fine-grained list in overture-categories.ts can still
+    -- change freely without re-downloading.
+    AND basic_category IN ('automotive_service', 'vehicle_service')
 ) TO '${OUT}' (FORMAT JSON, ARRAY false);
 "
 
@@ -585,7 +589,7 @@ grep -q '^data/$' .gitignore || printf '\n# Overture extracts — large, regener
 
 Expected: takes several minutes (it is reading a planet-scale parquet set over the network) and reports a record count. Every automotive category is filtered in the next task, not here — this pulls everything in the box so the category list can change without re-downloading.
 
-If DuckDB errors on `basic_category` not existing, the pinned release predates that column: report it and stop rather than falling back to the deprecated `categories.primary`.
+Both `taxonomy` and `basic_category` were verified present in the pinned release `2026-08-19.0` during execution. If `taxonomy` errors, report it and stop rather than falling back to the deprecated `categories.primary`.
 
 - [ ] **Step 5: Commit**
 
@@ -849,7 +853,7 @@ set -a; source .env; set +a
 npx tsx scripts/overture-import.ts data/va-places.json --dry-run
 ```
 
-Expected: a summary with a non-zero "would be written". If everything is skipped as "not workshops", the category list or `basic_category` is wrong — stop and check the extract's columns before changing the filter.
+Expected: a summary with a non-zero "would be written". If everything is skipped as "not workshops", the extract's `category` column is not carrying `taxonomy.primary` values — stop and check the extract's columns before changing the filter. Do not widen the category list to make the number move.
 
 - [ ] **Step 8: Commit**
 
