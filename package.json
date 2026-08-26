@@ -18,7 +18,8 @@
     "db:studio": "prisma studio",
     "create-user": "tsx scripts/create-user.ts",
     "stripe:setup": "tsx scripts/stripe-setup.ts",
-    "set-password": "tsx scripts/set-password.ts"
+    "set-password": "tsx scripts/set-password.ts",
+    "overture:import": "NODE_OPTIONS=--conditions=react-server tsx scripts/overture-import.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",

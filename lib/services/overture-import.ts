@@ -1,5 +1,6 @@
 import "server-only";
 import { isAutomotive, servicesFromCategory } from "./overture-categories";
+import { looksLikeSameName } from "./shop-submissions";
 
 /*
   One Overture place, flattened.
@@ -92,4 +93,25 @@ export function normalisePlace(
     sourceRef: place.id,
     services: servicesFromCategory(category),
   };
+}
+
+/** About 250 metres — close enough that one business is not two. */
+const SAME_PLACE_DEGREES = 0.0025;
+
+type Located = { name: string; lat: number; lng: number };
+
+/**
+ * Whether this place is a shop already stored.
+ *
+ * Both halves must hold: a similar name AND effectively the same spot. Name
+ * alone would collapse every branch of a chain into one; location alone would
+ * collapse the three businesses that share a retail park.
+ */
+export function shouldSkipAsDuplicate(candidate: Located, nearby: Located[]): boolean {
+  return nearby.some(
+    (existing) =>
+      Math.abs(existing.lat - candidate.lat) < SAME_PLACE_DEGREES &&
+      Math.abs(existing.lng - candidate.lng) < SAME_PLACE_DEGREES &&
+      looksLikeSameName(existing.name, candidate.name),
+  );
 }

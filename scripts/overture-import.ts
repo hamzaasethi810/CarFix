@@ -1,0 +1,128 @@
+import "dotenv/config";
+import { createReadStream } from "node:fs";
+import { createInterface } from "node:readline";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { PrismaClient } from "../lib/generated/prisma/client";
+import { normalisePlace, shouldSkipAsDuplicate, type OverturePlace } from "../lib/services/overture-import";
+
+/*
+  Loads an Overture extract into the shop table.
+
+  Operator tooling, run from a shell against a database URL given on the
+  command line. It is deliberately not reachable over HTTP: it writes hundreds
+  of thousands of rows and re-running it against the wrong database would be
+  tedious to undo.
+
+  Idempotent. Rows are keyed on (source, sourceRef), so a second run of the
+  same extract updates rather than duplicates.
+
+    npx tsx scripts/overture-import.ts data/va-places.json [--dry-run]
+*/
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
+});
+
+const BATCH = 1000;
+
+async function main() {
+  const [file, ...flags] = process.argv.slice(2);
+  if (!file) {
+    console.error("Usage: npx tsx scripts/overture-import.ts <extract.json> [--dry-run]");
+    process.exit(1);
+  }
+  const dryRun = flags.includes("--dry-run");
+
+  // The service catalogue, once. Names that are not in it are skipped rather
+  // than created — an import must never invent a service.
+  const services = await prisma.service.findMany({ select: { id: true, name: true } });
+  const serviceIdByName = new Map(services.map((s) => [s.name.toLowerCase(), s.id]));
+
+  let read = 0, kept = 0, skippedLowQuality = 0, skippedDuplicate = 0, written = 0;
+  let batch: ReturnType<typeof normalisePlace>[] = [];
+
+  const flush = async () => {
+    const rows = batch.filter((r): r is NonNullable<typeof r> => r !== null);
+    batch = [];
+    if (rows.length === 0) return;
+
+    for (const row of rows) {
+      // Only shops close enough to matter are candidates for a duplicate.
+      const d = 0.0025;
+      const nearby = await prisma.mechanic.findMany({
+        where: {
+          deletedAt: null,
+          lat: { gte: row.lat - d, lte: row.lat + d },
+          lng: { gte: row.lng - d, lte: row.lng + d },
+        },
+        select: { name: true, lat: true, lng: true, source: true, sourceRef: true },
+      });
+
+      // A previous run of this same extract is an update, not a duplicate.
+      const alreadyMine = nearby.some(
+        (n) => n.source === "OVERTURE" && n.sourceRef === row.sourceRef,
+      );
+      if (!alreadyMine && shouldSkipAsDuplicate(row, nearby)) {
+        skippedDuplicate += 1;
+        continue;
+      }
+
+      if (dryRun) { written += 1; continue; }
+
+      const shop = await prisma.mechanic.upsert({
+        where: { source_sourceRef: { source: "OVERTURE", sourceRef: row.sourceRef } },
+        create: {
+          name: row.name, address: row.address, city: row.city, state: row.state,
+          country: row.country, zip: row.zip, lat: row.lat, lng: row.lng,
+          phone: row.phone, website: row.website,
+          source: "OVERTURE", sourceRef: row.sourceRef,
+        },
+        update: {
+          name: row.name, address: row.address, city: row.city, state: row.state,
+          country: row.country, zip: row.zip, lat: row.lat, lng: row.lng,
+          phone: row.phone, website: row.website,
+        },
+        select: { id: true },
+      });
+
+      for (const name of row.services) {
+        const serviceId = serviceIdByName.get(name.toLowerCase());
+        if (!serviceId) continue;
+        await prisma.mechanicSpecialty.upsert({
+          where: { mechanicId_serviceId: { mechanicId: shop.id, serviceId } },
+          create: { mechanicId: shop.id, serviceId },
+          update: {},
+        });
+      }
+      written += 1;
+    }
+  };
+
+  const lines = createInterface({ input: createReadStream(file), crlfDelay: Infinity });
+  for await (const line of lines) {
+    if (!line.trim()) continue;
+    read += 1;
+    let place: OverturePlace;
+    try { place = JSON.parse(line); } catch { continue; }
+
+    const row = normalisePlace(place);
+    if (!row) { skippedLowQuality += 1; continue; }
+    kept += 1;
+    batch.push(row);
+    if (batch.length >= BATCH) await flush();
+    if (read % 20000 === 0) console.log(`  read ${read.toLocaleString()}…`);
+  }
+  await flush();
+
+  console.log(
+    `\nread ${read.toLocaleString()} places\n` +
+    `  ${skippedLowQuality.toLocaleString()} not workshops, unnamed, unplaced or low confidence\n` +
+    `  ${skippedDuplicate.toLocaleString()} already listed\n` +
+    `  ${written.toLocaleString()} ${dryRun ? "would be written" : "written"}\n` +
+    `  (${kept.toLocaleString()} passed normalisation)`,
+  );
+}
+
+main()
+  .catch((e) => { console.error(e instanceof Error ? e.message : e); process.exit(1); })
+  .finally(() => prisma.$disconnect());
