@@ -227,6 +227,7 @@ destruction on decision, audit logging, and generation-level aggregation.
 | `npm run db:migrate` | create and apply a migration (development) |
 | `npm run db:deploy` | apply migrations (production) |
 | `npm run db:seed` | seed taxonomy, services, and sample mechanics |
+| `./scripts/overture-extract.sh <west> <south> <east> <north> <out.json>` | pull automotive places for a bounding box out of Overture Maps' public S3 bucket into a JSON file |
 
 ---
 
