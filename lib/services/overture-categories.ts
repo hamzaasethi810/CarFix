@@ -1,20 +1,31 @@
 import "server-only";
 
 /*
-  Overture's place categories, narrowed to the trades this directory is about.
+  Overture's `taxonomy.primary` categories, narrowed to the trades this
+  directory is about.
 
-  Overture ships roughly 2,300 categories. Most automotive ones are not
+  Overture's coarse `basic_category` rollup (automotive_service, vehicle_service,
+  etc.) is used as a cheap prefilter. The actual workshop types live in
+  `taxonomy.primary`, which has 2,300+ values. Most automotive ones are not
   workshops — a registration service, a shipping broker and a tow truck are all
   filed under automotive, and none of them do work on your car. Importing them
-  would fill the map with places nobody can get a price from.
+  would fill the map with places nobody can get a price from. This map defines
+  which taxonomy values count as places where work gets done.
 
-  Read `basic_category`, not `categories.primary`: Overture deprecated the
-  latter and removes it in the September 2026 release.
+  Note: Do not use the deprecated `categories.primary` column. `taxonomy` is
+  the supported replacement and a separate column.
 */
+
+/** Coarse `basic_category` rollups worth scanning. Cheap row-group prefilter. */
+export const AUTOMOTIVE_ROLLUPS = Object.freeze([
+  "automotive_service",
+  "vehicle_service",
+]);
 
 /** Category -> the services a shop of that kind plausibly offers. */
 const BY_CATEGORY: Record<string, string[]> = {
   automotive_repair: ["Diagnostic", "Oil change", "Brake pads"],
+  automotive_service: ["Diagnostic", "Oil change", "Brake pads"],
   engine_repair_service: ["Engine rebuild", "Diagnostic"],
   hybrid_car_repair: ["Diagnostic", "Battery"],
   transmission_repair: ["Transmission service"],
@@ -32,7 +43,6 @@ const BY_CATEGORY: Record<string, string[]> = {
 
   tire_shop: ["Tires", "Alignment", "Wheel installation"],
   tire_dealer_and_repair: ["Tires", "Wheel installation"],
-  tire_repair_shop: ["Tires"],
   wheel_and_rim_repair: ["Wheel installation"],
   automotive_wheel_polishing_service: ["Wheel installation"],
 
@@ -40,7 +50,7 @@ const BY_CATEGORY: Record<string, string[]> = {
   mobile_dent_repair: ["Body work / dent repair"],
   auto_glass_service: ["Other"],
   windshield_installation_and_repair: ["Other"],
-  auto_restoration_services: ["Respray", "Upholstery / retrim"],
+  auto_restoration_service: ["Respray", "Upholstery / retrim"],
 
   auto_detailing: ["Detailing", "Paint correction", "Ceramic coating"],
   car_wash: ["Detailing"],
@@ -52,7 +62,6 @@ const BY_CATEGORY: Record<string, string[]> = {
   auto_upholstery: ["Upholstery / retrim"],
   car_stereo_installation: ["Other"],
   auto_security: ["Other"],
-  automotive_parts_and_accessories: ["Other"],
 };
 
 export const AUTOMOTIVE_CATEGORIES = Object.freeze(Object.keys(BY_CATEGORY));

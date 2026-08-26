@@ -1,6 +1,8 @@
+import { readFileSync } from "fs";
 import { describe, expect, it } from "vitest";
 import {
   AUTOMOTIVE_CATEGORIES,
+  AUTOMOTIVE_ROLLUPS,
   isAutomotive,
   servicesFromCategory,
 } from "../lib/services/overture-categories";
@@ -55,6 +57,17 @@ describe("what a category says a shop does", () => {
       for (const name of servicesFromCategory(c)) {
         expect(seeded.has(name), `${c} -> ${name}`).toBe(true);
       }
+    }
+  });
+
+  it("every mapped category exists in Overture's real taxonomy", () => {
+    // Validates against ground truth: transposition errors cannot sneak in.
+    const real = new Set(
+      readFileSync(".superpowers/sdd/2026-08-26-overture-shop-import/overture-taxonomy-us.csv", "utf8")
+        .split("\n").slice(1).map((l) => l.split(",")[0]).filter(Boolean),
+    );
+    for (const c of AUTOMOTIVE_CATEGORIES) {
+      expect(real.has(c), `${c} missing from Overture's taxonomy`).toBe(true);
     }
   });
 });
