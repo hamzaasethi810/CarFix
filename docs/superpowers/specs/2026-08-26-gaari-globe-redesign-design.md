@@ -99,6 +99,21 @@ the texture is a static public-domain image, not metered tiles.
 
 Over it: the wordmark and one control, **Nearby**. No filter bar, no cards.
 
+**The globe must sit in the scene, not on top of it.** A photoreal sphere
+pasted onto a flat fill is the single clearest tell of a thrown-together site,
+and it is what this design must not look like. Two things prevent it, and both
+are required:
+
+- The ground behind it is textured, never a flat colour — see Ground below.
+- The globe carries a grounding shadow: a soft ambient occlusion pooling
+  beneath and around it, darkest at the contact point and falling off outward,
+  plus a faint rim light on the lit edge. The shadow belongs to the page, not
+  to the map canvas, so it must be rendered behind the globe element rather
+  than drawn into the tile.
+
+Judge it by squinting: the globe and the ground should read as one photograph,
+not as two layers.
+
 ### The descent
 
 Nearby → geolocation → the camera flies from orbit to the visitor's city.
@@ -136,6 +151,12 @@ The rule: every surface should look like it is made of something.
 
 Deep forest green with real texture — a fine brushed grain and a soft vignette,
 not a flat fill. Chrome, navigation and the map sit on it.
+
+The texture is load-bearing, not decoration. It is what gives the globe
+something to sit against; over a flat fill the globe reads as a sticker
+regardless of how good the sphere itself looks. If the grain is so subtle it
+cannot be seen at arm's length on a normal monitor, it is too subtle — raise it
+until the ground obviously has a surface.
 
 ### Work surfaces
 

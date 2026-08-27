@@ -263,8 +263,13 @@ The spec: *"every surface should look like it is made of something"*, and
 - [ ] **Step 1: Give the ground grain and a vignette**
 
 Gradients, not an image file: no extra request, and nothing that can fail to
-load. Keep the alphas low — this should read as material under the eye, not as
-a visible pattern.
+load.
+
+**This texture is load-bearing.** Plan 2 puts a photoreal globe on this ground,
+and a photoreal sphere over a flat fill reads as a sticker no matter how good
+the sphere is. The grain is what the globe sits against. Err toward too visible
+rather than too subtle: if you cannot see that the ground has a surface at
+arm's length on a normal monitor, raise the alphas until you can.
 
 In `app/globals.css`, on `body`:
 
@@ -281,10 +286,10 @@ body {
     /* brushed grain — a fine vertical tick */
     repeating-linear-gradient(
       90deg,
-      rgba(255, 255, 255, 0.014) 0px,
-      rgba(255, 255, 255, 0.014) 1px,
-      rgba(0, 0, 0, 0.014) 1px,
-      rgba(0, 0, 0, 0.014) 2px
+      rgba(255, 255, 255, 0.035) 0px,
+      rgba(255, 255, 255, 0.035) 1px,
+      rgba(0, 0, 0, 0.035) 1px,
+      rgba(0, 0, 0, 0.035) 2px
     );
   background-attachment: fixed;
 }
@@ -292,6 +297,14 @@ body {
 
 `background-attachment: fixed` keeps the vignette anchored to the viewport so
 it does not slide around as the page scrolls.
+
+A single 1px vertical tick can alias into moiré on some displays. If it
+shimmers when you scroll, widen the period to 3px and drop the alpha slightly
+rather than removing the grain.
+
+**Check it before moving on.** Load any page, sit back to normal viewing
+distance, and confirm the ground obviously has a surface. A texture only
+visible when you lean in has failed at the job Plan 2 needs it for.
 
 - [ ] **Step 2: Raise the work surfaces**
 
