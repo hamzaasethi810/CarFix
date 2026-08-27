@@ -8,6 +8,7 @@ export type LimitName =
   | "login"
   | "register"
   | "experienceSubmit"
+  | "shopReply"
   | "receiptUpload"
   | "search"
   | "report"
@@ -28,6 +29,9 @@ const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m
   login: { tokens: 8, window: "5 m" },
   register: { tokens: 5, window: "1 h" },
   experienceSubmit: { tokens: 10, window: "1 h" },
+  // Cheaper than submitting a report, but still a public statement attributed
+  // to a business, so it is not unlimited.
+  shopReply: { tokens: 20, window: "1 h" },
   // Receipts are the heaviest path on the site: an upload, an object write,
   // and eventually a human review. Kept deliberately tight.
   receiptUpload: { tokens: 4, window: "1 h" },
