@@ -251,9 +251,9 @@ export const resolveReportSchema = z
 /*
   A shop's public reply to a report about them. Prose, so it is masked rather
   than rejected outright for ordinary profanity; a slur or a link is still
-  refused. `.pipe(z.string().min(1))` guards against a body that screens down
-  to nothing at all.
+  refused. The min length of 2 matches what this route always required, now
+  enforced on the pre-screen string via moderatedText's own `min` argument.
 */
 export const shopReplySchema = z
-  .object({ body: moderatedText(2000).pipe(z.string().min(1)) })
+  .object({ body: moderatedText(2000, 2) })
   .strict();
