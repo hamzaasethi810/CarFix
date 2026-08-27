@@ -15,7 +15,8 @@
 ## Global Constraints
 
 - **The descent must never stream through zoom levels.** A naive `flyTo` from orbit requests 200–400 tiles. MapTiler's free tier is 100,000 requests a month and **service pauses until the 1st** when exhausted. The whole descent happens over the static NASA texture; street tiles load only once the camera has arrived. Budget 20–30 tiles per visit.
-- **The tile source is one config value**, so it can be switched without touching component code. OpenFreeMap is the keyless default; MapTiler is used when a key is present. Neither is hardcoded at a call site.
+- **The tile source is one config value**, so it can be switched without touching component code. MapTiler is the default when a key is present; OpenFreeMap is the fallback, used both when there is no key and when MapTiler stops serving. Neither is hardcoded at a call site.
+- **Running out of tiles must degrade, not break.** MapTiler pauses service when the monthly quota is spent. The map must notice and fall back to OpenFreeMap by itself rather than going blank — a blank map on the landing page is the worst possible failure, and it would arrive silently on the 1st of a busy month.
 - **The map style must be dark.** The ground is `#0E1F16` with a brushed texture; light raster tiles fight it and reduce the redesign to a header strip on the one page every visitor sees first.
 - **The globe must sit in the scene, not on it.** It carries a grounding shadow — ambient occlusion pooling beneath it, darkest at contact — rendered behind the globe element on the page, not drawn into the tile. Squint: globe and ground should read as one photograph.
 - **Usability is not traded for looks.** Every interactive target at least 44pt, keyboard focus always visible, body text at WCAG AA. `tests/contrast.test.ts` enforces the last of these.
@@ -46,7 +47,7 @@ Create `tests/map-style.test.ts`:
 
 ```ts
 import { describe, expect, it } from "vitest";
-import { mapStyleUrl } from "../lib/map/style";
+import { fallbackStyleUrl, isQuotaFailure, mapStyleUrl } from "../lib/map/style";
 
 describe("mapStyleUrl", () => {
   it("falls back to a keyless source when no MapTiler key is set", () => {
@@ -57,6 +58,20 @@ describe("mapStyleUrl", () => {
     const url = mapStyleUrl("abc123");
     expect(url).toContain("maptiler");
     expect(url).toContain("abc123");
+  });
+
+  it("only treats payment and rate-limit failures as quota exhaustion", () => {
+    // A 404 or a one-off network blip must not discard a working paid source
+    // for the rest of the session.
+    expect(isQuotaFailure(402)).toBe(true);
+    expect(isQuotaFailure(429)).toBe(true);
+    for (const status of [200, 404, 500, 503]) {
+      expect(isQuotaFailure(status), String(status)).toBe(false);
+    }
+  });
+
+  it("falls back to a keyless source", () => {
+    expect(fallbackStyleUrl()).toContain("openfreemap");
   });
 
   it("asks for a dark style either way", () => {
@@ -103,6 +118,21 @@ export function mapStyleUrl(maptilerKey: string | undefined): string {
   if (!maptilerKey) return OPENFREEMAP_DARK;
   return `https://api.maptiler.com/maps/streets-v2-dark/style.json?key=${maptilerKey}`;
 }
+
+/** The source to use once MapTiler has stopped serving. Always keyless. */
+export function fallbackStyleUrl(): string {
+  return OPENFREEMAP_DARK;
+}
+
+/*
+  Whether a tile failure means "MapTiler is out" rather than "one tile
+  glitched". 402 is payment required and 429 is rate limited; both mean the
+  quota is spent and every subsequent request will fail the same way. A 404 or
+  a network blip is not that, and must not throw away a working paid source.
+*/
+export function isQuotaFailure(status: number): boolean {
+  return status === 402 || status === 429;
+}
 ```
 
 - [ ] **Step 4: Add the optional key**
@@ -114,7 +144,26 @@ will otherwise assume it leaked by mistake.
 
 Add it to `.env.example` with a comment noting the site works without it.
 
-- [ ] **Step 5: Rewrite the map component**
+- [ ] **Step 5: Fall back when MapTiler stops serving**
+
+In `components/mechanic-map.tsx`, listen for MapLibre's `error` event. When a
+tile request fails with a status `isQuotaFailure` recognises, switch the map to
+`fallbackStyleUrl()` and remember the switch for the rest of the session
+(`sessionStorage`) so every subsequent tile does not retry the dead source
+first.
+
+Three things to get right:
+
+- **Switch once.** A quota failure produces one error per tile in flight, so
+  guard the swap or it will fire a dozen times.
+- **Do not persist forever.** The quota resets on the 1st. `sessionStorage`
+  forgets when the tab closes, which is the right lifetime — `localStorage`
+  would keep a visitor on the fallback for weeks after service resumed.
+- **Say nothing to the visitor.** This is an operational event, not a user
+  error. The map keeps working and looks the same; a toast explaining a billing
+  limit helps nobody.
+
+- [ ] **Step 6: Rewrite the map component**
 
 Rewrite `components/mechanic-map.tsx` on MapLibre GL. Keep its existing props
 and exported types **exactly** — `app/discover.tsx` is 1066 lines and consumes
@@ -131,7 +180,7 @@ What must survive the migration:
 
 Read the existing file first and enumerate every behaviour before you delete it.
 
-- [ ] **Step 6: Remove Leaflet**
+- [ ] **Step 7: Remove Leaflet**
 
 ```bash
 npm uninstall leaflet leaflet.markercluster @types/leaflet @types/leaflet.markercluster
@@ -142,7 +191,7 @@ grep -rn "leaflet" app components lib   # must return nothing
 The last command is the check. A leftover `leaflet/dist/leaflet.css` import
 will not fail the build but will ship dead CSS.
 
-- [ ] **Step 7: Verify it still works**
+- [ ] **Step 8: Verify it still works**
 
 ```bash
 npm run dev
@@ -153,7 +202,7 @@ Open the shots. The map must render, pins must cluster, and the audit must
 report no console errors. Compare against the current behaviour — this task is
 a migration, so anything that worked before and does not now is a regression.
 
-- [ ] **Step 8: Commit**
+- [ ] **Step 9: Commit**
 
 ```bash
 git add components/mechanic-map.tsx lib/map/style.ts lib/env.ts .env.example \
