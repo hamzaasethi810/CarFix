@@ -8,10 +8,18 @@ const money = z.coerce.number().min(0).max(1_000_000);
 /**
  * Free text a person wrote. Screened on the way in, so no route can forget:
  * profanity is masked, slurs and spam are refused with the reason.
+ *
+ * `min` defaults to 0 (a no-op, since strings can't have negative length) so
+ * every existing call site is unaffected; pass it explicitly for a field
+ * that also carries a minimum length, e.g. `moderatedText(60, 1)` for a
+ * display name that must not be empty. It has to be applied here, before the
+ * transform, because `.min()` is a `ZodString` method and the transform's
+ * output is no longer a `ZodString`.
  */
-export const moderatedText = (max: number) =>
+export const moderatedText = (max: number, min = 0) =>
   z
     .string()
+    .min(min)
     .max(max)
     .transform((value, ctx) => {
       const result = screenText(value);
@@ -31,7 +39,7 @@ export const registerSchema = z
       .min(3)
       .max(30)
       .regex(/^[a-z0-9_]+$/, "Use lowercase letters, numbers, and underscores only."),
-    displayName: z.string().min(1).max(60),
+    displayName: moderatedText(60, 1),
   })
   .strict();
 
@@ -41,9 +49,9 @@ export const loginSchema = z
 
 export const updateProfileSchema = z
   .object({
-    displayName: z.string().min(1).max(60).optional(),
-    bio: z.string().max(1000).nullable().optional(),
-    generalLocation: z.string().max(100).nullable().optional(),
+    displayName: moderatedText(60, 1).optional(),
+    bio: moderatedText(1000).nullable().optional(),
+    generalLocation: moderatedText(100).nullable().optional(),
   })
   .strict();
 
@@ -56,7 +64,7 @@ export const createVehicleSchema = z
     engineId: id.nullable().optional(),
     drivetrainId: id.nullable().optional(),
     mileage: z.coerce.number().int().min(0).max(2_000_000).nullable().optional(),
-    nickname: z.string().max(60).nullable().optional(),
+    nickname: moderatedText(60).nullable().optional(),
   })
   .strict();
 
@@ -188,6 +196,11 @@ export const createReportSchema = z
   .object({
     targetType: z.enum(["EXPERIENCE", "MECHANIC", "PROFILE"]),
     experienceId: id.optional(),
+    // Deliberately NOT moderatedText: this is the abuse-report field, and
+    // someone reporting a slur needs to be able to quote it verbatim. Running
+    // it through screenText would block the exact report we most want to
+    // receive. Do not "fix" this for consistency with the other free-text
+    // fields.
     reason: z.string().min(5).max(1000),
   })
   .strict();
