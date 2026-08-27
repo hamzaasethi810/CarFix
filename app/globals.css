@@ -545,3 +545,97 @@ body:has(.map-root) footer {
 .maplibregl-ctrl-bottom-right {
   margin-bottom: env(safe-area-inset-bottom);
 }
+
+/* ---------------- Globe ---------------- */
+
+/*
+  The globe's stage: a fixed circle rather than a canvas filling the
+  viewport, so it never claims more than about half the screen (the texture
+  is sized for exactly that — see components/globe.tsx) and so .globe-ground
+  below has something of known size to sit under.
+
+  46vmin rather than something closer to the ~58% the sphere could visually
+  support: the wordmark and Nearby are layered over the same box rather than
+  sharing flex space with the stage (see the layout comment in
+  components/globe.tsx), so vmin is the only thing controlling how close the
+  sphere gets to them. 844×390 — the landscape phone that has broken this
+  site twice — has only a 390px vmin dimension after the header; 46vmin
+  leaves roughly 95px clear above and below the sphere there, enough for both
+  overlays without touching it.
+*/
+.globe-stage {
+  position: relative;
+  width: min(46vmin, 560px);
+  aspect-ratio: 1 / 1;
+}
+
+/*
+  What stops the globe reading as a sticker. A photoreal sphere on a flat page
+  has no relationship to the surface behind it; the shadow gives it one. It
+  belongs to the page rather than the map canvas, so it sits behind the globe
+  element and does not scale with the projection.
+
+  Anchored to the stage's own bottom edge rather than centred inside it: the
+  globe is zoomed to fill its circular stage right to the rim (see
+  components/globe.tsx), so a shadow centred partway up the stage would sit
+  almost entirely underneath the opaque sphere and never actually show. Only
+  the ellipse's top quarter tucks behind the sphere's lower curve, for
+  contact; the rest falls into the open page below it, which is what makes
+  it read as the sphere resting on the ground rather than floating over it.
+*/
+.globe-ground {
+  position: absolute;
+  left: 50%;
+  top: 100%;
+  transform: translate(-50%, -16%);
+  width: 155%;
+  height: 58%;
+  pointer-events: none;
+  /*
+    Deeper than the brief's own literal example (0.55/0.28) — the ground here
+    is already a dark forest green, not a light page, so a shadow has to cut
+    noticeably darker than the base to read as a shadow at all rather than
+    disappearing into the grain. Verified against a pixel sample, not just by
+    eye: the un-widened version measured only ~7/255 darker than the bare
+    background, invisible at normal viewing distance.
+  */
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    rgba(0, 0, 0, 0.8) 0%,
+    rgba(0, 0, 0, 0.45) 45%,
+    rgba(0, 0, 0, 0) 72%
+  );
+}
+
+/*
+  The sphere itself. MapLibre's canvas is square; clipping it to a circle
+  gives the globe a crisp edge instead of a photo dropped in a box. The two
+  insets are page-layer light rather than anything the map canvas draws: a
+  dark falloff away from the light on the lower-right sells the curvature,
+  and a faint rim light on the upper-left — the lit edge — is what a sphere
+  actually does under one light source, which a flat raster image never
+  reproduces on its own.
+*/
+.globe-sphere {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  overflow: hidden;
+  box-shadow:
+    inset -8px -10px 20px rgba(0, 0, 0, 0.45),
+    inset 6px 7px 14px rgba(255, 255, 255, 0.16);
+}
+
+/*
+  The same specificity collision the map migration hit (see
+  .map-muted.maplibregl-map above): MapLibre's own stylesheet sets
+  `.maplibregl-map { position: relative }`, loads after Tailwind, and wins
+  the cascade over the `absolute` utility class at equal specificity —
+  collapsing the globe's canvas to 0 height instead of filling its circular
+  stage. Same fix, same reason: a compound selector outranks it regardless
+  of load order.
+*/
+.globe-canvas.maplibregl-map {
+  position: absolute;
+  inset: 0;
+}
