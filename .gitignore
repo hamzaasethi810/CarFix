@@ -50,3 +50,6 @@ graphify-out/
 
 # Overture extracts — large, regenerable
 data/
+
+# local scratch (screenshots etc.)
+tmp/
