@@ -228,7 +228,18 @@ export function Skeleton({ className = "" }: { className?: string }) {
       aria-hidden="true"
       className={`relative overflow-hidden rounded-md bg-fill ${className}`}
     >
-      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-black/5 to-transparent motion-safe:animate-[shimmer_1.6s_infinite] dark:via-white/5" />
+      {/*
+        The page has one appearance — dark, forced via `color-scheme: dark`
+        in globals.css, never toggled by a `.dark` class or media query — so
+        there is no separate light-mode sweep to keep the old `dark:`
+        variant for. `via-black/5` was a light-page sweep (a light page
+        already close to white just needs a faint shadow to read as a
+        highlight); over this dark ground it vanished into the fill instead
+        of sweeping across it, which is what the dead `dark:via-white/5`
+        variant was quietly correcting for on the light theme this design no
+        longer has.
+      */}
+      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent motion-safe:animate-[shimmer_1.6s_infinite]" />
     </div>
   );
 }

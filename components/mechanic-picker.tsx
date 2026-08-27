@@ -144,7 +144,7 @@ export function MechanicPicker({
           }}
           onFocus={() => items.length > 0 && setOpen(true)}
           onKeyDown={onKeyDown}
-          className="w-full min-h-11 rounded-control bg-elevated text-label text-body px-3.5 py-2.5 pr-10 border border-separator placeholder:text-tertiary-label"
+          className="w-full min-h-11 rounded-control bg-elevated text-label text-body px-3.5 py-2.5 pr-11 border border-separator placeholder:text-tertiary-label"
         />
 
         {chosen && (
@@ -152,7 +152,7 @@ export function MechanicPicker({
             type="button"
             onClick={clear}
             aria-label="Clear selected shop"
-            className="absolute right-1 top-1/2 -translate-y-1/2 size-9 grid place-items-center text-secondary"
+            className="absolute right-0 top-1/2 -translate-y-1/2 size-11 grid place-items-center text-secondary"
           >
             ×
           </button>

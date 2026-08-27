@@ -143,7 +143,7 @@ export function ServicePicker({
             setActive(-1);
           }}
           onKeyDown={onKeyDown}
-          className="w-full min-h-11 rounded-control bg-elevated/90 border border-separator px-3 pr-8 text-subhead"
+          className="w-full min-h-11 rounded-control bg-elevated/90 border border-separator px-3 pr-11 text-subhead"
         />
 
         {selected && !open && (
@@ -151,7 +151,7 @@ export function ServicePicker({
             type="button"
             onClick={() => pick(null)}
             aria-label="Clear service"
-            className="absolute right-0 top-1/2 -translate-y-1/2 size-9 grid place-items-center text-secondary"
+            className="absolute right-0 top-1/2 -translate-y-1/2 size-11 grid place-items-center text-secondary"
           >
             ×
           </button>

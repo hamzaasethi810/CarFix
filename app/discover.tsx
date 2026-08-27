@@ -527,7 +527,7 @@ export function Discover({
             >
               {/* Says the panel moves, and gives the thumb something to aim at. */}
               <div className="col-span-2 lg:col-span-5 -mt-1 mb-0.5 flex justify-center">
-                <span aria-hidden="true" className="h-1 w-9 rounded-control bg-black/15" />
+                <span aria-hidden="true" className="h-1 w-9 rounded-control bg-white/15" />
               </div>
 
               <Picker label="Make" value={makeId} onChange={chooseMake} options={makes} anyLabel="Any make" />
@@ -601,7 +601,7 @@ export function Discover({
                   className={`inline-flex items-center gap-2 min-h-11 px-4 rounded-control text-subhead font-medium transition-colors duration-150 ${
                     verifiedOnly
                       ? "bg-success/15 text-success"
-                      : "bg-black/[0.06] text-secondary hover:bg-black/10"
+                      : "bg-white/[0.06] text-secondary hover:bg-fill"
                   }`}
                 >
                   <span aria-hidden="true">{verifiedOnly ? "✓" : "○"}</span>
@@ -615,8 +615,8 @@ export function Discover({
                   onClick={() => setSubscribedOnly((v) => !v)}
                   className={`inline-flex items-center gap-2 min-h-11 px-4 rounded-control text-subhead font-medium transition-colors duration-150 ${
                     subscribedOnly
-                      ? "bg-[color-mix(in_srgb,#b8860b_18%,transparent)] text-[#8a6508]"
-                      : "bg-black/[0.06] text-secondary hover:bg-black/10"
+                      ? "bg-[color-mix(in_srgb,var(--gold)_18%,transparent)] text-gold"
+                      : "bg-white/[0.06] text-secondary hover:bg-fill"
                   }`}
                 >
                   <GoldCar className="size-4" />
@@ -640,7 +640,7 @@ export function Discover({
                     value={sort}
                     onChange={(e) => setSort(e.target.value as typeof sort)}
                     aria-label="Sort results by"
-                    className="min-h-11 rounded-control bg-black/[0.06] pl-4 pr-8 text-subhead font-medium"
+                    className="min-h-11 rounded-control bg-white/[0.06] pl-4 pr-8 text-subhead font-medium"
                   >
                     {/* Relevance is the only one that reads the filters. */}
                     <option value="relevant">Relevance</option>
@@ -692,7 +692,7 @@ export function Discover({
             {/* Signals the sheet can be dragged, the way sheets usually do. */}
             <span
               aria-hidden="true"
-              className="sm:hidden mx-auto mt-2 h-1 w-9 rounded-control bg-black/15"
+              className="sm:hidden mx-auto mt-2 h-1 w-9 rounded-control bg-white/15"
             />
 
             <button
@@ -734,7 +734,7 @@ export function Discover({
             <button
               type="button"
               onClick={() => setManuallyStowed(true)}
-              className="absolute right-2 top-2 hidden sm:grid size-9 place-items-center rounded-full text-secondary hover:text-label hover:bg-black/[0.06]"
+              className="absolute right-2 top-2 hidden sm:grid size-11 place-items-center rounded-full text-secondary hover:text-label hover:bg-fill"
               aria-label="Move the shop list aside"
             >
               <span aria-hidden="true" className="text-headline">&lsaquo;</span>
@@ -749,7 +749,7 @@ export function Discover({
                   onChange={(e) => setShopQuery(e.target.value)}
                   placeholder="Find a shop by name or town"
                   aria-label="Filter these shops by name or town"
-                  className="w-full min-h-11 rounded-control bg-elevated/80 border border-separator pl-9 pr-9 text-subhead"
+                  className="w-full min-h-11 rounded-control bg-elevated/80 border border-separator pl-9 pr-11 text-subhead"
                 />
                 <span
                   aria-hidden="true"
@@ -762,7 +762,7 @@ export function Discover({
                     type="button"
                     onClick={() => setShopQuery("")}
                     aria-label="Clear shop filter"
-                    className="absolute right-0 top-1/2 -translate-y-1/2 size-9 grid place-items-center text-secondary"
+                    className="absolute right-0 top-1/2 -translate-y-1/2 size-11 grid place-items-center text-secondary"
                   >
                     ×
                   </button>
@@ -861,7 +861,7 @@ export function Discover({
                     onClick={() => setSelectedId(m.id)}
                     aria-current={m.id === selectedId || undefined}
                     className={`w-full text-left rounded-control px-3 py-3 transition-colors ${
-                      m.id === selectedId ? "bg-accent-fill/12" : "hover:bg-black/5"
+                      m.id === selectedId ? "bg-accent-fill/12" : "hover:bg-fill"
                     }`}
                   >
                     <span className="flex items-baseline justify-between gap-2">
@@ -1019,7 +1019,7 @@ function Picker({
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-control bg-black/5 py-2">
+    <div className="rounded-control bg-fill py-2">
       <dt className="text-caption text-secondary">{label}</dt>
       <dd className="text-subhead font-semibold tabular-nums">{value}</dd>
     </div>

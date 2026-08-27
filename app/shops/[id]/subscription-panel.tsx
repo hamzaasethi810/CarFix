@@ -65,7 +65,7 @@ export function SubscriptionPanel({
         </div>
 
         {active && (
-          <span className="inline-flex items-center gap-1.5 text-footnote font-semibold rounded-control px-3 py-1.5 bg-[color-mix(in_srgb,#b8860b_15%,transparent)] text-[#8a6508]">
+          <span className="inline-flex items-center gap-1.5 text-footnote font-semibold rounded-control px-3 py-1.5 bg-[color-mix(in_srgb,var(--gold)_15%,transparent)] text-gold">
             <GoldCar className="size-4" /> Subscribed
           </span>
         )}

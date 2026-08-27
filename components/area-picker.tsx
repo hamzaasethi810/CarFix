@@ -89,7 +89,7 @@ export function AreaPicker({
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="inline-flex items-center gap-2 min-h-11 px-4 rounded-control bg-black/[0.06] hover:bg-black/10 text-subhead font-medium transition-colors duration-150 max-w-full"
+        className="inline-flex items-center gap-2 min-h-11 px-4 rounded-control bg-white/[0.06] hover:bg-fill text-subhead font-medium transition-colors duration-150 max-w-full"
       >
         <span aria-hidden="true">◎</span>
         <span className="truncate">{current ?? "Select area"}</span>
@@ -140,7 +140,7 @@ export function AreaPicker({
                   <button
                     type="button"
                     onClick={() => choose(r)}
-                    className="w-full text-left px-3 py-2.5 rounded-control hover:bg-black/5"
+                    className="w-full text-left px-3 py-2.5 rounded-control hover:bg-fill"
                   >
                     <span className="block text-subhead">{r.label}</span>
                     <span className="block text-footnote text-secondary">

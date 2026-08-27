@@ -82,7 +82,7 @@ export function Engagement({
             onClick={toggle}
             aria-pressed={vote.voted}
             className={`inline-flex items-center gap-2 min-h-11 px-4 rounded-control text-subhead font-medium transition-colors duration-150 ${
-              vote.voted ? "bg-accent-fill/12 text-accent" : "bg-black/[0.06] text-secondary hover:bg-black/10"
+              vote.voted ? "bg-accent-fill/12 text-accent" : "bg-white/[0.06] text-secondary hover:bg-fill"
             }`}
           >
             <span aria-hidden="true">{vote.voted ? "✓" : "☆"}</span>

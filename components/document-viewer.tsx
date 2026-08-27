@@ -84,6 +84,9 @@ export function DocumentViewer({ src, title, onClose, children }: Props) {
 
   return (
     <div
+      // Deliberately still black, not a token: this is a modal scrim, and a
+      // scrim is supposed to read as dark regardless of the page ground —
+      // it dims whatever is behind the dialog rather than tinting toward it.
       className="fixed inset-0 z-[100] grid place-items-center bg-black/60 p-4 motion-safe:animate-[fade-in_150ms_ease-out]"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
@@ -100,14 +103,14 @@ export function DocumentViewer({ src, title, onClose, children }: Props) {
             ref={closeRef}
             type="button"
             onClick={onClose}
-            className="size-9 grid place-items-center rounded-full text-secondary hover:text-label hover:bg-black/[0.06]"
+            className="size-11 grid place-items-center rounded-full text-secondary hover:text-label hover:bg-fill"
             aria-label="Close"
           >
             <span aria-hidden="true" className="text-headline">×</span>
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-auto bg-black/[0.04] grid place-items-center p-3">
+        <div className="flex-1 min-h-0 overflow-auto bg-white/[0.04] grid place-items-center p-3">
           {error && <p className="text-subhead text-destructive p-8">{error}</p>}
           {!error && !blobUrl && (
             <p className="text-subhead text-secondary p-8">Opening…</p>

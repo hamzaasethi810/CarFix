@@ -37,10 +37,12 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f2f2f7" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
-  ],
+  // Dark appearance only, by request (see globals.css) — the page is the same
+  // deep forest ground regardless of the visitor's system preference, so
+  // there is no separate light-mode colour to declare here. `#12271A` is
+  // `--bg-grouped`, the tone `<body>` actually paints (see the comment
+  // there), not the raw `--bg`, so mobile browser chrome matches the page.
+  themeColor: "#12271A",
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -49,10 +51,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="en" className={`h-full ${body.variable} ${display.variable}`}>
       {/*
-        The grouped tone (#f5f5f7) rather than pure white. White cards need
-        something marginally darker behind them or they do not read as cards at
-        all — which is why every panel looked like plain text on a page. The
-        map route paints its own full-bleed background over this.
+        The grouped tone (`--bg-grouped`, app/globals.css) rather than the
+        plain ground. Cards need something marginally different behind them
+        or they do not read as cards at all — which is why every panel used
+        to look like plain text on a page. The map route paints its own
+        full-bleed background over this.
       */}
       <body className="min-h-full flex flex-col bg-grouped">
         <a

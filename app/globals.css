@@ -47,6 +47,8 @@
 
   --success: #7BD69A;
   --warning: #E8A33D;
+  /* Gold — the subscription mark only (GoldCar and its "Subscribed" chip). */
+  --gold: #E8B84D;
 
   /* Brand — the wordmark and map pins only, never a generic control. */
   --brand: #6FCF8E;
@@ -78,9 +80,9 @@
     0 2px 8px rgba(0, 0, 0, 0.3),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
 
-  --radius-card: 14px;
-  --radius-control: 10px;
-  --radius-glass: 22px;
+  --radius-card: 10px;
+  --radius-control: 6px;
+  --radius-glass: 12px;
 
   /*
     A card has to read as a surface sitting on something, not as a rectangle
@@ -154,6 +156,7 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-brand: var(--brand);
+  --color-gold: var(--gold);
 
   /* Apple's text styles. Body is 17px — the platform default. */
   --text-large-title: 2.125rem;
@@ -183,9 +186,9 @@
   --text-caption: 0.75rem;
   --text-caption--line-height: 1rem;
 
-  --radius-card: 14px;
-  --radius-control: 10px;
-  --radius-glass: 22px;
+  --radius-card: 10px;
+  --radius-control: 6px;
+  --radius-glass: 12px;
 
   --shadow-card: var(--shadow-card);
   --shadow-raised: var(--shadow-raised);
