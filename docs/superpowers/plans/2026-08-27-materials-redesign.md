@@ -536,7 +536,7 @@ git commit -m "Set the site in condensed mechanical type"
 
 ---
 
-### Task 5: Sweep what escapes the tokens
+### Task 5: Sweep the escapes, tighten the radii, raise the small targets
 
 **Files:**
 - Modify: `app/discover.tsx`
@@ -590,11 +590,65 @@ surfaces.
 - `app/shops/[id]/subscription-panel.tsx` — replace with tokens.
 - `app/icon.svg` — the favicon. Check it still reads on a dark browser tab.
 
-- [ ] **Step 3: Commit**
+
+- [ ] **Step 4: Tighten the radii so surfaces read machined, not soft**
+
+The current values are a holdover from the Apple-HIG theme and are rounder than
+this design wants:
+
+```
+--radius-card: 14px;
+--radius-control: 10px;
+--radius-glass: 22px;   /* the worst offender */
+```
+
+A 22px radius on a floating panel reads as a bubble, which is the specific
+thing this redesign is meant to get away from. Bring them in:
+
+```css
+--radius-card: 10px;
+--radius-control: 6px;
+--radius-glass: 12px;
+```
+
+Change them in **both** places they appear in `app/globals.css` — the `:root`
+block and the `@theme inline` block — or the tokens and the Tailwind utilities
+will disagree.
+
+Then look at it. A machined part has a small, even radius; the goal is
+"milled edge", not "pebble". If 6px on a 44px-tall button looks too sharp
+against the brushed fill, 8px is defensible — but do not go back above 10px.
+
+- [ ] **Step 5: Raise the sub-44px touch targets**
+
+Usability is not being traded away for looks here. Most controls already use
+`min-h-11` (44px), which is the floor, but five interactive elements are
+36px squares:
 
 ```bash
-git add app/discover.tsx app/layout.tsx app/shops/\[id\]/subscription-panel.tsx app/icon.svg
-git commit -m "Move the last hardcoded colours onto the new palette"
+grep -rn "size-9" app components
+```
+
+They are the clear-field buttons in `app/discover.tsx`,
+`components/service-picker.tsx` and `components/mechanic-picker.tsx`, and the
+close button in `components/document-viewer.tsx`.
+
+Raise each to `size-11` (44px). Where that would crowd the layout — these sit
+inside input fields — keep the visible icon its current size and expand only
+the hit area, with padding or a pseudo-element, so the control stays
+proportionate while the target meets the floor.
+
+Verify by measuring, not by eye: in the browser, check
+`el.getBoundingClientRect()` for each is at least 44 in both axes.
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add app/globals.css app/discover.tsx app/layout.tsx \
+  app/shops/\[id\]/subscription-panel.tsx app/icon.svg \
+  components/service-picker.tsx components/mechanic-picker.tsx \
+  components/document-viewer.tsx app/experiences/\[id\]/engagement.tsx
+git commit -m "Move the last colours onto the palette, tighten the radii, and raise the small touch targets"
 ```
 
 ---

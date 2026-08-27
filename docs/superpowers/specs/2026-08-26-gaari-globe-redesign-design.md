@@ -238,6 +238,14 @@ spent there is effort not spent on the part everyone sees.
 
 ## Guardrails
 
+- **Usability is not traded for looks.** Every interactive target is at least
+  44pt in both axes, keyboard focus stays visible on every control, and body
+  text holds WCAG AA against whatever surface it sits on. An automated contrast
+  check enforces the last of these; the first two are checked in the browser.
+  A skeuomorphic surface that is hard to use has failed, however good it looks.
+- **No bubbles.** Radii stay small and even — a milled edge, not a pebble.
+  Pill-shaped controls are out entirely. Round is allowed only where the thing
+  is genuinely a circle: an avatar, a status dot, a spinner.
 - **`prefers-reduced-motion`** disables the descent, the stagger and the tilt.
   Nothing becomes unreachable; things simply appear.
 - **Slow connections** skip the globe entirely and land on the map.
