@@ -1,22 +1,35 @@
 import "dotenv/config";
 import { createReadStream } from "node:fs";
 import { createInterface } from "node:readline";
+import { createInterface as createPromptInterface } from "node:readline/promises";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../lib/generated/prisma/client";
-import { normalisePlace, shouldSkipAsDuplicate, type OverturePlace } from "../lib/services/overture-import";
+import {
+  normalisePlace,
+  SAME_PLACE_DEGREES,
+  shouldSkipAsDuplicate,
+  upsertWasCreate,
+  type OverturePlace,
+} from "../lib/services/overture-import";
 
 /*
   Loads an Overture extract into the shop table.
 
-  Operator tooling, run from a shell against a database URL given on the
-  command line. It is deliberately not reachable over HTTP: it writes hundreds
-  of thousands of rows and re-running it against the wrong database would be
-  tedious to undo.
+  Operator tooling, run from a shell. It reads its target database from
+  `process.env.DATABASE_URL` (via `.env`, loaded above) — there is no
+  command-line way to point it elsewhere. It is deliberately not reachable
+  over HTTP: it writes tens of thousands of rows and re-running it against
+  the wrong database would be tedious to undo.
 
   Idempotent. Rows are keyed on (source, sourceRef), so a second run of the
   same extract updates rather than duplicates.
 
-    npx tsx scripts/overture-import.ts data/va-places.json [--dry-run]
+  Must be run through the npm script below rather than a bare `npx tsx` —
+  the service layer this imports pulls in `server-only`, which throws for
+  any runtime that hasn't opted into React Server Component conditions, and
+  `npx tsx` alone hasn't:
+
+    npm run overture:import -- data/va-places.json [--dry-run] [--yes]
 */
 
 const prisma = new PrismaClient({
@@ -25,20 +38,48 @@ const prisma = new PrismaClient({
 
 const BATCH = 1000;
 
+/** Host and database name only — never the password or the full URL. */
+function describeTarget(databaseUrl: string): string {
+  const url = new URL(databaseUrl);
+  return `${url.hostname}/${url.pathname.replace(/^\//, "")}`;
+}
+
+/**
+ * Blast-radius guard before the first write. Skipped entirely for
+ * `--dry-run`, which writes nothing, and for `--yes`, for scripted use.
+ */
+async function confirmOrAbort(file: string, yes: boolean) {
+  const target = describeTarget(process.env.DATABASE_URL!);
+  console.log(`About to import ${file} into ${target}.`);
+  if (yes) return;
+
+  const rl = createPromptInterface({ input: process.stdin, output: process.stdout });
+  const answer = await rl.question('Type "yes" to proceed: ');
+  rl.close();
+  if (answer.trim() !== "yes") {
+    console.error("Aborted.");
+    process.exit(1);
+  }
+}
+
 async function main() {
   const [file, ...flags] = process.argv.slice(2);
   if (!file) {
-    console.error("Usage: npx tsx scripts/overture-import.ts <extract.json> [--dry-run]");
+    console.error("Usage: npm run overture:import -- <extract.json> [--dry-run] [--yes]");
     process.exit(1);
   }
   const dryRun = flags.includes("--dry-run");
+  const yes = flags.includes("--yes");
+
+  if (!dryRun) await confirmOrAbort(file, yes);
 
   // The service catalogue, once. Names that are not in it are skipped rather
   // than created — an import must never invent a service.
   const services = await prisma.service.findMany({ select: { id: true, name: true } });
   const serviceIdByName = new Map(services.map((s) => [s.name.toLowerCase(), s.id]));
 
-  let read = 0, kept = 0, skippedLowQuality = 0, skippedDuplicate = 0, written = 0, failed = 0;
+  let read = 0, kept = 0, skippedLowQuality = 0, skippedDuplicate = 0, malformed = 0;
+  let created = 0, updated = 0, wouldWrite = 0, failed = 0;
   let batch: ReturnType<typeof normalisePlace>[] = [];
 
   const flush = async () => {
@@ -49,7 +90,9 @@ async function main() {
     for (const row of rows) {
       try {
         // Only shops close enough to matter are candidates for a duplicate.
-        const d = 0.0025;
+        // Same radius the matcher below tests against, so the two cannot
+        // silently drift apart and let a duplicate through.
+        const d = SAME_PLACE_DEGREES;
         const nearby = await prisma.mechanic.findMany({
           where: {
             deletedAt: null,
@@ -68,7 +111,7 @@ async function main() {
           continue;
         }
 
-        if (dryRun) { written += 1; continue; }
+        if (dryRun) { wouldWrite += 1; continue; }
 
         const shop = await prisma.mechanic.upsert({
           where: { source_sourceRef: { source: "OVERTURE", sourceRef: row.sourceRef } },
@@ -83,7 +126,7 @@ async function main() {
             country: row.country, zip: row.zip, lat: row.lat, lng: row.lng,
             phone: row.phone, website: row.website,
           },
-          select: { id: true },
+          select: { id: true, createdAt: true, updatedAt: true },
         });
 
         for (const name of row.services) {
@@ -95,7 +138,8 @@ async function main() {
             update: {},
           });
         }
-        written += 1;
+        if (upsertWasCreate(shop.createdAt, shop.updatedAt)) created += 1;
+        else updated += 1;
       } catch (e) {
         failed += 1;
         console.error(
@@ -110,7 +154,7 @@ async function main() {
     if (!line.trim()) continue;
     read += 1;
     let place: OverturePlace;
-    try { place = JSON.parse(line); } catch { continue; }
+    try { place = JSON.parse(line); } catch { malformed += 1; continue; }
 
     const row = normalisePlace(place);
     if (!row) { skippedLowQuality += 1; continue; }
@@ -121,11 +165,16 @@ async function main() {
   }
   await flush();
 
+  const written = dryRun
+    ? `  ${wouldWrite.toLocaleString()} would be written\n`
+    : `  ${created.toLocaleString()} created, ${updated.toLocaleString()} updated\n`;
+
   console.log(
     `\nread ${read.toLocaleString()} places\n` +
     `  ${skippedLowQuality.toLocaleString()} not workshops, unnamed, unplaced or low confidence\n` +
     `  ${skippedDuplicate.toLocaleString()} already listed\n` +
-    `  ${written.toLocaleString()} ${dryRun ? "would be written" : "written"}\n` +
+    written +
+    (malformed > 0 ? `  ${malformed.toLocaleString()} unparseable\n` : "") +
     (failed > 0 ? `  ${failed.toLocaleString()} failed\n` : "") +
     `  (${kept.toLocaleString()} passed normalisation)`,
   );

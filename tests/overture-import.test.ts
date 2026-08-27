@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalisePlace, type OverturePlace } from "../lib/services/overture-import";
+import { normalisePlace, upsertWasCreate, type OverturePlace } from "../lib/services/overture-import";
 
 const place = (over: Partial<OverturePlace> = {}): OverturePlace => ({
   id: "08f2ab...",
@@ -71,5 +71,37 @@ describe("turning an Overture place into a shop", () => {
   it("keeps state empty outside the United States", () => {
     const shop = normalisePlace(place({ country: "GB", region: "England" }));
     expect(shop?.state).toBe("");
+  });
+
+  it("caps every unbounded text field, matching app/api/shops/submit/route.ts", () => {
+    // The columns are Postgres text, so without a cap a malformed record
+    // stores and renders a multi-KB field.
+    const shop = normalisePlace(place({
+      freeform: "A".repeat(1000),
+      locality: "B".repeat(1000),
+      region: "C".repeat(1000),
+      postcode: "D".repeat(1000),
+      phone: "E".repeat(1000),
+      country: "USA",
+    }));
+    expect(shop?.address.length).toBe(200);
+    expect(shop?.city.length).toBe(100);
+    expect(shop?.state.length).toBe(100);
+    expect(shop?.zip.length).toBe(20);
+    expect(shop?.phone?.length).toBe(40);
+    expect(shop?.country.length).toBe(2);
+  });
+});
+
+describe("telling an insert from an update after an upsert", () => {
+  it("calls it a create when the timestamps match", () => {
+    const now = new Date("2026-08-26T12:00:00Z");
+    expect(upsertWasCreate(now, now)).toBe(true);
+  });
+
+  it("calls it an update when updatedAt has moved on", () => {
+    const createdAt = new Date("2026-01-01T00:00:00Z");
+    const updatedAt = new Date("2026-08-26T12:00:00Z");
+    expect(upsertWasCreate(createdAt, updatedAt)).toBe(false);
   });
 });

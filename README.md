@@ -195,19 +195,45 @@ OpenStreetMap never mapped. Two steps, both run by an operator:
 # 1. Pull an area out of Overture's public S3 bucket (needs duckdb)
 ./scripts/overture-extract.sh -83.7 36.5 -75.2 39.5 data/va-places.json
 
-# 2. Load it, against whichever database you mean
-DATABASE_URL=... npx tsx scripts/overture-import.ts data/va-places.json --dry-run
-DATABASE_URL=... npx tsx scripts/overture-import.ts data/va-places.json
+# 2. Load it, against whatever DATABASE_URL points to (from .env)
+npm run overture:import -- data/va-places.json --dry-run
+npm run overture:import -- data/va-places.json
 ```
+
+Run it through the npm script, not a bare `npx tsx scripts/overture-import.ts`
+— the service layer it imports pulls in `server-only`, which throws under
+plain `tsx` and never gets as far as reading a record.
+
+A write (anything without `--dry-run`) prints the target database's host and
+name — never the password, never the full connection string — and the file
+being imported, then asks the operator to type `yes` before touching a row.
+Pass `--yes` to skip that prompt for scripted use. `--dry-run` skips the
+prompt entirely, since it writes nothing.
 
 Idempotent: rows are keyed on `(source, sourceRef)`, so re-running an extract
 updates rather than duplicates. A shop already listed from another source is
 left alone — a similar name at effectively the same spot counts as the same
 business.
 
-Imported shops carry `source = 'OVERTURE'` and cannot hold a subscription or
-a gold badge — that is enforced by data, not by convention, so a shop that
-was scraped in can never look like one an owner claimed and paid for.
+Imported shops carry `source = 'OVERTURE'` and `listingStatus: CONFIRMED` —
+these are real businesses from a curated dataset, not user submissions, so
+they are not marked unconfirmed. What actually stands between an imported
+shop and a paid subscription or the gold badge is the claim flow: nobody can
+subscribe a shop they have not claimed, and claiming it requires uploading a
+trading document that a reviewer approves before the claim takes effect.
+
+**Rollback.** There is no undo script, deliberately: `DELETE FROM "Mechanic"
+WHERE source = 'OVERTURE'` looks like the obvious rollback but is not a safe
+one — `MechanicExperience.mechanic` cascades, so it would also delete every
+real report a user has since filed against an imported shop that got
+claimed. The safe rollback is a soft delete restricted to rows nobody has
+reported on:
+
+```sql
+UPDATE "Mechanic" SET "deletedAt" = now()
+WHERE source = 'OVERTURE' AND "deletedAt" IS NULL
+  AND id NOT IN (SELECT DISTINCT "mechanicId" FROM "MechanicExperience");
+```
 
 **Measured cost, from a real Virginia import (21,279 shops, 25,520 places
 read):** about 255 bytes per shop on the heap (283 with Postgres's per-row
@@ -215,9 +241,9 @@ overhead), measured with `avg(pg_column_size(m.*))` rather than dividing the
 table's file size by row count — the dev database carries about 44 MB of
 dead space from an earlier benchmark that `VACUUM FULL` cannot reclaim here,
 which makes a size-on-disk measurement meaningless. At that rate, the whole
-United States (roughly 300,000 shops) projects to around 300,000 × 283 bytes
-≈ 81 MB of heap, comfortably inside Neon's 512 MB free-tier limit even after
-accounting for indexes.
+United States (roughly 300,000 shops) projects to roughly 126–202 MB
+nationally, including indexes and the join rows in `MechanicSpecialty` —
+comfortably inside Neon's 512 MB free-tier limit.
 
 That is well under the ~400 MB threshold this project uses to decide
 between a single national import and importing state by state, so **a
@@ -269,6 +295,7 @@ destruction on decision, audit logging, and generation-level aggregation.
 | `npm run db:deploy` | apply migrations (production) |
 | `npm run db:seed` | seed taxonomy, services, and sample mechanics |
 | `./scripts/overture-extract.sh <west> <south> <east> <north> <out.json>` | pull automotive places for a bounding box out of Overture Maps' public S3 bucket into a JSON file |
+| `npm run overture:import -- <extract.json> [--dry-run] [--yes]` | load an Overture extract into the shop table (never `npx tsx` directly — see above) |
 
 ---
 

@@ -76,27 +76,38 @@ export function normalisePlace(
   const category = place.category ?? "";
   if (!isAutomotive(category)) return null;
 
-  const country = (place.country ?? "US").toUpperCase();
+  const country = (place.country ?? "US").toUpperCase().slice(0, 2);
 
   return {
+    // Caps match app/api/shops/submit/route.ts's Zod schema, the other path
+    // onto this same column set — text columns are unbounded in Postgres, so
+    // without a cap here a malformed record can store and render a multi-KB
+    // field.
     name: name.slice(0, 200),
-    address: place.freeform?.trim() ?? "",
-    city: place.locality?.trim() ?? "",
+    address: (place.freeform?.trim() ?? "").slice(0, 200),
+    city: (place.locality?.trim() ?? "").slice(0, 100),
     // "state" is a US concept here, matching how the rest of the app treats it.
-    state: country === "US" ? (place.region?.trim() ?? "") : "",
+    state: country === "US" ? (place.region?.trim() ?? "").slice(0, 100) : "",
     country,
-    zip: place.postcode?.trim() ?? "",
+    zip: (place.postcode?.trim() ?? "").slice(0, 20),
     lat: place.lat,
     lng: place.lng,
-    phone: place.phone?.trim() || null,
+    phone: place.phone?.trim().slice(0, 40) || null,
     website: safeUrl(place.website),
     sourceRef: place.id,
     services: servicesFromCategory(category),
   };
 }
 
-/** About 250 metres — close enough that one business is not two. */
-const SAME_PLACE_DEGREES = 0.0025;
+/**
+ * About 250 metres — close enough that one business is not two.
+ *
+ * Exported so the script's neighbour query can use the same radius the
+ * matcher below tests against. If the two drifted apart, the query could
+ * stop returning candidates the matcher would have flagged, and duplicates
+ * would slip through silently.
+ */
+export const SAME_PLACE_DEGREES = 0.0025;
 
 type Located = { name: string; lat: number; lng: number };
 
@@ -114,4 +125,19 @@ export function shouldSkipAsDuplicate(candidate: Located, nearby: Located[]): bo
       Math.abs(existing.lng - candidate.lng) < SAME_PLACE_DEGREES &&
       looksLikeSameName(existing.name, candidate.name),
   );
+}
+
+/**
+ * Whether an upsert created a new row, versus updating one that already
+ * existed.
+ *
+ * The neighbour query's `alreadyMine` flag looks like it would answer this
+ * for free, but it comes from a `deletedAt: null` search, so a row that was
+ * soft-deleted and then re-imported would read as "created" when it was
+ * really restored. Comparing the timestamps the upsert already returns has
+ * no such gap: a fresh row's `createdAt` and `updatedAt` are set by the same
+ * statement, so they are exactly equal only on creation.
+ */
+export function upsertWasCreate(createdAt: Date, updatedAt: Date): boolean {
+  return createdAt.getTime() === updatedAt.getTime();
 }

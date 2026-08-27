@@ -71,3 +71,15 @@ describe("what a category says a shop does", () => {
     }
   });
 });
+
+describe("the shell prefilter stays in step with AUTOMOTIVE_ROLLUPS", () => {
+  // scripts/overture-extract.sh hard-codes its own copy of these rollups — a
+  // shell script cannot import TypeScript — so nothing would catch the two
+  // lists drifting apart except this test.
+  it("has every AUTOMOTIVE_ROLLUPS value in the extract script's WHERE clause", () => {
+    const script = readFileSync("scripts/overture-extract.sh", "utf8");
+    for (const rollup of AUTOMOTIVE_ROLLUPS) {
+      expect(script.includes(rollup), `${rollup} missing from overture-extract.sh`).toBe(true);
+    }
+  });
+});
