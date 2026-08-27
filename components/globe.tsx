@@ -99,6 +99,15 @@ export function Globe({ onNearby }: { onNearby: () => void }) {
       container: containerRef.current,
       style: GLOBE_STYLE,
       center: [-20, 15],
+      /*
+        Load-bearing, not an arbitrary starting position. At this zoom the
+        rendered sphere exactly fills .globe-stage's circle, which is what the
+        contact shadow and the rim light in globals.css are positioned against.
+        It was arrived at by measuring rendered pixels, not derived from the
+        projection, so a MapLibre change to how zoom maps to globe radius would
+        silently reopen a gap or leave a ring between sphere and stage. If the
+        globe ever looks detached from its shadow again, check this first.
+      */
       zoom: 2.05,
       minZoom: 0.3,
       maxZoom: 2.5,
