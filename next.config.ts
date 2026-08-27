@@ -15,7 +15,7 @@ const csp = [
   // OpenFreeMap is the always-available keyless fallback (see lib/map/style.ts).
   "connect-src 'self' https://api.maptiler.com https://tiles.openfreemap.org",
   // MapLibre's worker is spawned from a blob URL.
-  "worker-src 'self' blob:",
+  "worker-src 'self'",
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",
