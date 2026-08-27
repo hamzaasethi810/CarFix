@@ -52,25 +52,31 @@
   --brand: #6FCF8E;
 
   /*
-    Liquid Glass. `regular` blurs and lifts luminosity so text stays legible
-    over busy content; `clear` is more transparent for floating over media
-    (the map). Values follow the reference: blur 20-40px regular / 10-20px
-    clear, opacity 0.6-0.8 / 0.3-0.5, saturation 1.2-1.5x.
+    Liquid Glass, retuned dark. On a light page, frosted glass lightens and
+    saturates what's under it; on this deep-green, textured ground the same
+    light-tinted glass reads as a smear painted over the material rather than
+    a pane of something. A dark, smoked pane — low-alpha near-black, the same
+    blur — instead darkens and desaturates the map or content behind it,
+    which is what glass over a dark scene actually looks like. `regular`
+    stays denser for text legibility; `clear` stays lighter for floating over
+    media (the map).
   */
-  --glass-regular-bg: rgba(255, 255, 255, 0.62);
+  --glass-regular-bg: rgba(6, 14, 10, 0.55);
   --glass-regular-blur: 32px;
-  --glass-clear-bg: rgba(255, 255, 255, 0.34);
+  --glass-clear-bg: rgba(6, 14, 10, 0.32);
   --glass-clear-blur: 20px;
-  --glass-saturate: 1.5;
-  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-saturate: 1.3;
+  --glass-border: rgba(255, 255, 255, 0.12);
   /*
     Two shadows: a wide soft one for lift off the map, and a hairline inner
-    highlight along the top edge that reads as the thickness of the glass.
+    highlight along the top edge that reads as the thickness of the glass —
+    dimmer than a light-glass highlight would be, so it doesn't read as a
+    light source of its own on a dark ground.
   */
   --glass-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.14),
-    0 2px 8px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    0 2px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 
   --radius-card: 14px;
   --radius-control: 10px;
@@ -78,12 +84,22 @@
 
   /*
     A card has to read as a surface sitting on something, not as a rectangle
-    drawn on the same colour. The ring was 6% black on a white page, which is
-    close to invisible; the page behind it is now the grouped tone, so the
-    white card is what separates them and the ring only defines the edge.
+    drawn on the same colour. Shadows tuned for a white page are close to
+    invisible on a dark, textured ground — on dark grounds the separation
+    comes mainly from a 1px top highlight (the edge catching light) plus a
+    wider, darker drop shadow than a light theme would ever need, since the
+    ground itself is already dark and a faint shadow just disappears into it.
   */
-  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.04), 0 0 0 0.5px rgba(0, 0, 0, 0.08);
-  --shadow-raised: 0 4px 16px rgba(0, 0, 0, 0.1), 0 0 0 0.5px rgba(0, 0, 0, 0.05);
+  --shadow-card:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 1px 2px rgba(0, 0, 0, 0.3),
+    0 8px 20px rgba(0, 0, 0, 0.28),
+    0 0 0 0.5px rgba(0, 0, 0, 0.4);
+  --shadow-raised:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 2px 6px rgba(0, 0, 0, 0.35),
+    0 16px 40px rgba(0, 0, 0, 0.35),
+    0 0 0 0.5px rgba(0, 0, 0, 0.45);
 }
 
 /* Increase Contrast: deepen the ground, brighten type, raise separators. */
@@ -181,7 +197,32 @@ html {
 }
 
 body {
-  background: var(--bg);
+  background-color: var(--bg);
+  /*
+    The ground is a material, not a flat fill: a vignette that pulls the
+    corners down from the centre, over a fine brushed-metal grain. Both are
+    gradients rather than an image — no extra request, nothing to fail to
+    load. Plan 2 puts a photoreal globe on this ground, and a sphere over a
+    flat fill reads as a sticker no matter how good the sphere is; this
+    texture is what it needs to sit against, so the alphas below are tuned to
+    be obvious at normal viewing distance, not merely present under a loupe.
+  */
+  background-image:
+    /* vignette — corners fall away from the centre */
+    radial-gradient(
+      ellipse at 50% 35%,
+      rgba(0, 0, 0, 0) 40%,
+      rgba(0, 0, 0, 0.4) 100%
+    ),
+    /* brushed grain — a fine vertical tick, widened to 3px to avoid moiré */
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.05) 0px,
+      rgba(255, 255, 255, 0.05) 1px,
+      rgba(0, 0, 0, 0.05) 1px,
+      rgba(0, 0, 0, 0.05) 3px
+    );
+  background-attachment: fixed;
   color: var(--label);
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, Roboto,
@@ -212,11 +253,11 @@ body {
   backdrop-filter: blur(var(--glass-clear-blur)) saturate(var(--glass-saturate));
 }
 
-/* Where backdrop-filter is unsupported, fall back to a solid surface. */
+/* Where backdrop-filter is unsupported, fall back to a solid dark surface. */
 @supports not (backdrop-filter: blur(1px)) {
   .glass,
   .glass-clear {
-    background: rgba(255, 255, 255, 0.97);
+    background: rgba(14, 31, 22, 0.97);
   }
 }
 

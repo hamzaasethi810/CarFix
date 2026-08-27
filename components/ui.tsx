@@ -1,5 +1,12 @@
 import type { ReactNode } from "react";
 
+/*
+  Raised off the textured ground: bg-elevated is the lighter panel tone, and
+  shadow-card (see --shadow-card in globals.css) carries both a 1px top
+  highlight — the edge catching light — and a drop shadow wide enough to
+  separate the card from the grain and vignette behind it. On a dark ground
+  the highlight, not the shadow, is what reads as "raised".
+*/
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
   return (
     <div
@@ -186,6 +193,10 @@ const BUTTON_BASE =
   at all — the shop list's distance labels and the map's roads show straight
   through it. Glass belongs to the panels anchored to the page; anything that
   opens above them needs something solid to sit on.
+
+  shadow-raised (see --shadow-raised in globals.css) gives it the same top
+  highlight as Card, plus a deeper drop shadow — popovers float further off
+  the page than a card sitting in the flow does, so they need more separation.
 */
 export const popoverSurface =
   "bg-elevated shadow-raised border border-separator";
