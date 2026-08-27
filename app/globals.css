@@ -268,6 +268,72 @@ body {
   border-radius: 6px;
 }
 
+/*
+  A machined-aluminium control.
+
+  Three things make metal read as metal: a directional brush, edges that catch
+  light differently top and bottom, and a highlight that moves when the object
+  does. The inset edges are what give it thickness — without them this is just
+  a gradient.
+*/
+.machined {
+  position: relative;
+  overflow: hidden;
+  background-image: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.05) 0px,
+    rgba(255, 255, 255, 0.05) 1px,
+    rgba(0, 0, 0, 0.05) 1px,
+    rgba(0, 0, 0, 0.05) 2px
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.30),   /* bright top edge */
+    inset 0 -1px 0 rgba(0, 0, 0, 0.38),        /* dark bottom edge */
+    0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* The specular band, parked off the left edge until hover moves it across. */
+.machined::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    105deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.22) 48%,
+    transparent 66%
+  );
+  transform: translateX(-100%);
+}
+
+.machined:active {
+  /* Depress: the edges swap, so the light now comes from below. */
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.45),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+}
+.machined:active > * {
+  transform: translateY(1px);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .machined::after {
+    transition: transform 520ms ease-out;
+  }
+  .machined:hover::after {
+    transform: translateX(100%);
+  }
+}
+
+/*
+  overflow: hidden on .machined clips the specular band to the button's
+  rounded corners, which is the point — but a focus outline is drawn outside
+  the border box, not as part of the box's own content, so browsers do not
+  clip it against the element's own overflow. The ring stays whole; only the
+  specular band (an ::after living inside the box) gets clipped.
+*/
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

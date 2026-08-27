@@ -186,6 +186,19 @@ const BUTTON_BASE =
   "inline-flex items-center justify-center min-h-11 px-4 rounded-control text-headline font-semibold transition-[background-color,opacity] duration-150 disabled:opacity-40 disabled:cursor-not-allowed";
 
 /*
+  Machined aluminium: a directional brush, top/bottom edges that catch light
+  differently, and a specular band that travels on hover (see .machined in
+  globals.css). Filled variants only — `plain` is a text button and stays
+  flat, or it would read as a metal slab behind a link.
+
+  BUTTON_BASE already transitions background-color/opacity on its own
+  timeline; .machined's transition is scoped to its own ::after (the
+  specular band) under `prefers-reduced-motion: no-preference`, so the two
+  never fight over the same property.
+*/
+const MACHINED = "machined";
+
+/*
   The surface a floating menu sits on.
 
   Deliberately opaque. Menus open over the map and over the glass panels
@@ -202,9 +215,10 @@ export const popoverSurface =
   "bg-elevated shadow-raised border border-separator";
 
 export const buttonStyles = {
-  primary: `${BUTTON_BASE} bg-accent-fill text-on-accent hover:bg-accent-hover`,
-  secondary: `${BUTTON_BASE} bg-fill text-accent hover:opacity-80`,
-  destructive: `${BUTTON_BASE} bg-destructive-fill text-on-destructive hover:opacity-90`,
+  primary: `${BUTTON_BASE} ${MACHINED} bg-accent-fill text-on-accent hover:bg-accent-hover`,
+  secondary: `${BUTTON_BASE} ${MACHINED} bg-fill text-accent hover:opacity-80`,
+  destructive: `${BUTTON_BASE} ${MACHINED} bg-destructive-fill text-on-destructive hover:opacity-90`,
+  // Text button: no material — a metal slab behind a link would misread as a control.
   plain: `${BUTTON_BASE} text-accent hover:bg-fill`,
 } as const;
 
