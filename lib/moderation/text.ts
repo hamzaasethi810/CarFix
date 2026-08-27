@@ -91,9 +91,27 @@ const censor = new TextCensor().setStrategy(keepStartCensorStrategy(asteriskCens
   ever uses the result of this function to decide whether something matched,
   and to build the text it returns when something did. A clean post is
   always returned as the user wrote it, spacing included; see screenText.
+
+  The run-matching regex cannot tell a real one-letter English word ("a",
+  "I") from part of a spaced-out obfuscation it happens to sit next to, so
+  without help it swallows it: "I s h i t you not" would otherwise collapse
+  to "Ishit you not" instead of "I shit you not". The while-loop below peels
+  a leading "a"/"I" off the front of a matched run before joining the rest,
+  so that real word stays a separate token. This was cut once already as
+  apparently-dead weight because the only test for it used `toContain("*")`,
+  which can't tell "Is***" from "I s***" apart — see the exact-output
+  "leaves a real leading word out of a spaced-out run" test below, which
+  exists specifically so this can't happen again.
 */
 function collapseLetterSpacing(text: string): string {
-  return text.replace(/\b(?:[A-Za-z]\s+){2,}[A-Za-z]\b/g, (run) => run.replace(/\s+/g, ""));
+  return text.replace(/\b(?:[A-Za-z]\s+){2,}[A-Za-z]\b/g, (run) => {
+    const letters = run.split(/\s+/);
+    let prefix = "";
+    while (letters.length > 3 && /^[ai]$/i.test(letters[0])) {
+      prefix += `${letters.shift()} `;
+    }
+    return prefix + letters.join("");
+  });
 }
 
 /** Anything that looks like a link, including bare domains. */
@@ -104,7 +122,20 @@ const DATA_URL = /data:\s*[a-z]+\/[a-z0-9.+-]+\s*;\s*base64/i;
 const BASE64_RUN = /[A-Za-z0-9+/=]{200,}/;
 
 const EMAIL = /\b[^\s@]+@[^\s@]+\.[a-z]{2,}\b/i;
+
+/*
+  A run of digits (with spacing/punctuation) on its own is not evidence of
+  spam — it's a service date, a part number, a registration, or the garage's
+  own phone number, and every review on this site is about one of those. The
+  distinction that matters is not "does this contain digits" but "is this
+  soliciting contact": a number cited alongside phrasing like "call me" or
+  "for a better price" is someone trying to move the conversation off-site;
+  a number cited as a fact is ordinary review content.
+*/
 const PHONE = /\b(\+?\d[\d\s().-]{7,}\d)\b/;
+const SOLICITATION_CUE =
+  /\b(call|text|whatsapp|dm|contact|reach)\s+me\b|\bmy\s+number\b|\bfor\s+a\s+(?:better|cheaper)\s+price\b|\bcheaper\s+elsewhere\b/i;
+
 const CHARACTER_WALL = /(.)\1{5,}/;
 
 const MESSAGES: Record<ScreenReason, string> = {
@@ -124,9 +155,17 @@ const reject = (reason: ScreenReason): ScreenResult => ({
   message: MESSAGES[reason],
 });
 
-/** Loud enough to be shouting, and long enough that it was not an acronym. */
+/*
+  Loud enough to be shouting, and long enough that it was not an acronym.
+  Automotive writing is unusually acronym-dense (BMW, MOT, ABS, ECU, OBD,
+  DPF, EGR...), and every one of those is short and legitimately all caps.
+  Counting them toward the ratio would flag ordinary technical sentences, so
+  only words longer than four characters — too long to plausibly be an
+  acronym — are counted at all.
+*/
 function isShouting(text: string) {
-  const letters = text.replace(/[^a-z]/gi, "");
+  const longWords = (text.match(/[a-z]+/gi) ?? []).filter((word) => word.length > 4);
+  const letters = longWords.join("");
   if (letters.length < 20) return false;
   const upper = letters.replace(/[^A-Z]/g, "").length;
   return upper / letters.length > 0.7;
@@ -142,7 +181,12 @@ export function screenText(input: string): ScreenResult {
   // Checked ahead of the generic link check: an email address's domain
   // (e.g. "example.com" in "deals@example.com") would otherwise also match
   // the bare-domain half of LINK, misreporting contact harvesting as a link.
-  if (EMAIL.test(text) || PHONE.test(text)) return reject("spam");
+  // An email address in a review is almost always promotional, so it is
+  // refused unconditionally; a phone number is refused only alongside a
+  // solicitation cue (see SOLICITATION_CUE above) — bare digits are a date,
+  // a part number or a registration far more often than they are spam.
+  if (EMAIL.test(text)) return reject("spam");
+  if (PHONE.test(text) && SOLICITATION_CUE.test(text)) return reject("spam");
   if (LINK.test(text)) return reject("link");
   if (isShouting(text) || CHARACTER_WALL.test(text)) return reject("spam");
 
