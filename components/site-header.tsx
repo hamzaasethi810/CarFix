@@ -54,7 +54,14 @@ export function SiteHeader({
             <Link href="/garage" className={navLink}>
               Garage
             </Link>
-            <Link href="/experiences/new" className={`${navLink} hidden sm:inline-flex`}>
+            {/*
+              max-sm:hidden rather than "hidden sm:inline-flex": navLink already
+              sets inline-flex unconditionally, and Tailwind emits .inline-flex
+              after .hidden, so the plain .hidden lost the cascade and this link
+              never actually hid — it wrapped the header onto two lines on a
+              360px screen. A media-query variant wins regardless of order.
+            */}
+            <Link href="/experiences/new" className={`${navLink} max-sm:hidden`}>
               Log a service
             </Link>
           </>
