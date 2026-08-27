@@ -7,10 +7,15 @@ const csp = [
   // Next injects inline hydration scripts; dev additionally needs eval for HMR.
   `script-src 'self' 'unsafe-inline'${isProd ? "" : " 'unsafe-eval'"}`,
   "style-src 'self' 'unsafe-inline'",
-  // OpenStreetMap raster tiles for the mechanic map (no API key, no billing).
-  "img-src 'self' blob: data: https://*.tile.openstreetmap.org https://tile.openstreetmap.org",
+  "img-src 'self' blob: data:",
   "font-src 'self' data:",
-  "connect-src 'self'",
+  // MapLibre GL fetches style/tile/sprite/glyph data itself (not <img> tags),
+  // so the map's tile sources are allowed here rather than in img-src.
+  // MapTiler is the preferred source when NEXT_PUBLIC_MAPTILER_KEY is set;
+  // OpenFreeMap is the always-available keyless fallback (see lib/map/style.ts).
+  "connect-src 'self' https://api.maptiler.com https://tiles.openfreemap.org",
+  // MapLibre's worker is spawned from a blob URL.
+  "worker-src 'self' blob:",
   "frame-ancestors 'none'",
   "object-src 'none'",
   "base-uri 'self'",

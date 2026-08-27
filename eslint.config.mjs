@@ -84,6 +84,11 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
     "lib/generated/**",
+    // Vendored as-is from maplibre-gl/dist so the browser can fetch a real
+    // http(s) URL for its worker (see the comment in mechanic-map.tsx) —
+    // third-party minified code, not ours to lint.
+    "public/maplibre-gl-worker.mjs",
+    "public/maplibre-gl-shared.mjs",
   ]),
 ]);
 

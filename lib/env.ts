@@ -38,6 +38,15 @@ const serverEnvSchema = z.object({
   UPSTASH_REDIS_REST_URL: blankAsUndefined(z.string().url()),
   UPSTASH_REDIS_REST_TOKEN: blankAsUndefined(z.string().min(1)),
 
+  /*
+    Map tiles. Optional — without it the map falls back to a keyless dark
+    style (see lib/map/style.ts). This is NEXT_PUBLIC because the browser,
+    not this server, makes the tile requests. A MapTiler key is
+    domain-restricted rather than secret, so shipping it to the client is not
+    a leak.
+  */
+  NEXT_PUBLIC_MAPTILER_KEY: blankAsUndefined(z.string().min(1)),
+
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
 

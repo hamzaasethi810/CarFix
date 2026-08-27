@@ -405,21 +405,34 @@ body:has(.map-root) footer {
 }
 
 /*
-  HIG recommends the muted map style when information-rich content sits on top.
-  Desaturating the raster tiles in CSS achieves that with no paid tile plan.
+  MapLibre renders through a single WebGL canvas rather than Leaflet's raster
+  tile-pane divs, so there is nothing left to desaturate in CSS for the old
+  "muted" look — the map style itself (lib/map/style.ts) is dark now, which
+  gets the same HIG "muted" emphasis against the glass panels on top without
+  a CSS filter.
 */
-.map-muted .leaflet-tile-pane {
-  filter: saturate(0.55) brightness(1.04) contrast(0.95);
-}
-
-.leaflet-container {
-  background: #eceff1;
+.maplibregl-map {
+  background: #0b0f0d;
   font-family: inherit;
   isolation: isolate;
 }
 
+/*
+  MapLibre's own stylesheet sets `.maplibregl-map { position: relative }`.
+  That rule loads after this one (maplibre-gl.css is imported inside the map
+  component, not the root layout) and is equal specificity to the `absolute`
+  utility class the container also carries, so it silently wins the cascade
+  and collapses the map to 0 height. The compound selector below outranks a
+  single-class rule on specificity alone, so the fix does not depend on
+  stylesheet load order.
+*/
+.map-muted.maplibregl-map {
+  position: absolute;
+  inset: 0;
+}
+
 /* Attribution stays legible and is never fully covered. */
-.leaflet-control-attribution {
+.maplibregl-ctrl-attrib {
   background: rgba(255, 255, 255, 0.82) !important;
   backdrop-filter: blur(8px);
   font-size: 11px !important;
@@ -428,29 +441,30 @@ body:has(.map-root) footer {
   color: var(--label-secondary) !important;
 }
 
-.leaflet-control-attribution a {
+.maplibregl-ctrl-attrib a {
   color: var(--accent) !important;
 }
 
-.leaflet-control-zoom {
+.maplibregl-ctrl-group {
   border: none !important;
   box-shadow: var(--glass-shadow) !important;
   border-radius: 12px !important;
   overflow: hidden;
+  background: transparent !important;
 }
 
-.leaflet-control-zoom a {
+.maplibregl-ctrl-group button {
   background: var(--glass-regular-bg) !important;
   backdrop-filter: blur(var(--glass-regular-blur)) saturate(var(--glass-saturate));
-  color: var(--label) !important;
-  border-color: var(--separator) !important;
   width: 40px !important;
   height: 40px !important;
-  line-height: 40px !important;
-  font-size: 20px !important;
 }
 
-.leaflet-control-zoom a:hover {
+.maplibregl-ctrl-group button + button {
+  border-top: 1px solid var(--separator) !important;
+}
+
+.maplibregl-ctrl-group button:hover {
   background: #ffffff !important;
 }
 
@@ -465,6 +479,7 @@ body:has(.map-root) footer {
   background: var(--brand);
   border: 2px solid #ffffff;
   box-shadow: 0 3px 10px rgba(0, 0, 0, 0.32);
+  cursor: pointer;
 }
 
 .pin span {
@@ -492,6 +507,7 @@ body:has(.map-root) footer {
   font-variant-numeric: tabular-nums;
   border: 2.5px solid #ffffff;
   box-shadow: 0 3px 12px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
 }
 
 .cluster-sm {
@@ -511,18 +527,21 @@ body:has(.map-root) footer {
 }
 
 /*
-  Leaflet positions its controls itself, outside React, so they cannot be given
-  the safe-area padding the rest of the map layer receives. On a phone held
-  sideways the zoom buttons sat under the Dynamic Island.
+  MapLibre positions its controls itself, outside React, so they cannot be
+  given the safe-area padding the rest of the map layer receives. On a phone
+  held sideways the zoom buttons sat under the Dynamic Island.
 */
-.leaflet-left {
+.maplibregl-ctrl-top-left,
+.maplibregl-ctrl-bottom-left {
   margin-left: env(safe-area-inset-left);
 }
 
-.leaflet-right {
+.maplibregl-ctrl-top-right,
+.maplibregl-ctrl-bottom-right {
   margin-right: env(safe-area-inset-right);
 }
 
-.leaflet-bottom {
+.maplibregl-ctrl-bottom-left,
+.maplibregl-ctrl-bottom-right {
   margin-bottom: env(safe-area-inset-bottom);
 }

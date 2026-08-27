@@ -97,7 +97,7 @@ for (const [route, slug] of ROUTES) {
           if (r.width === 0 || r.height === 0) return false;
           // The skip link is 1x1 until focused, and attribution is not a control.
           if (el.textContent.trim() === "Skip to content") return false;
-          if (el.closest(".leaflet-control-attribution")) return false;
+          if (el.closest(".maplibregl-ctrl-attrib")) return false;
           /*
             Inline links inside a sentence are exempt from the target-size
             rule — WCAG 2.5.5 carves them out, because you cannot pad a word

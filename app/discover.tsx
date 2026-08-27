@@ -9,7 +9,7 @@ import { AreaPicker, type Area } from "@/components/area-picker";
 import { GoldCar } from "@/app/shops/[id]/subscription-panel";
 import { ServicePicker } from "@/components/service-picker";
 
-// Leaflet needs `window`, so the map never renders on the server.
+// MapLibre needs `window`, so the map never renders on the server.
 const MechanicMap = dynamic(
   () => import("@/components/mechanic-map").then((m) => m.MechanicMap),
   {
