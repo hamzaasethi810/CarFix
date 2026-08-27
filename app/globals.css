@@ -593,10 +593,24 @@ body:has(.map-root) footer {
 .globe-ground {
   position: absolute;
   left: 50%;
+  /*
+    The box straddles the contact line rather than hanging below it.
+
+    Anchoring the gradient's focal point to the box's TOP edge put the darkest
+    point in the right place, but clipped the ellipse's upper half against the
+    element's own boundary — which rendered as a hard horizontal line across
+    the sphere's base and a squared-off band wider than the sphere. It read as
+    a rendering fault rather than a shadow.
+
+    Centring the box on the contact line instead lets the ellipse fade in every
+    direction from its darkest point. The upper half is not clipped, it is
+    simply hidden: this element is painted before .globe-sphere, so the sphere
+    covers it. No straight edges anywhere.
+  */
   top: 100%;
-  transform: translate(-50%, 0);
-  width: 155%;
-  height: 58%;
+  transform: translate(-50%, -50%);
+  width: 118%;
+  height: 104%;
   pointer-events: none;
   /*
     Deeper than the brief's own literal example (0.55/0.28) — the ground here
@@ -607,10 +621,10 @@ body:has(.map-root) footer {
     background, invisible at normal viewing distance.
   */
   background: radial-gradient(
-    ellipse at 50% 0%,
+    ellipse at 50% 50%,
     rgba(0, 0, 0, 0.8) 0%,
-    rgba(0, 0, 0, 0.45) 40%,
-    rgba(0, 0, 0, 0) 68%
+    rgba(0, 0, 0, 0.42) 32%,
+    rgba(0, 0, 0, 0) 66%
   );
 }
 
