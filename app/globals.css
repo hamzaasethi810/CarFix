@@ -1,59 +1,55 @@
 @import "tailwindcss";
 
 /*
-  Design system calibrated to Apple's Human Interface Guidelines.
+  Design system: a deep forest green, skeuomorphic material ground.
 
   Two layers, per the Liquid Glass guidance:
-    - Content layer  — opaque white surfaces, standard materials.
+    - Content layer  — opaque, raised dark-green surfaces, standard materials.
     - Functional layer — Liquid Glass (blur + translucency) for navigation,
       toolbars, and floating controls that sit ABOVE content.
 
   Glass never appears on content cards. Putting it there "creates unnecessary
   complexity and confusing visual hierarchy".
 
-  Light appearance only, by request: the page is white throughout.
+  Dark appearance only, by request: the page is a deep forest green throughout.
+  Every text token below is checked against its surface by
+  tests/contrast.test.ts — see lib/design/contrast.ts.
 */
 
 :root {
-  color-scheme: light;
+  color-scheme: dark;
 
-  /* Content layer. */
-  --bg: #ffffff;
-  --bg-elevated: #ffffff;
-  --bg-grouped: #f5f5f7;
-  --bg-tertiary: #f5f5f7;
-  --fill-quaternary: rgba(116, 116, 128, 0.08);
+  /* Ground — deep forest green. Texture is applied on body, not here. */
+  --bg: #0E1F16;
+  --bg-elevated: #17301F;   /* raised work surface */
+  --bg-grouped: #12271A;
+  --bg-tertiary: #1B3624;
+  --fill-quaternary: rgba(220, 236, 226, 0.10);
 
-  /* Label hierarchy. */
-  --label: #16161a;
-  --label-secondary: rgba(29, 29, 31, 0.72);
-  --label-tertiary: rgba(29, 29, 31, 0.5);
-  --separator: rgba(0, 0, 0, 0.1);
+  /* Label hierarchy — white and near-white, per the spec. */
+  --label: #F2F7F3;
+  --label-secondary: rgba(228, 240, 231, 0.82);
+  --label-tertiary: rgba(228, 240, 231, 0.62);
+  --separator: rgba(180, 208, 190, 0.22);
 
   /*
-    Interactive blue, darkened to clear 4.5:1 as link text on white and behind
-    white button text. Apple's #007AFF is 4.02:1 on white and fails that bar.
+    A brighter green than the old light theme's, so it reads as text against
+    the dark ground: #6FCF8E on #0E1F16 clears 4.5:1 (see contrast.test.ts).
   */
-  /*
-    Forest green, matching the car in the mark. Every button draws from these,
-    so there is one accent in the product rather than a blue that had nothing
-    to do with the brand sitting next to a green logo.
-    #1E5631 on white is about 8:1, comfortably past the 4.5:1 minimum.
-  */
-  --accent: #1E5631;
-  --accent-fill: #1E5631;
-  --accent-hover: #163F24;
-  --on-accent: #ffffff;
+  --accent: #6FCF8E;
+  --accent-fill: #2E7D4F;
+  --accent-hover: #37945D;
+  --on-accent: #FFFFFF;
 
-  --destructive: #d70015;
-  --destructive-fill: #d70015;
-  --on-destructive: #ffffff;
+  --destructive: #FF6B6B;
+  --destructive-fill: #A81E1E;
+  --on-destructive: #FFFFFF;
 
-  --success: #23873c;
-  --warning: #b25000;
+  --success: #7BD69A;
+  --warning: #E8A33D;
 
-  /* Brand red — the wordmark and map pins only, never a generic control. */
-  --brand: #d70015;
+  /* Brand — the wordmark and map pins only, never a generic control. */
+  --brand: #6FCF8E;
 
   /*
     Liquid Glass. `regular` blurs and lifts luminosity so text stays legible
@@ -90,19 +86,21 @@
   --shadow-raised: 0 4px 16px rgba(0, 0, 0, 0.1), 0 0 0 0.5px rgba(0, 0, 0, 0.05);
 }
 
-/* Increase Contrast: raise label and separator contrast, deepen accents. */
+/* Increase Contrast: deepen the ground, brighten type, raise separators. */
 @media (prefers-contrast: more) {
   :root {
-    --label-secondary: rgba(29, 29, 31, 0.92);
-    --label-tertiary: rgba(29, 29, 31, 0.78);
-    --separator: rgba(0, 0, 0, 0.32);
-    --accent: #2E7D4F;
-    --accent-fill: #2E7D4F;
-    --destructive: #a20009;
-    --success: #17651f;
+    --bg: #081209;
+    --bg-elevated: #102319;
+    --label-secondary: rgba(228, 240, 231, 0.95);
+    --label-tertiary: rgba(228, 240, 231, 0.85);
+    --separator: rgba(180, 208, 190, 0.42);
+    --accent: #8FE0AA;
+    --accent-fill: #37945D;
+    --destructive: #FF9494;
+    --success: #9AE3B4;
     /* Glass becomes near-opaque so text never fights the background. */
-    --glass-regular-bg: rgba(255, 255, 255, 0.97);
-    --glass-clear-bg: rgba(255, 255, 255, 0.92);
+    --glass-regular-bg: rgba(14, 31, 22, 0.97);
+    --glass-clear-bg: rgba(14, 31, 22, 0.92);
     --glass-saturate: 1;
   }
 }
@@ -110,8 +108,8 @@
 /* Reduce Transparency: drop translucency entirely rather than merely thinning it. */
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    --glass-regular-bg: rgba(255, 255, 255, 0.98);
-    --glass-clear-bg: rgba(255, 255, 255, 0.96);
+    --glass-regular-bg: rgba(14, 31, 22, 0.98);
+    --glass-clear-bg: rgba(14, 31, 22, 0.96);
     --glass-regular-blur: 0px;
     --glass-clear-blur: 0px;
     --glass-saturate: 1;
