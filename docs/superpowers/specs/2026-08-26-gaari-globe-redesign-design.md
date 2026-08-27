@@ -193,9 +193,26 @@ The mechanic list slides in from the **left**, the filter rail from the
 
 ### The shop popout
 
-A pin opens a card that rises out of the map and tilts toward the cursor —
-parallax across its surface, light travelling with it. On touch the tilt
-follows the drag. Under `prefers-reduced-motion` it simply appears.
+A pin opens the shop, and what that means depends on the screen.
+
+**Phone (<640).** The shop takes the whole screen. A close control — an X —
+sits at the top, inside the safe area. There is no room on a phone for a card
+floating over a map that the card has just made unusable, and a half-covered
+map is worse than an honest full-screen view.
+
+**Tablet and desktop (≥640).** The shop opens as a card over the map, anchored
+near its pin, sized so the surrounding map stays visible and useful. Dismissed
+by the same X, by clicking away, or by Escape.
+
+**No cursor tracking.** The card does not tilt toward the pointer and does not
+parallax. This is a reversal of an earlier direction in this spec, decided on
+2026-08-27: the effect is a distraction on a screen whose job is to compare
+prices, and it buys nothing on touch, which is where most of this traffic will
+be. The card is a solid object made of the same materials as everything else —
+it rises, and that is all.
+
+The rise itself still respects `prefers-reduced-motion`: under it, the card
+simply appears.
 
 ### Responsive behaviour
 
