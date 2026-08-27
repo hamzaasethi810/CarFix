@@ -1,8 +1,26 @@
 import { z } from "zod";
+import { screenText } from "../moderation/text";
 
 const id = z.string().min(1).max(64);
 const rating = z.coerce.number().int().min(1).max(5);
 const money = z.coerce.number().min(0).max(1_000_000);
+
+/**
+ * Free text a person wrote. Screened on the way in, so no route can forget:
+ * profanity is masked, slurs and spam are refused with the reason.
+ */
+export const moderatedText = (max: number) =>
+  z
+    .string()
+    .max(max)
+    .transform((value, ctx) => {
+      const result = screenText(value);
+      if (!result.ok) {
+        ctx.addIssue({ code: "custom", message: result.message });
+        return z.NEVER;
+      }
+      return result.text;
+    });
 
 export const registerSchema = z
   .object({
@@ -62,7 +80,7 @@ export const createExperienceSchema = z
     knowledgeRating: rating,
     wouldRecommend: z.coerce.boolean(),
     wouldReturn: z.coerce.boolean(),
-    reviewText: z.string().max(5000).nullable().optional(),
+    reviewText: moderatedText(5000).nullable().optional(),
   })
   .strict()
   .superRefine((v, ctx) => {
@@ -94,7 +112,7 @@ export const updateExperienceSchema = z
     knowledgeRating: rating.optional(),
     wouldRecommend: z.coerce.boolean().optional(),
     wouldReturn: z.coerce.boolean().optional(),
-    reviewText: z.string().max(5000).nullable().optional(),
+    reviewText: moderatedText(5000).nullable().optional(),
   })
   .strict();
 

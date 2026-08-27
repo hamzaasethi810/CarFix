@@ -3,11 +3,12 @@ import { ok, parseJson, route } from "@/lib/api/handler";
 import { requireUser } from "@/lib/auth/guards";
 import { clientIdentifier, enforceRateLimit } from "@/lib/rate-limit";
 import { submitShop } from "@/lib/services/shop-submissions";
+import { moderatedText } from "@/lib/validation/schemas";
 
 const bodySchema = z
   .object({
     name: z.string().min(2).max(200),
-    description: z.string().max(1000).nullable().optional(),
+    description: moderatedText(1000).nullable().optional(),
     address: z.string().min(3).max(200),
     city: z.string().min(1).max(100),
     // Empty outside the US; the service decides whether that is allowed for
