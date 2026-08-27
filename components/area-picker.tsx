@@ -15,13 +15,23 @@ export function AreaPicker({
   current,
   onChoose,
   onOpenChange,
+  initialOpen = false,
 }: {
   current: string | null;
   onChoose: (area: Area) => void;
   /** Lets the page move things out of the way while this is open. */
   onOpenChange?: (open: boolean) => void;
+  /**
+   * Opens the popover as soon as it mounts, rather than waiting for its own
+   * trigger to be clicked — for a caller that mounts this component *as*
+   * the response to something else (e.g. the globe opening it after
+   * geolocation is refused, so declining isn't a dead end). Read once, on
+   * first render only, like any other `useState` initializer; a caller that
+   * needs to reopen it later should remount rather than toggle this prop.
+   */
+  initialOpen?: boolean;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(initialOpen);
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Area[]>([]);
   const [loading, setLoading] = useState(false);

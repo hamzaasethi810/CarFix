@@ -1,10 +1,13 @@
 "use client";
 
-import { useEffect, useRef } from "react";
-import { Map as MapLibreGlMap, setWorkerUrl } from "maplibre-gl";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AttributionControl, Map as MapLibreGlMap, setWorkerUrl } from "maplibre-gl";
 import type { Map as MapLibreMap, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { buttonStyles } from "@/components/ui";
+import { AreaPicker, type Area } from "@/components/area-picker";
+import { descentPlan, type DescentStep } from "@/lib/map/descent";
+import { fallbackStyleUrl, isQuotaFailure, mapStyleUrl } from "@/lib/map/style";
 
 /*
   Same vendored-worker fix as components/mechanic-map.tsx: MapLibre resolves
@@ -63,6 +66,82 @@ const EARTH_LAYER_ID = "earth-surface";
 */
 const MERCATOR_LAT_LIMIT = 85.0511;
 
+/*
+  The zoom Nearby arrives at — close enough to street level to be useful,
+  and close to lib/map/descent.ts's STREET_ZOOM_FLOOR so the final leg (the
+  only part of the descent that costs tiles) is a short hop rather than a
+  long one. Matches the zoom the working street map (mechanic-map.tsx)
+  itself settles around for a single city.
+*/
+const CITY_ZOOM = 11;
+
+// Same lifetime reasoning as mechanic-map.tsx's identical constant/helper:
+// the quota resets monthly, so remembering the switch for longer than this
+// tab's session would strand a returning visitor on the fallback for weeks
+// after MapTiler is serving again. Not imported from that file because it
+// isn't exported there and duplicating one string constant is cheaper than
+// coupling two independent map components together.
+const FALLBACK_SESSION_KEY = "gaari:map-tile-fallback";
+
+function startedOnFallback(): boolean {
+  try {
+    return sessionStorage.getItem(FALLBACK_SESSION_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+/*
+  Read once at module scope rather than per-descent: NEXT_PUBLIC_ variables are
+  inlined at build time, so this is a constant, not a lookup. Absent, the map
+  falls back to the keyless source — see lib/map/style.ts.
+*/
+const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY;
+
+/**
+ * Animate one leg and resolve when the camera stops.
+ *
+ * `moveend` rather than a timer: an interrupted or shortened animation still
+ * fires it, so a descent can never be left half-run waiting on a duration that
+ * no longer applies.
+ */
+/**
+ * Swap the basemap and wait until it is actually ready to draw.
+ *
+ * `setStyle` is asynchronous, and a camera animation started in the same tick
+ * is discarded while the new style loads — which is exactly what happened the
+ * first time this was wired: the descent swapped in street tiles, the final
+ * `easeTo` was dropped on the floor, and the camera stopped half a continent
+ * up. It looked like a working flight that simply never arrived, and the low
+ * tile count made it look economical rather than broken.
+ */
+function swapStyle(map: MapLibreMap, style: string): Promise<void> {
+  return new Promise((resolve) => {
+    const done = () => {
+      map.off("idle", done);
+      resolve();
+    };
+    map.once("idle", done);
+    map.setStyle(style);
+    // Belt and braces: a style that is already cached can settle without ever
+    // going busy, and a descent must not hang waiting for an event that has
+    // already been and gone.
+    setTimeout(done, 2_000);
+  });
+}
+
+function flyLeg(map: MapLibreMap, step: DescentStep): Promise<void> {
+  return new Promise((resolve) => {
+    map.once("moveend", () => resolve());
+    map.easeTo({
+      center: [step.lng, step.lat],
+      zoom: step.zoom,
+      duration: step.durationMs,
+      essential: true,
+    });
+  });
+}
+
 const GLOBE_STYLE: StyleSpecification = {
   version: 8,
   sources: {
@@ -88,9 +167,21 @@ const GLOBE_STYLE: StyleSpecification = {
   projection: { type: "globe" },
 };
 
-export function Globe({ onNearby }: { onNearby: () => void }) {
+export function Globe({ onNearby }: { onNearby: (area: { lat: number; lng: number }) => void }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
+
+  // Whether the area picker is open. Only ever true after geolocation is
+  // refused (or unavailable) — see handleNearby — so declining location
+  // never dead-ends: naming a town is always the very next thing offered.
+  const [picking, setPicking] = useState(false);
+  // True for the span between a target being chosen and the camera actually
+  // arriving, so a second tap on Nearby (or the area picker) can't start a
+  // second descent on top of the first one.
+  const [descending, setDescending] = useState(false);
+
+  const fallbackAppliedRef = useRef(false);
+  const attributionAddedRef = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -110,7 +201,21 @@ export function Globe({ onNearby }: { onNearby: () => void }) {
       */
       zoom: 2.05,
       minZoom: 0.3,
-      maxZoom: 2.5,
+      /*
+        High enough for the descent to actually arrive.
+
+        This was 2.5, bounding the decorative globe — and it silently clamped
+        the descent's final leg: easeTo({ zoom: 11 }) became easeTo({ zoom:
+        2.5 }), so the camera crossed the world and then stopped in orbit. It
+        looked like a flight that worked and a tile count that was
+        impressively low, when in fact the map had never reached street level
+        at all.
+
+        Nothing is lost by raising it: every zoom interaction on this map is
+        disabled (see the handler block below), so a visitor cannot zoom at
+        all. The only thing that moves the camera is the descent.
+      */
+      maxZoom: 18,
       bearing: 0,
       pitch: 0,
       attributionControl: false,
@@ -133,6 +238,46 @@ export function Globe({ onNearby }: { onNearby: () => void }) {
       keyboard: false,
     });
 
+    /*
+      Attribution, added only once a street style is in play.
+
+      The globe itself draws a local public-domain NASA texture credited in the
+      comment at the top of this file, so there is nothing for MapLibre to
+      attribute while it is on screen — and an empty attribution box floating
+      under the sphere is noise. The moment the descent swaps in MapTiler or
+      OpenFreeMap, though, their attribution is a licence obligation rather
+      than a courtesy, so it goes on with the style that requires it.
+    */
+    map.on("styledata", () => {
+      if (attributionAddedRef.current) return;
+      // The globe style carries the local texture and nothing to credit.
+      if (map.getSource(EARTH_SOURCE_ID)) return;
+      attributionAddedRef.current = true;
+      map.addControl(new AttributionControl({ compact: false }));
+    });
+
+    /*
+      Same quota fallback as mechanic-map.tsx, for the same reason: MapTiler
+      pauses service when the month's requests are spent, and a blank map is
+      the worst way for a visitor to discover that. Only 402 and 429 count —
+      a 404 or a network blip must not discard a working paid source. The
+      keyless fallback is never the thing that fails here, so this only ever
+      fires for MapTiler.
+    */
+    map.on("error", (e) => {
+      const status = (e.error as { status?: number } | undefined)?.status;
+      if (status === undefined || !isQuotaFailure(status)) return;
+      if (fallbackAppliedRef.current) return; // switch once, not once per tile
+      fallbackAppliedRef.current = true;
+      try {
+        sessionStorage.setItem(FALLBACK_SESSION_KEY, "1");
+      } catch {
+        // Private browsing can throw on storage access; the ref above still
+        // prevents repeat switches for the rest of this page's life.
+      }
+      map.setStyle(fallbackStyleUrl());
+    });
+
     mapRef.current = map;
 
     return () => {
@@ -140,6 +285,82 @@ export function Globe({ onNearby }: { onNearby: () => void }) {
       mapRef.current = null;
     };
   }, []);
+
+  /*
+    Fly the camera down through the plan's keyframes.
+
+    The street source is swapped in exactly when the final leg begins, and not
+    a moment earlier. That single fact is what keeps a descent in the tens of
+    tile requests rather than the hundreds: a naive flight from orbit to a city
+    interpolates through every zoom level in between with tiles attached, and
+    MapTiler's free tier pauses service for the rest of the month when it is
+    spent. Everything before the last leg is drawn from the local texture.
+  */
+  const descend = useCallback(
+    async (to: { lat: number; lng: number }) => {
+      const map = mapRef.current;
+      if (!map || descending) return;
+      setDescending(true);
+      setPicking(false);
+
+      const plan = descentPlan({ ...to, zoom: CITY_ZOOM });
+      const streetStyle = startedOnFallback() ? fallbackStyleUrl() : mapStyleUrl(MAPTILER_KEY);
+
+      /*
+        Reduced motion means no flight at all — not a faster one. The camera
+        is placed at the destination and the tiles load there. Nothing becomes
+        unreachable; it simply arrives.
+      */
+      const still =
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+      const last = plan[plan.length - 1];
+
+      if (still) {
+        await swapStyle(map, streetStyle);
+        map.jumpTo({ center: [last.lng, last.lat], zoom: last.zoom });
+        setDescending(false);
+        onNearby(to);
+        return;
+      }
+
+      for (const [i, step] of plan.entries()) {
+        // The final leg is the only one that costs anything, so the basemap
+        // arrives with it rather than before it — and the swap is awaited,
+        // because a camera move started while a style is loading is dropped.
+        if (i === plan.length - 1) await swapStyle(map, streetStyle);
+        await flyLeg(map, step);
+      }
+
+      setDescending(false);
+      onNearby(to);
+    },
+    [descending, onNearby],
+  );
+
+  /*
+    Geolocation, with refusal treated as a normal answer rather than an error.
+
+    Declining location must not dead-end: the globe stays where it is and the
+    area picker opens instead, so naming a town is always the very next thing
+    offered. No warning, no retry prompt — a person who said no does not need
+    to be argued with.
+  */
+  const handleNearby = useCallback(() => {
+    if (descending) return;
+
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setPicking(true);
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => void descend({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      () => setPicking(true),
+      { timeout: 8_000, maximumAge: 300_000 },
+    );
+  }, [descend, descending]);
 
   return (
     /*
@@ -201,12 +422,33 @@ export function Globe({ onNearby }: { onNearby: () => void }) {
       <div className="absolute bottom-0 inset-x-0 pb-6 sm:pb-10 flex justify-center pointer-events-none">
         <button
           type="button"
-          onClick={onNearby}
+          onClick={handleNearby}
+          disabled={descending}
           className={`${buttonStyles.primary} pointer-events-auto`}
         >
           Nearby
         </button>
       </div>
+
+      {/*
+        Only mounted once geolocation has been refused or is unavailable, and
+        keyed on that so it mounts open every time rather than needing its own
+        trigger pressed. Refusing location should cost one tap, not two.
+      */}
+      {picking && (
+        <div className="absolute inset-x-0 bottom-24 flex justify-center px-4">
+          <div className="pointer-events-auto">
+            <AreaPicker
+              current={null}
+              initialOpen
+              onChoose={(area: Area) => void descend({ lat: area.lat, lng: area.lng })}
+              onOpenChange={(open) => {
+                if (!open) setPicking(false);
+              }}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
