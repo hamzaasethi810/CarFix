@@ -32,6 +32,18 @@ export type DescentStep = LatLngZoom & { durationMs: number };
 export const STREET_ZOOM_FLOOR = 9;
 
 /*
+  The zoom a descent arrives at — close enough to street level to be useful.
+
+  It lives here rather than in the component so its relationship to
+  STREET_ZOOM_FLOOR is enforceable: the final leg is the only part of the
+  flight that costs tiles, and it must be a short hop rather than a long
+  climb. tests/descent.test.ts asserts the gap; previously these were two
+  constants in two files that merely happened to agree, linked by a comment
+  nothing could check.
+*/
+export const CITY_ZOOM = 11;
+
+/*
   Where the globe is sitting when nobody has touched it. Mirrors
   components/globe.tsx's `center: [-20, 15]` / `zoom: 2.05` (lng, lat is
   MapLibre's order; this module uses lat/lng like the rest of the plan). Kept

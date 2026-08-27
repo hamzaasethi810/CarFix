@@ -6,8 +6,13 @@ import type { Map as MapLibreMap, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { buttonStyles } from "@/components/ui";
 import { AreaPicker, type Area } from "@/components/area-picker";
-import { descentPlan, type DescentStep } from "@/lib/map/descent";
-import { fallbackStyleUrl, isQuotaFailure, mapStyleUrl } from "@/lib/map/style";
+import { CITY_ZOOM, descentPlan, type DescentStep } from "@/lib/map/descent";
+import {
+  FALLBACK_ATTRIBUTION,
+  fallbackStyleUrl,
+  isQuotaFailure,
+  mapStyleUrl,
+} from "@/lib/map/style";
 
 /*
   Same vendored-worker fix as components/mechanic-map.tsx: MapLibre resolves
@@ -66,15 +71,6 @@ const EARTH_LAYER_ID = "earth-surface";
 */
 const MERCATOR_LAT_LIMIT = 85.0511;
 
-/*
-  The zoom Nearby arrives at — close enough to street level to be useful,
-  and close to lib/map/descent.ts's STREET_ZOOM_FLOOR so the final leg (the
-  only part of the descent that costs tiles) is a short hop rather than a
-  long one. Matches the zoom the working street map (mechanic-map.tsx)
-  itself settles around for a single city.
-*/
-const CITY_ZOOM = 11;
-
 // Same lifetime reasoning as mechanic-map.tsx's identical constant/helper:
 // the quota resets monthly, so remembering the switch for longer than this
 // tab's session would strand a returning visitor on the fallback for weeks
@@ -117,22 +113,45 @@ const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY;
  */
 function swapStyle(map: MapLibreMap, style: string): Promise<void> {
   return new Promise((resolve) => {
+    // A holder rather than a bare `let`: `done` has to be defined before the
+    // timer that calls it, and the timer has to be created after setStyle.
+    const timer: { id?: ReturnType<typeof setTimeout> } = {};
     const done = () => {
+      if (timer.id !== undefined) clearTimeout(timer.id);
       map.off("idle", done);
       resolve();
     };
     map.once("idle", done);
     map.setStyle(style);
-    // Belt and braces: a style that is already cached can settle without ever
-    // going busy, and a descent must not hang waiting for an event that has
-    // already been and gone.
-    setTimeout(done, 2_000);
+    /*
+      A safety net, not the normal path: a style already in cache can settle
+      without ever going busy, and a descent must not hang on an event that has
+      already been and gone.
+
+      Eight seconds rather than two. If this timer wins the race on a slow
+      connection, the next leg starts against a still-loading style and the
+      camera move is dropped — reproducing the exact bug the awaited swap
+      exists to prevent. The margin has to be wide enough that only a genuinely
+      stuck load reaches it.
+    */
+    timer.id = setTimeout(done, 8_000);
   });
 }
 
 function flyLeg(map: MapLibreMap, step: DescentStep): Promise<void> {
   return new Promise((resolve) => {
-    map.once("moveend", () => resolve());
+    const done = () => {
+      map.off("moveend", done);
+      map.off("remove", done);
+      resolve();
+    };
+    map.once("moveend", done);
+    /*
+      `remove()` never fires moveend, so without this a descent interrupted by
+      the component unmounting would leave this promise — and its listener —
+      pending forever.
+    */
+    map.once("remove", done);
     map.easeTo({
       center: [step.lng, step.lat],
       zoom: step.zoom,
@@ -182,6 +201,30 @@ export function Globe({ onNearby }: { onNearby: (area: { lat: number; lng: numbe
 
   const fallbackAppliedRef = useRef(false);
   const attributionAddedRef = useRef(false);
+  /*
+    Two refs rather than relying on the `descending` state alone.
+
+    `aliveRef` is the unmount guard: a descent is a multi-second async
+    sequence, and somebody can navigate away mid-flight. Without this, the
+    steps after an await would run against a torn-down map and set state on an
+    unmounted component.
+
+    `descendingRef` is the race guard. `descending` is state, so both handlers
+    close over its render-time value — two quick presses of Nearby before the
+    first geolocation callback returns would each read `false` and start a
+    flight, two sets of listeners driving one camera. The button's `disabled`
+    attribute lags a render behind and cannot prevent it. The state is kept
+    only for that disabled attribute; the ref is what actually decides.
+  */
+  const aliveRef = useRef(true);
+  const descendingRef = useRef(false);
+
+  useEffect(() => {
+    aliveRef.current = true;
+    return () => {
+      aliveRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
@@ -253,7 +296,18 @@ export function Globe({ onNearby }: { onNearby: (area: { lat: number; lng: numbe
       // The globe style carries the local texture and nothing to credit.
       if (map.getSource(EARTH_SOURCE_ID)) return;
       attributionAddedRef.current = true;
-      map.addControl(new AttributionControl({ compact: false }));
+      /*
+        customAttribution because the keyless fallback style carries none of
+        its own — without it the control renders empty on that path, which
+        looks like credit is being given when it is not. Harmless alongside
+        MapTiler, which declares its own and is shown in addition.
+      */
+      map.addControl(
+        new AttributionControl({
+          compact: false,
+          customAttribution: fallbackAppliedRef.current ? FALLBACK_ATTRIBUTION : undefined,
+        }),
+      );
     });
 
     /*
@@ -299,9 +353,28 @@ export function Globe({ onNearby }: { onNearby: (area: { lat: number; lng: numbe
   const descend = useCallback(
     async (to: { lat: number; lng: number }) => {
       const map = mapRef.current;
-      if (!map || descending) return;
+      if (!map || descendingRef.current) return;
+      descendingRef.current = true;
       setDescending(true);
       setPicking(false);
+
+      /*
+        Drag-to-spin is switched off for the duration.
+
+        A gesture calls MapLibre's `camera.stop()`, which fires `moveend` at
+        wherever the drag left the camera — and `flyLeg` resolves on
+        `moveend`. So spinning the globe mid-flight would resolve the current
+        leg early and advance the plan from a position that no longer matches
+        the keyframe, or finish the descent somewhere other than the target.
+        The globe is not draggable while it is flying you somewhere.
+      */
+      map.dragPan.disable();
+      const finish = () => {
+        descendingRef.current = false;
+        if (!aliveRef.current) return;
+        map.dragPan.enable();
+        setDescending(false);
+      };
 
       const plan = descentPlan({ ...to, zoom: CITY_ZOOM });
       const streetStyle = startedOnFallback() ? fallbackStyleUrl() : mapStyleUrl(MAPTILER_KEY);
@@ -319,8 +392,9 @@ export function Globe({ onNearby }: { onNearby: (area: { lat: number; lng: numbe
 
       if (still) {
         await swapStyle(map, streetStyle);
+        if (!aliveRef.current) return void (descendingRef.current = false);
         map.jumpTo({ center: [last.lng, last.lat], zoom: last.zoom });
-        setDescending(false);
+        finish();
         onNearby(to);
         return;
       }
@@ -329,14 +403,20 @@ export function Globe({ onNearby }: { onNearby: (area: { lat: number; lng: numbe
         // The final leg is the only one that costs anything, so the basemap
         // arrives with it rather than before it — and the swap is awaited,
         // because a camera move started while a style is loading is dropped.
-        if (i === plan.length - 1) await swapStyle(map, streetStyle);
+        if (i === plan.length - 1) {
+          await swapStyle(map, streetStyle);
+          if (!aliveRef.current) return void (descendingRef.current = false);
+        }
         await flyLeg(map, step);
+        // Checked after every await: the map may have been torn down while
+        // this leg was in the air.
+        if (!aliveRef.current) return void (descendingRef.current = false);
       }
 
-      setDescending(false);
+      finish();
       onNearby(to);
     },
-    [descending, onNearby],
+    [onNearby],
   );
 
   /*
@@ -348,7 +428,7 @@ export function Globe({ onNearby }: { onNearby: (area: { lat: number; lng: numbe
     to be argued with.
   */
   const handleNearby = useCallback(() => {
-    if (descending) return;
+    if (descendingRef.current) return;
 
     if (typeof navigator === "undefined" || !navigator.geolocation) {
       setPicking(true);
@@ -360,7 +440,7 @@ export function Globe({ onNearby }: { onNearby: (area: { lat: number; lng: numbe
       () => setPicking(true),
       { timeout: 8_000, maximumAge: 300_000 },
     );
-  }, [descend, descending]);
+  }, [descend]);
 
   return (
     /*

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { descentPlan, STREET_ZOOM_FLOOR } from "../lib/map/descent";
+import { CITY_ZOOM, descentPlan, STREET_ZOOM_FLOOR } from "../lib/map/descent";
 
 describe("descentPlan", () => {
   const plan = descentPlan({ lat: 38.88, lng: -77.09, zoom: 12 });
@@ -25,5 +25,16 @@ describe("descentPlan", () => {
   it("keeps the flight short enough to sit through", () => {
     const total = plan.reduce((n, s) => n + s.durationMs, 0);
     expect(total).toBeLessThanOrEqual(4000);
+  });
+
+  it("arrives close enough to the street floor that the paid leg is short", () => {
+    /*
+      The whole cost argument rests on the final leg being a hop, not a climb.
+      These two constants used to live in different files, linked only by a
+      comment — so either could drift and quietly turn one cheap leg into a
+      long streaming one. This is the assertion that stops that.
+    */
+    expect(CITY_ZOOM).toBeGreaterThan(STREET_ZOOM_FLOOR);
+    expect(CITY_ZOOM - STREET_ZOOM_FLOOR).toBeLessThanOrEqual(3);
   });
 });

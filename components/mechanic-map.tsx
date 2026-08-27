@@ -11,7 +11,12 @@ import {
 import type { GeoJSONSource, Map as MapLibreMap, MapGeoJSONFeature, Marker } from "maplibre-gl";
 import type { FeatureCollection, Point } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { fallbackStyleUrl, isQuotaFailure, mapStyleUrl } from "@/lib/map/style";
+import {
+  FALLBACK_ATTRIBUTION,
+  fallbackStyleUrl,
+  isQuotaFailure,
+  mapStyleUrl,
+} from "@/lib/map/style";
 
 /*
   MapLibre locates its own worker script from `import.meta.url` at run time,
@@ -116,7 +121,15 @@ export function MechanicMap({
         : mapStyleUrl(process.env.NEXT_PUBLIC_MAPTILER_KEY),
       center: [-77.15, 38.9],
       zoom: 10,
-      attributionControl: { compact: false },
+      /*
+        customAttribution because the keyless fallback style declares none of
+        its own, so the control would render empty on that path — credit that
+        looks given but is not. MapTiler declares its own and is unaffected.
+      */
+      attributionControl: {
+        compact: false,
+        customAttribution: fallbackAppliedRef.current ? FALLBACK_ATTRIBUTION : undefined,
+      },
       // No rotation/pitch in this migration — the Leaflet map never had
       // either, and adding them here is redesign scope, not migration scope.
       dragRotate: false,

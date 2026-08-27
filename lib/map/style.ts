@@ -19,6 +19,21 @@ export function mapStyleUrl(maptilerKey: string | undefined): string {
   return `https://api.maptiler.com/maps/streets-v2-dark/style.json?key=${maptilerKey}`;
 }
 
+/*
+  Attribution for the keyless fallback, supplied by us because the style does
+  not.
+
+  MapTiler's style JSON declares its own attribution and MapLibre renders it
+  automatically. OpenFreeMap's dark style declares none, so the attribution
+  control comes up EMPTY on the fallback path — which is worse than having no
+  control at all, because it looks like credit is being given when it is not.
+  OpenFreeMap serves OpenStreetMap data, and ODbL requires the credit whoever
+  is serving it.
+*/
+export const FALLBACK_ATTRIBUTION =
+  '<a href="https://openfreemap.org/" target="_blank" rel="noreferrer">OpenFreeMap</a> ' +
+  '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">OpenStreetMap contributors</a>';
+
 /** The source to use once MapTiler has stopped serving. Always keyless. */
 export function fallbackStyleUrl(): string {
   return OPENFREEMAP_DARK;
