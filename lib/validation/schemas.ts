@@ -30,6 +30,37 @@ export const moderatedText = (max: number, min = 0) =>
       return result.text;
     });
 
+/**
+ * A short identity label — a name, not prose. Profanity is refused rather than
+ * masked: masking works when a real sentence surrounds it, but a masked name is
+ * just a wall of asterisks that reads as broken rather than moderated.
+ */
+export const moderatedLabel = (max: number, min = 0) =>
+  z
+    .string()
+    .min(min)
+    .max(max)
+    .transform((value, ctx) => {
+      const result = screenText(value);
+      if (!result.ok) {
+        ctx.addIssue({ code: "custom", message: result.message });
+        return z.NEVER;
+      }
+      // screenText masks profanity rather than rejecting it, which is right
+      // for prose but wrong for a label: comparing against the trimmed input
+      // (screenText's own baseline, before any censoring) catches the case
+      // where something was caught and masked, without false-flagging a
+      // clean label just because it had leading/trailing whitespace trimmed.
+      if (result.text !== value.trim()) {
+        ctx.addIssue({
+          code: "custom",
+          message: "This can't be used as written. Please choose a different one.",
+        });
+        return z.NEVER;
+      }
+      return result.text;
+    });
+
 export const registerSchema = z
   .object({
     email: z.string().email().max(254),
@@ -39,7 +70,7 @@ export const registerSchema = z
       .min(3)
       .max(30)
       .regex(/^[a-z0-9_]+$/, "Use lowercase letters, numbers, and underscores only."),
-    displayName: moderatedText(60, 1),
+    displayName: moderatedLabel(60, 1),
   })
   .strict();
 
@@ -49,7 +80,7 @@ export const loginSchema = z
 
 export const updateProfileSchema = z
   .object({
-    displayName: moderatedText(60, 1).optional(),
+    displayName: moderatedLabel(60, 1).optional(),
     bio: moderatedText(1000).nullable().optional(),
     generalLocation: moderatedText(100).nullable().optional(),
   })
@@ -64,7 +95,7 @@ export const createVehicleSchema = z
     engineId: id.nullable().optional(),
     drivetrainId: id.nullable().optional(),
     mileage: z.coerce.number().int().min(0).max(2_000_000).nullable().optional(),
-    nickname: moderatedText(60).nullable().optional(),
+    nickname: moderatedLabel(60).nullable().optional(),
   })
   .strict();
 

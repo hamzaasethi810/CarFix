@@ -16,11 +16,21 @@ export function toErrorResponse(error: unknown) {
   }
 
   if (error instanceof ZodError) {
+    // A single issue is unambiguous, so its own message is more useful than
+    // the generic line — this is what lets a rejected display name (or any
+    // other single-field failure) tell the person why, rather than just that
+    // something was wrong. With more than one issue, naming just one of them
+    // would misleadingly suggest it's the only problem, so the generic
+    // message stands and the caller falls back to `details`.
+    const message =
+      error.issues.length === 1
+        ? error.issues[0].message
+        : "Some of the information provided was not valid.";
     return NextResponse.json(
       {
         error: {
           code: "VALIDATION",
-          message: "Some of the information provided was not valid.",
+          message,
           details: error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
         },
       },

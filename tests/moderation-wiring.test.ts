@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { toErrorResponse } from "../lib/api/handler";
 import {
   createExperienceSchema,
   createVehicleSchema,
@@ -49,10 +50,10 @@ const registerBase = {
   username: "person1",
 };
 
-describe("registration display name is moderated by the schema", () => {
-  it("masks profanity in place", () => {
-    const parsed = registerSchema.parse({ ...registerBase, displayName: "shit mechanic" });
-    expect(parsed.displayName).toBe("s*** mechanic");
+describe("registration display name is a moderated label: rejects rather than masks", () => {
+  it("refuses profanity outright, rather than masking it", () => {
+    const r = registerSchema.safeParse({ ...registerBase, displayName: "shit mechanic" });
+    expect(r.success).toBe(false);
   });
 
   it("refuses a slur", () => {
@@ -72,9 +73,9 @@ describe("registration display name is moderated by the schema", () => {
 });
 
 describe("profile fields are moderated by the schema", () => {
-  it("masks profanity in the display name", () => {
-    const parsed = updateProfileSchema.parse({ displayName: "shit mechanic" });
-    expect(parsed.displayName).toBe("s*** mechanic");
+  it("refuses profanity in the display name, rather than masking it", () => {
+    const r = updateProfileSchema.safeParse({ displayName: "shit mechanic" });
+    expect(r.success).toBe(false);
   });
 
   it("masks profanity in the bio", () => {
@@ -106,10 +107,10 @@ const vehicleBase = {
   year: 2020,
 };
 
-describe("vehicle nickname is moderated by the schema", () => {
-  it("masks profanity in place on create", () => {
-    const parsed = createVehicleSchema.parse({ ...vehicleBase, nickname: "shit box" });
-    expect(parsed.nickname).toBe("s*** box");
+describe("vehicle nickname is a moderated label: rejects rather than masks", () => {
+  it("refuses profanity outright on create, rather than masking it", () => {
+    const r = createVehicleSchema.safeParse({ ...vehicleBase, nickname: "shit box" });
+    expect(r.success).toBe(false);
   });
 
   it("refuses a slur on create", () => {
@@ -117,18 +118,69 @@ describe("vehicle nickname is moderated by the schema", () => {
     expect(r.success).toBe(false);
   });
 
+  it("leaves a clean nickname untouched on create", () => {
+    const parsed = createVehicleSchema.parse({ ...vehicleBase, nickname: "The Beast" });
+    expect(parsed.nickname).toBe("The Beast");
+  });
+
   it("still accepts no nickname at all on create", () => {
     expect(createVehicleSchema.parse({ ...vehicleBase }).nickname).toBeUndefined();
   });
 
-  it("masks profanity in place on update, and stays optional", () => {
-    const parsed = updateVehicleSchema.parse({ nickname: "shit box" });
-    expect(parsed.nickname).toBe("s*** box");
+  it("refuses profanity outright on update, and stays optional when absent", () => {
+    const r = updateVehicleSchema.safeParse({ nickname: "shit box" });
+    expect(r.success).toBe(false);
     expect(updateVehicleSchema.parse({}).nickname).toBeUndefined();
   });
 
   it("refuses a slur on update", () => {
     const r = updateVehicleSchema.safeParse({ nickname: "faggot wagon" });
     expect(r.success).toBe(false);
+  });
+});
+
+describe("moderatedLabel rejection message names no term and tells the person to choose again", () => {
+  it("uses the same generic message whether profanity was merely masked-worthy or an outright slur", () => {
+    const maskWorthy = registerSchema.safeParse({ ...registerBase, displayName: "shit mechanic" });
+    const outright = registerSchema.safeParse({ ...registerBase, displayName: "faggot" });
+    expect(maskWorthy.success).toBe(false);
+    expect(outright.success).toBe(false);
+    if (!maskWorthy.success) {
+      expect(maskWorthy.error.issues[0].message).toBe(
+        "This can't be used as written. Please choose a different one.",
+      );
+      expect(maskWorthy.error.issues[0].message).not.toContain("shit");
+    }
+  });
+});
+
+describe("a single validation issue surfaces its own message; several fall back to the generic one", () => {
+  it("puts the specific reason at the top level for registration with a profane display name", async () => {
+    const result = registerSchema.safeParse({ ...registerBase, displayName: "shit mechanic" });
+    expect(result.success).toBe(false);
+    if (result.success) return;
+
+    const body = await toErrorResponse(result.error).json();
+    expect(body.error.message).toBe("This can't be used as written. Please choose a different one.");
+    // details still carries the per-field breakdown for any form that wants it.
+    expect(body.error.details).toEqual([
+      { path: "displayName", message: "This can't be used as written. Please choose a different one." },
+    ]);
+  });
+
+  it("keeps the generic message when more than one field fails, so no single field is misleadingly singled out", async () => {
+    const result = registerSchema.safeParse({
+      email: "not-an-email",
+      password: "short",
+      username: "abc123",
+      displayName: "shit mechanic",
+    });
+    expect(result.success).toBe(false);
+    if (result.success) return;
+
+    expect(result.error.issues.length).toBeGreaterThan(1);
+    const body = await toErrorResponse(result.error).json();
+    expect(body.error.message).toBe("Some of the information provided was not valid.");
+    expect(body.error.details.length).toBe(result.error.issues.length);
   });
 });
