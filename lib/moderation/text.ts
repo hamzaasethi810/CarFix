@@ -85,18 +85,15 @@ const censor = new TextCensor().setStrategy(keepStartCensorStrategy(asteriskCens
   boundaries and reopens the Scunthorpe problem for the whole sentence, not
   just the obfuscated word). So "s h i t" is normalised by hand before either
   matcher sees it: runs of three or more single-letter tokens get their
-  spaces removed. A leading "a" or "I" is left outside the run, since those
-  are real one-letter words, not spaced-out obfuscation.
+  spaces removed.
+
+  This exists purely to defeat evasion during detection — screenText only
+  ever uses the result of this function to decide whether something matched,
+  and to build the text it returns when something did. A clean post is
+  always returned as the user wrote it, spacing included; see screenText.
 */
 function collapseLetterSpacing(text: string): string {
-  return text.replace(/\b(?:[A-Za-z]\s+){2,}[A-Za-z]\b/g, (run) => {
-    const letters = run.split(/\s+/);
-    let prefix = "";
-    while (letters.length > 3 && /^[ai]$/i.test(letters[0])) {
-      prefix += `${letters.shift()} `;
-    }
-    return prefix + letters.join("");
-  });
+  return text.replace(/\b(?:[A-Za-z]\s+){2,}[A-Za-z]\b/g, (run) => run.replace(/\s+/g, ""));
 }
 
 /** Anything that looks like a link, including bare domains. */
@@ -149,10 +146,19 @@ export function screenText(input: string): ScreenResult {
   if (LINK.test(text)) return reject("link");
   if (isShouting(text) || CHARACTER_WALL.test(text)) return reject("spam");
 
+  // Normalisation is for detection only — it defeats evasion, but it is
+  // never what gets stored. A clean post that happens to contain three or
+  // more single-letter words in a row ("I S O a good mechanic", "M O T")
+  // must come back exactly as written, not with its spacing corrupted for
+  // no reason. Only when the collapsed form actually turns up a match does
+  // the collapsed (and then censored) text get returned instead: a user who
+  // wrote "s h i t" to dodge the filter has no claim to their exact spacing.
   const normalized = collapseLetterSpacing(text);
   if (slurMatcher.hasMatch(normalized)) return reject("slur");
 
-  // Everything that survives is publishable; profanity is softened, not refused.
   const matches = profanityMatcher.getAllMatches(normalized, true);
+  if (matches.length === 0) return { ok: true, text };
+
+  // Something was actually caught; profanity is softened, not refused.
   return { ok: true, text: censor.applyTo(normalized, matches) };
 }

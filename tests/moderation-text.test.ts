@@ -79,4 +79,17 @@ describe("screenText", () => {
   it("leaves an empty string alone", () => {
     expect(pass("")).toBe("");
   });
+
+  it("does not corrupt a clean post with three or more consecutive single letters", () => {
+    // Normalisation exists to defeat evasion during detection. It must never
+    // be what gets stored — these are real, harmless car-site sentences that
+    // happen to contain runs of single-letter words (acronyms spelled out).
+    for (const s of [
+      "I S O a good mechanic near me",
+      "Got my M O T done here",
+      "Ask for B M W specialist parts",
+    ]) {
+      expect(pass(s)).toBe(s);
+    }
+  });
 });
