@@ -97,6 +97,14 @@ MapLibre GL with globe projection, NASA Blue Marble imagery. Centred. It
 drifts, it spins under a drag with momentum, and it costs nothing to look at —
 the texture is a static public-domain image, not metered tiles.
 
+**This is a library migration, not a restyle.** The site today runs on Leaflet
+(`leaflet` and `leaflet.markercluster`, used in `components/mechanic-map.tsx`).
+Leaflet is a 2D raster map and cannot do globe projection at all, so the globe
+requires replacing it with MapLibre GL — along with the marker clustering, the
+area-select control, and the pin interactions built on it. Budget that as the
+first task of the globe plan rather than discovering it midway. Noted
+2026-08-27, after the materials work exposed the mismatch.
+
 Over it: the wordmark and one control, **Nearby**. No filter bar, no cards.
 
 **The globe must sit in the scene, not on top of it.** A photoreal sphere
