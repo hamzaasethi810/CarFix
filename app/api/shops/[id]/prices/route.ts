@@ -4,17 +4,9 @@ import { requireUser } from "@/lib/auth/guards";
 import { clientIdentifier, enforceRateLimit } from "@/lib/rate-limit";
 import { currentUser } from "@/lib/auth/guards";
 import { getShopPrices, removeShopPrice, setShopPrice } from "@/lib/services/shops";
+import { shopPriceSchema } from "@/lib/validation/schemas";
 
 type Params = { params: Promise<{ id: string }> };
-
-const priceSchema = z
-  .object({
-    serviceId: z.string().min(1).max(64),
-    minPrice: z.coerce.number().min(0).max(1_000_000),
-    maxPrice: z.coerce.number().min(0).max(1_000_000).nullable().optional(),
-    note: z.string().max(200).nullable().optional(),
-  })
-  .strict();
 
 // Published prices are public: they are what the shop is advertising.
 export async function GET(req: Request, { params }: Params) {
@@ -31,7 +23,7 @@ export async function PUT(req: Request, { params }: Params) {
     const user = await requireUser();
     await enforceRateLimit("mutation", clientIdentifier(req, user.id));
     const { id } = await params;
-    const input = await parseJson(req, priceSchema);
+    const input = await parseJson(req, shopPriceSchema);
     return ok(await setShopPrice(id, user.id, input));
   });
 }

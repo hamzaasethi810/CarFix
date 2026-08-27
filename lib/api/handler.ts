@@ -22,9 +22,17 @@ export function toErrorResponse(error: unknown) {
     // something was wrong. With more than one issue, naming just one of them
     // would misleadingly suggest it's the only problem, so the generic
     // message stands and the caller falls back to `details`.
+    //
+    // Restricted to `code === "custom"`: those are the issues our own
+    // schemas author via `ctx.addIssue`, including every moderation message.
+    // Any other single issue is Zod's own default phrasing (e.g.
+    // `Unrecognized key: "extra"`, `Too small: expected string to have >=12
+    // characters`) — meaningless or machine-voiced to a person, so it falls
+    // back to the generic line too rather than reaching the browser verbatim.
+    const single = error.issues.length === 1 ? error.issues[0] : undefined;
     const message =
-      error.issues.length === 1
-        ? error.issues[0].message
+      single && single.code === "custom"
+        ? single.message
         : "Some of the information provided was not valid.";
     return NextResponse.json(
       {

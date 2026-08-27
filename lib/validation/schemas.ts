@@ -19,6 +19,7 @@ const money = z.coerce.number().min(0).max(1_000_000);
 export const moderatedText = (max: number, min = 0) =>
   z
     .string()
+    .trim()
     .min(min)
     .max(max)
     .transform((value, ctx) => {
@@ -30,6 +31,10 @@ export const moderatedText = (max: number, min = 0) =>
       return result.text;
     });
 
+// The only message a label rejection ever surfaces, whatever screenText's
+// reason was — see moderatedLabel below.
+const LABEL_REJECTION_MESSAGE = "This can't be used as written. Please choose a different one.";
+
 /**
  * A short identity label — a name, not prose. Profanity is refused rather than
  * masked: masking works when a real sentence surrounds it, but a masked name is
@@ -38,12 +43,21 @@ export const moderatedText = (max: number, min = 0) =>
 export const moderatedLabel = (max: number, min = 0) =>
   z
     .string()
+    .trim()
     .min(min)
     .max(max)
     .transform((value, ctx) => {
-      const result = screenText(value);
+      // "label" mode skips the prose-only heuristics (CHARACTER_WALL,
+      // isShouting): a handle with a run of repeated letters, or an
+      // all-caps word, is ordinary for a name/username/nickname. Slur,
+      // link, email and embedded-file checks still apply in full.
+      const result = screenText(value, { mode: "label" });
       if (!result.ok) {
-        ctx.addIssue({ code: "custom", message: result.message });
+        // Every screenText reason (slur, spam, link, embedded-file) gets
+        // the same generic label message here, never screenText's own
+        // prose-flavoured wording — a signup form should not read like a
+        // review moderation notice.
+        ctx.addIssue({ code: "custom", message: LABEL_REJECTION_MESSAGE });
         return z.NEVER;
       }
       // screenText masks profanity rather than rejecting it, which is right
@@ -52,10 +66,7 @@ export const moderatedLabel = (max: number, min = 0) =>
       // where something was caught and masked, without false-flagging a
       // clean label just because it had leading/trailing whitespace trimmed.
       if (result.text !== value.trim()) {
-        ctx.addIssue({
-          code: "custom",
-          message: "This can't be used as written. Please choose a different one.",
-        });
+        ctx.addIssue({ code: "custom", message: LABEL_REJECTION_MESSAGE });
         return z.NEVER;
       }
       return result.text;
@@ -256,4 +267,65 @@ export const resolveReportSchema = z
 */
 export const shopReplySchema = z
   .object({ body: moderatedText(2000, 2) })
+  .strict();
+
+/*
+  A public shop listing submitted by any signed-in person (see
+  lib/services/shop-submissions.ts for the corroboration model this feeds).
+  `name` is an identity label like a display name — refused rather than
+  masked. `description` is prose. Both reach public pages, same as every
+  other moderated field, so both are screened here rather than left as plain
+  strings in the route's own schema — which is also what makes this wiring
+  testable at all: a route module pulls in server-only infra that this test
+  suite cannot import directly, so exporting the schema from here is the only
+  way to exercise it without spinning up a route.
+*/
+export const submitShopSchema = z
+  .object({
+    name: moderatedLabel(200, 2),
+    description: moderatedText(1000).nullable().optional(),
+    address: z.string().min(3).max(200),
+    city: z.string().min(1).max(100),
+    // Empty outside the US; the service decides whether that is allowed for
+    // the country given, because only it knows which countries use states.
+    state: z.string().max(100).default(""),
+    country: z.string().length(2).toUpperCase(),
+    zip: z.string().max(20).nullable().optional(),
+    phone: z.string().max(40).nullable().optional(),
+    website: z.string().max(500).nullable().optional(),
+    // Sent on the second attempt, after the person has seen the possible
+    // duplicate and said it is a different business.
+    confirmDistinct: z.boolean().optional(),
+  })
+  .strict();
+
+/*
+  The claimant can rewrite the shop's name at any time this way, so it needs
+  the same screening as the initial submission above.
+*/
+export const updateShopLocationSchema = z
+  .object({
+    name: moderatedLabel(200, 2),
+    address: z.string().min(3).max(200),
+    city: z.string().min(1).max(100),
+    state: z.string().max(100).default(""),
+    country: z.string().length(2).toUpperCase(),
+    zip: z.string().max(20).nullable().optional(),
+    phone: z.string().max(40).nullable().optional(),
+    website: z.string().max(500).nullable().optional(),
+  })
+  .strict();
+
+/*
+  `note` is prose, not a label, and is returned by the public GET on this
+  same resource — it is what the shop is advertising, so it needs the same
+  screening as any other public text.
+*/
+export const shopPriceSchema = z
+  .object({
+    serviceId: z.string().min(1).max(64),
+    minPrice: z.coerce.number().min(0).max(1_000_000),
+    maxPrice: z.coerce.number().min(0).max(1_000_000).nullable().optional(),
+    note: moderatedText(200).nullable().optional(),
+  })
   .strict();

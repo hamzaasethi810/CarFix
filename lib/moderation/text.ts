@@ -36,6 +36,16 @@ export type ScreenResult =
   | { ok: false; reason: ScreenReason; message: string };
 
 /*
+  "prose" (the default) is a review, a bio, a reply — full sentences, where
+  CHARACTER_WALL and isShouting are meaningful signals of spam. "label" is a
+  name, a username, a vehicle nickname — short identity strings where a run
+  of repeated characters or an all-caps word is just how someone wrote their
+  handle, not spam. Slur, link, email and embedded-file checks apply to both
+  equally and are never skipped.
+*/
+export type ScreenOptions = { mode?: "prose" | "label" };
+
+/*
   Terms refused outright. Kept as a separate list rather than taken wholesale
   from the profanity dataset, because the two need opposite treatment and the
   dataset does not grade severity.
@@ -171,7 +181,8 @@ function isShouting(text: string) {
   return upper / letters.length > 0.7;
 }
 
-export function screenText(input: string): ScreenResult {
+export function screenText(input: string, options: ScreenOptions = {}): ScreenResult {
+  const { mode = "prose" } = options;
   const text = input.trim();
   if (text === "") return { ok: true, text: "" };
 
@@ -188,7 +199,10 @@ export function screenText(input: string): ScreenResult {
   if (EMAIL.test(text)) return reject("spam");
   if (PHONE.test(text) && SOLICITATION_CUE.test(text)) return reject("spam");
   if (LINK.test(text)) return reject("link");
-  if (isShouting(text) || CHARACTER_WALL.test(text)) return reject("spam");
+  // Written for prose: a name, a username or a vehicle nickname is not
+  // shouting, and a run of repeated characters in a handle ("aaaaaaa",
+  // "woooooot") is ordinary, not a character wall. Skip both for labels.
+  if (mode === "prose" && (isShouting(text) || CHARACTER_WALL.test(text))) return reject("spam");
 
   // Normalisation is for detection only — it defeats evasion, but it is
   // never what gets stored. A clean post that happens to contain three or

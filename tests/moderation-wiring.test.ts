@@ -4,7 +4,11 @@ import {
   createExperienceSchema,
   createVehicleSchema,
   registerSchema,
+  shopPriceSchema,
+  shopReplySchema,
+  submitShopSchema,
   updateProfileSchema,
+  updateShopLocationSchema,
   updateVehicleSchema,
 } from "../lib/validation/schemas";
 
@@ -68,6 +72,22 @@ describe("registration display name is a moderated label: rejects rather than ma
 
   it("still requires a non-empty display name", () => {
     const r = registerSchema.safeParse({ ...registerBase, displayName: "" });
+    expect(r.success).toBe(false);
+  });
+
+  it("still requires a non-empty display name for whitespace-only input", () => {
+    // `.min()` used to run on the raw string, before screenText's transform
+    // trimmed it — so a whitespace-only name passed the minimum-length check
+    // and was stored as "". `.trim()` now runs before `.min()`.
+    const r = updateProfileSchema.safeParse({ displayName: " " });
+    expect(r.success).toBe(false);
+  });
+});
+
+describe("moderatedText also enforces its minimum on whitespace-only input", () => {
+  it("refuses a whitespace-only shop reply", () => {
+    // Same bug, prose side: shopReplySchema's `body` has a minimum of 2.
+    const r = shopReplySchema.safeParse({ body: "  " });
     expect(r.success).toBe(false);
   });
 });
@@ -220,5 +240,95 @@ describe("a single validation issue surfaces its own message; several fall back 
       if (result.success) return;
       expect(result.error.issues[0].message).toContain("lowercase letters");
     });
+
+    it("does not gate a handle on prose-only heuristics (character wall, shouting)", () => {
+      // CHARACTER_WALL and isShouting are written for prose. A run of
+      // repeated letters, or an underscore run, in a handle is ordinary —
+      // labels use screenText's "label" mode, which skips both checks.
+      for (const handle of ["woooooot", "aaaaaaa", "x_______y"]) {
+        expect(register(handle).success, handle).toBe(true);
+      }
+    });
+
+    it("still refuses a handle containing a slur", () => {
+      const result = register("faggot123");
+      expect(result.success).toBe(false);
+    });
+  });
+
+  it("still refuses a label containing a URL — label mode keeps the link check", () => {
+    // The username regex (lowercase/digits/underscore only) can't itself
+    // contain a URL, so this exercises the same moderatedLabel path via
+    // displayName instead: label mode must keep the slur/link/email/
+    // embedded-file checks even though it skips the prose-only heuristics.
+    const r = registerSchema.safeParse({ ...registerBase, displayName: "http://example.com" });
+    expect(r.success).toBe(false);
+  });
+});
+
+const shopBase = { address: "1 Main St", city: "Austin", country: "US" };
+
+describe("a submitted shop's name and description are moderated by the schema", () => {
+  it("refuses a profane shop name outright, rather than masking it", () => {
+    const r = submitShopSchema.safeParse({ ...shopBase, name: "shit mechanics" });
+    expect(r.success).toBe(false);
+  });
+
+  it("refuses a slur in the shop name", () => {
+    const r = submitShopSchema.safeParse({ ...shopBase, name: "faggot motors" });
+    expect(r.success).toBe(false);
+  });
+
+  it("leaves a clean shop name untouched", () => {
+    const parsed = submitShopSchema.parse({ ...shopBase, name: "Joe's Garage" });
+    expect(parsed.name).toBe("Joe's Garage");
+  });
+
+  it("masks profanity in the description rather than refusing it", () => {
+    const parsed = submitShopSchema.parse({
+      ...shopBase, name: "Joe's Garage", description: "does shit work",
+    });
+    expect(parsed.description).toBe("does s*** work");
+  });
+
+  it("refuses a link in the description", () => {
+    const r = submitShopSchema.safeParse({
+      ...shopBase, name: "Joe's Garage", description: "see https://spam.example.com",
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("still accepts a submission with no description at all", () => {
+    expect(submitShopSchema.parse({ ...shopBase, name: "Joe's Garage" }).description).toBeUndefined();
+  });
+});
+
+describe("a claimant correcting the shop name is moderated the same way", () => {
+  it("refuses a profane name on update", () => {
+    const r = updateShopLocationSchema.safeParse({ ...shopBase, name: "shit mechanics" });
+    expect(r.success).toBe(false);
+  });
+
+  it("leaves a clean name untouched on update", () => {
+    const parsed = updateShopLocationSchema.parse({ ...shopBase, name: "Corrected Motors" });
+    expect(parsed.name).toBe("Corrected Motors");
+  });
+});
+
+describe("a shop's public price note is moderated by the schema", () => {
+  const priceBase = { serviceId: "c000000000000000000000005", minPrice: 100 };
+
+  it("masks profanity in the note rather than refusing it", () => {
+    const parsed = shopPriceSchema.parse({ ...priceBase, note: "shit parts but fair labour" });
+    expect(parsed.note).toBe("s*** parts but fair labour");
+  });
+
+  it("refuses a link in the note", () => {
+    const r = shopPriceSchema.safeParse({ ...priceBase, note: "see https://spam.example.com" });
+    expect(r.success).toBe(false);
+  });
+
+  it("still accepts a price with no note at all", () => {
+    expect(shopPriceSchema.parse(priceBase).note).toBeUndefined();
   });
 });
