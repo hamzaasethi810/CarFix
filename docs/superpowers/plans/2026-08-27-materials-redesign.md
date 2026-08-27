@@ -548,9 +548,36 @@ Four places hardcode colours and so did not move with the palette.
 
 - [ ] **Step 1: Find them**
 
+Two different kinds of escape. Hex literals:
+
 ```bash
 grep -rnE '#[0-9a-fA-F]{3,8}\b' app components | grep -v globals.css
 ```
+
+And — the larger set — Tailwind utilities built on `black`, which were written
+against a white page and are invisible on this one:
+
+```bash
+grep -rn "bg-black/\|border-black/\|text-black" app components
+```
+
+There are about eighteen of the second kind, concentrated in
+`app/discover.tsx`, `app/experiences/[id]/engagement.tsx` and
+`components/document-viewer.tsx`. They are filter chips, drag handles, hover
+states and selected states — `bg-black/[0.06]` over a dark ground renders as
+nothing at all, so those controls read as flat and dead rather than as
+surfaces.
+
+**Do not blanket-replace them.** Two cases, opposite treatments:
+
+- **Surface tints** — `bg-black/[0.06]`, `bg-black/5`, `bg-black/15`, and the
+  `hover:bg-black/10` states. These were lightening-by-darkening against white.
+  On a dark ground they must become light tints: use the existing
+  `--fill-quaternary` token via `bg-fill`, or `bg-white/[0.06]` where a raw
+  utility is clearer. Check each one still reads as a distinct surface.
+- **Scrims** — `bg-black/60` in `components/document-viewer.tsx:87` is a modal
+  backdrop. A scrim is meant to be dark. Leave it, and say in your report that
+  you deliberately did.
 
 - [ ] **Step 2: Fix each**
 
