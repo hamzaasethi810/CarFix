@@ -575,19 +575,26 @@ body:has(.map-root) footer {
   belongs to the page rather than the map canvas, so it sits behind the globe
   element and does not scale with the projection.
 
-  Anchored to the stage's own bottom edge rather than centred inside it: the
-  globe is zoomed to fill its circular stage right to the rim (see
-  components/globe.tsx), so a shadow centred partway up the stage would sit
-  almost entirely underneath the opaque sphere and never actually show. Only
-  the ellipse's top quarter tucks behind the sphere's lower curve, for
-  contact; the rest falls into the open page below it, which is what makes
-  it read as the sphere resting on the ground rather than floating over it.
+  Anchored so the gradient's *darkest point* sits exactly on the stage's
+  bottom edge — measured (Puppeteer, deviceScaleFactor 1) to be the sphere's
+  actual lowest visible pixel, not just the DOM box: at 1440x900 the rendered
+  globe fills its circular clip right to the rim, so `.globe-stage`'s own
+  bottom edge (`top: 100%` here, no vertical offset) already coincides with
+  it within a couple of anti-aliased pixels. A prior version centred the
+  radial gradient (`at 50% 50%`) inside a box that itself started ~40px above
+  that edge, which put the gradient's darkest ring another ~120px below
+  *that* — the sphere ended up floating ~90-160px above the shadow's dark
+  core instead of sitting in it. Fixing it means moving the focal point, not
+  just the box: `at 50% 0%` puts the darkest stop at the box's own top edge,
+  which is pinned to the sphere's contact point, so the shadow begins dark
+  exactly there and only ever fades — downward and outward — never fading
+  *in* first the way a centred ellipse does on its way past the contact line.
 */
 .globe-ground {
   position: absolute;
   left: 50%;
   top: 100%;
-  transform: translate(-50%, -16%);
+  transform: translate(-50%, 0);
   width: 155%;
   height: 58%;
   pointer-events: none;
@@ -600,30 +607,47 @@ body:has(.map-root) footer {
     background, invisible at normal viewing distance.
   */
   background: radial-gradient(
-    ellipse at 50% 50%,
+    ellipse at 50% 0%,
     rgba(0, 0, 0, 0.8) 0%,
-    rgba(0, 0, 0, 0.45) 45%,
-    rgba(0, 0, 0, 0) 72%
+    rgba(0, 0, 0, 0.45) 40%,
+    rgba(0, 0, 0, 0) 68%
   );
 }
 
 /*
   The sphere itself. MapLibre's canvas is square; clipping it to a circle
-  gives the globe a crisp edge instead of a photo dropped in a box. The two
-  insets are page-layer light rather than anything the map canvas draws: a
-  dark falloff away from the light on the lower-right sells the curvature,
-  and a faint rim light on the upper-left — the lit edge — is what a sphere
-  actually does under one light source, which a flat raster image never
-  reproduces on its own.
+  gives the globe a crisp edge instead of a photo dropped in a box.
 */
 .globe-sphere {
   position: absolute;
   inset: 0;
   border-radius: 50%;
   overflow: hidden;
+}
+
+/*
+  Page-layer light over the map canvas, not a box-shadow on .globe-sphere:
+  box-shadow paints as part of a box's own background/border layer, which
+  renders *behind* its children — the opaque canvas filling the whole circle
+  hid it completely (confirmed by pixel-sampling the rendered screenshot: flat
+  (0,0,28) right up to the edge, no rim visible at any alpha). A sibling div
+  painted after the canvas fixes that by sitting on top instead.
+
+  A dark falloff away from the light on the lower-right sells the curvature,
+  and a rim light on the upper-left — the lit edge — is what a sphere
+  actually does under one light source, which a flat raster image never
+  reproduces on its own. Strong enough (0.6 alpha, tight 3px blur) to survive
+  against this specific dark-navy texture; confirmed visible by re-sampling
+  the same pixel column after adding this layer.
+*/
+.globe-shading {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
   box-shadow:
     inset -8px -10px 20px rgba(0, 0, 0, 0.45),
-    inset 6px 7px 14px rgba(255, 255, 255, 0.16);
+    inset 3px 4px 6px rgba(255, 255, 255, 0.6);
 }
 
 /*

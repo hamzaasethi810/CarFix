@@ -163,6 +163,14 @@ export function Globe({ onNearby }: { onNearby: () => void }) {
               aria-hidden="true"
               tabIndex={-1}
             />
+            {/*
+              A sibling painted after the canvas, not a box-shadow on
+              .globe-sphere itself: box-shadow is part of a box's own
+              background/border layer, which paints *behind* its children —
+              the opaque MapLibre canvas filling the whole circle completely
+              hid it. This overlay is the fix: same inset shadow, now on top.
+            */}
+            <div className="globe-shading" aria-hidden="true" />
           </div>
         </div>
       </div>
