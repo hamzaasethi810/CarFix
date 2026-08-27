@@ -95,6 +95,34 @@ export function Discover({
     return bar > window.innerHeight * 0.35;
   }, []);
 
+  /*
+    Collapse the filters on arrival when they would swallow the screen, and
+    again whenever the screen changes shape.
+
+    This used to run only after a search, which deadlocked a landscape phone:
+    the open panel pushed the Search button three points below the fold, and
+    neither the panel nor the page scrolls, so the one control that would have
+    collapsed the panel was the one control you could not reach. The measurement
+    has to happen on arrival, before anyone has done anything.
+
+    It runs after paint so the bar has a real measured height rather than zero,
+    and it only ever closes — reopening on rotation would fight somebody who
+    deliberately opened it.
+  */
+  useEffect(() => {
+    const collapseIfCrowded = () => {
+      if (filtersCrowdTheMap()) setFiltersOpen(false);
+    };
+    const id = requestAnimationFrame(collapseIfCrowded);
+    window.addEventListener("resize", collapseIfCrowded);
+    window.addEventListener("orientationchange", collapseIfCrowded);
+    return () => {
+      cancelAnimationFrame(id);
+      window.removeEventListener("resize", collapseIfCrowded);
+      window.removeEventListener("orientationchange", collapseIfCrowded);
+    };
+  }, [filtersCrowdTheMap]);
+
   const [manuallyStowed, setManuallyStowed] = useState(false);
 
   /*
@@ -478,9 +506,20 @@ export function Discover({
           it while keeping the glass.
         */}
         <div className="pointer-events-auto p-3 sm:p-4 relative z-20">
+          {/*
+            Bounded to the window and scrollable inside.
+
+            Collapsing on arrival keeps the map usable, but somebody who then
+            opens the filters on a landscape phone still could not reach Search:
+            it landed three points below the fold, and with neither the panel
+            nor the page scrolling there was nothing to scroll to it. Capping
+            the height and letting the panel scroll itself guarantees every
+            control is reachable at any window size, rather than fitting the
+            handful of sizes anyone thought to check.
+          */}
           <div
             ref={filterBarRef}
-            className="glass rounded-glass p-3 sm:p-4 max-w-4xl mx-auto"
+            className="glass rounded-glass p-3 sm:p-4 max-w-4xl mx-auto max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain"
             onPointerDown={onFilterPointerDown}
             onPointerUp={onFilterPointerUp}
           >
