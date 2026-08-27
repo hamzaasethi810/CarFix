@@ -225,12 +225,42 @@ body {
   background-attachment: fixed;
   color: var(--label);
   font-family:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, Roboto,
-    "Helvetica Neue", Arial, sans-serif;
+    var(--font-body), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+    system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
   font-size: 1.0625rem;
   line-height: 1.375rem;
   letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
+}
+
+/*
+  Condensed mechanical display type — workshop signage and gauge faces.
+
+  Only the title-scale styles (large-title, title1-3) and heading elements
+  get the condensed face; headline/body/callout and smaller sit at 15-17px,
+  where a fully condensed face measurably hurts reading, so they stay on the
+  body face. Barlow Condensed is already tight, so the Apple-tuned negative
+  tracking on the title styles (built for SF Pro) is dropped in favour of
+  normal-to-slightly-positive tracking at these sizes.
+*/
+h1,
+.text-large-title,
+.text-title1,
+.text-title2,
+.text-title3 {
+  font-family:
+    var(--font-display), -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+    system-ui, Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.text-large-title,
+.text-title1 {
+  letter-spacing: 0;
+}
+
+.text-title2,
+.text-title3 {
+  letter-spacing: 0.01em;
 }
 
 /*

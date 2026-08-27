@@ -1,8 +1,30 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site-header";
 import { currentUser, isPrivileged } from "@/lib/auth/guards";
+
+/*
+  Self-hosted at build time via next/font/google: no runtime request to
+  Google, so the CSP stays intact and nothing about a visitor leaks to a
+  third party on page load.
+
+  Barlow carries body text; Barlow Condensed carries display sizes only
+  (headings, prices, the title-scale text styles) — see globals.css. They're
+  the same superfamily, so the two sit together without clashing.
+*/
+const body = Barlow({
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  variable: "--font-body",
+});
+
+const display = Barlow_Condensed({
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
+  variable: "--font-display",
+});
 
 export const metadata: Metadata = {
   title: "Gaari",
@@ -25,7 +47,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const user = await currentUser();
 
   return (
-    <html lang="en" className="h-full">
+    <html lang="en" className={`h-full ${body.variable} ${display.variable}`}>
       {/*
         The grouped tone (#f5f5f7) rather than pure white. White cards need
         something marginally darker behind them or they do not read as cards at
