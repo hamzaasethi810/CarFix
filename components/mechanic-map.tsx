@@ -5,7 +5,6 @@ import {
   LngLatBounds,
   Map as MapLibreGlMap,
   Marker as MapLibreMarker,
-  NavigationControl,
   setWorkerUrl,
 } from "maplibre-gl";
 import type { GeoJSONSource, Map as MapLibreMap, MapGeoJSONFeature, Marker } from "maplibre-gl";
@@ -47,6 +46,62 @@ export type MapMechanic = {
 const SOURCE_ID = "mechanics";
 const LAYER_ID = "mechanics-unrendered"; // See setupSource — kept invisible on purpose.
 
+// A flat conversion, not a great-circle one — this is a soft leash, not a
+// navigation calculation, and the error it introduces at the radii this site
+// searches (tens of miles) is negligible next to the slack already built
+// into REST_SLACK below.
+const MILES_PER_DEGREE_LAT = 69;
+
+/*
+  How far past the searched radius the camera may rest before it eases back
+  — a little wider than the radius itself so a drag that only grazes the
+  edge doesn't spring immediately, without loosening the lock enough that
+  "bounded to the search" stops meaning anything.
+
+  This is deliberately NOT implemented with MapLibre's own `maxBounds`.
+  `maxBounds` doesn't just clamp panning — its constrain function also
+  forces the camera to zoom IN whenever the bound box is narrower on screen
+  than the viewport (see `defaultConstrain` in maplibre-gl's mercator
+  transform: "shouldZoomIn" bumps zoom until the box fills the width). A
+  20-mile-radius box is routinely narrower than a desktop viewport at the
+  zoom `setupSource`'s own `fitBounds` already chose to show the actual
+  results — so `maxBounds` fought that zoom outright, and measuring it
+  (mouse-drag a screen width, watch a marker barely move) showed panning
+  reduced to a few hundred pixels of the tens of thousands requested. That
+  is "stopping dead" wearing a different disguise, not a fix for it.
+
+  The lock here is enforced on "moveend" instead — after a drag (including
+  its momentum) has actually settled, not while it's in flight — which is
+  what turns a spring into a wall vs. leaves it a spring: nothing clamps
+  mid-gesture, so the drag itself is exactly as free as an unlocked map, and
+  only the resting position is corrected. The gap this accepts is a single
+  continuous drag that never releases before crossing the whole boundary —
+  a shape no real finger or mouse stroke covering a phone- or desktop-sized
+  viewport produces, but a scripted one could. That is an acceptable trade
+  against a UI-level control: the actual ceiling against a scripted client
+  is server-side (mechanicSearchSchema's limit cap — see
+  tests/map-limit.test.ts), same as any other API in this app.
+*/
+const REST_SLACK = 1.15;
+
+function clampNumber(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+/** A roughly-square box `radiusMiles` out from `center` in every direction. */
+function boundsForRadius(center: { lat: number; lng: number }, radiusMiles: number): LngLatBounds {
+  const latDelta = radiusMiles / MILES_PER_DEGREE_LAT;
+  const milesPerDegreeLng = MILES_PER_DEGREE_LAT * Math.cos((center.lat * Math.PI) / 180);
+  // Guards the pole-adjacent limit where a degree of longitude is nearly
+  // zero miles wide, which would otherwise blow the box out to the whole
+  // planet's width for a search nobody asked to be that wide.
+  const lngDelta = radiusMiles / Math.max(milesPerDegreeLng, 1);
+  return new LngLatBounds(
+    [center.lng - lngDelta, center.lat - latDelta],
+    [center.lng + lngDelta, center.lat + latDelta],
+  );
+}
+
 // A quota switch only needs to survive the tab, not the visit — the quota
 // resets monthly, and localStorage would strand a returning visitor on the
 // fallback for weeks after MapTiler is serving again.
@@ -80,11 +135,17 @@ export function MechanicMap({
   mechanics,
   selectedId,
   onSelect,
+  center = null,
+  radiusMiles = 0,
   className = "",
 }: {
   mechanics: MapMechanic[];
   selectedId: string | null;
   onSelect: (id: string | null) => void;
+  /** The anchor of the current search. Bounds the map to it — see the lock effect below. */
+  center?: { lat: number; lng: number } | null;
+  /** The searched radius, in miles. Ignored while `center` is null. */
+  radiusMiles?: number;
   className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -136,8 +197,6 @@ export function MechanicMap({
       touchPitch: false,
       pitchWithRotate: false,
     });
-
-    map.addControl(new NavigationControl({ showCompass: false }), "top-left");
 
     // Background clicks reach here; pin/cluster markers are separate DOM
     // elements layered over the canvas, not part of it, so their own click
@@ -373,6 +432,57 @@ export function MechanicMap({
     if (!target || !map) return;
     map.panTo([target.lng, target.lat], { animate: true });
   }, [selectedId, mechanics]);
+
+  /*
+    Lock the map to the searched radius.
+
+    This is a cost control as much as an interaction: an unbounded map lets
+    one curious visitor drag across the country, and every degree of that
+    drag is tiles nobody searched for. A drag (including its momentum) is
+    left completely free — nothing clamps mid-gesture — and only once it
+    settles ("moveend") is a resting position outside `bounds` corrected
+    with an eased pan back inside. That is what makes the edge read as
+    elastic rather than as a wall: the boundary is something the camera
+    springs back from, not something that stops the drag itself. See
+    REST_SLACK's comment above for why this isn't MapLibre's own
+    `maxBounds` — it does more than clamp panning and fought the zoom
+    `fitBounds` had already chosen for a search this size.
+
+    Moving to a new area (Nearby, the area picker) changes `center` or
+    `radiusMiles`, which re-runs this effect and re-locks around the new
+    anchor — the old boundary never lingers.
+  */
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !center) return;
+
+    const bounds = boundsForRadius(center, radiusMiles * REST_SLACK);
+
+    // Only a real drag should trigger the snap-back — a programmatic move
+    // (the initial fitBounds to results, or panTo on selecting one) also
+    // fires "moveend" and must not be yanked back to the search anchor.
+    let dragged = false;
+    const onDragStart = () => {
+      dragged = true;
+    };
+    const onMoveEnd = () => {
+      if (!dragged) return;
+      dragged = false;
+      const c = map.getCenter();
+      const lng = clampNumber(c.lng, bounds.getWest(), bounds.getEast());
+      const lat = clampNumber(c.lat, bounds.getSouth(), bounds.getNorth());
+      if (lng === c.lng && lat === c.lat) return;
+      map.easeTo({ center: [lng, lat], duration: 320 });
+    };
+
+    map.on("dragstart", onDragStart);
+    map.on("moveend", onMoveEnd);
+
+    return () => {
+      map.off("dragstart", onDragStart);
+      map.off("moveend", onMoveEnd);
+    };
+  }, [center, radiusMiles]);
 
   return (
     <div

@@ -8,6 +8,8 @@ import { distance, money, num } from "@/components/ui";
 import { AreaPicker, type Area } from "@/components/area-picker";
 import { GoldCar } from "@/app/shops/[id]/subscription-panel";
 import { ServicePicker } from "@/components/service-picker";
+import { Globe } from "@/components/globe";
+import { shouldShowGlobe } from "@/lib/map/should-show-globe";
 
 // MapLibre needs `window`, so the map never renders on the server.
 const MechanicMap = dynamic(
@@ -38,6 +40,46 @@ type Result = MapMechanic & {
 const placeLabel = (city: string, state: string) =>
   [city, state].filter((p) => p && p.trim()).join(", ");
 
+type RememberedArea = { lat: number; lng: number; radiusMiles: number; label: string | null };
+
+/*
+  Whether this browser has ever landed here before, and where — used both to
+  gate the globe (shouldShowGlobe's `firstVisit`) and, for a returning
+  visitor, to skip re-asking for location entirely and go straight to the
+  area they last searched. localStorage rather than sessionStorage on
+  purpose: "returning visitor" means a later day, not just a later tab.
+*/
+const LAST_AREA_KEY = "gaari:last-area";
+
+function readLastArea(): RememberedArea | null {
+  try {
+    const raw = localStorage.getItem(LAST_AREA_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<RememberedArea>;
+    if (typeof parsed.lat !== "number" || typeof parsed.lng !== "number") return null;
+    return {
+      lat: parsed.lat,
+      lng: parsed.lng,
+      radiusMiles: typeof parsed.radiusMiles === "number" ? parsed.radiusMiles : 20,
+      label: typeof parsed.label === "string" ? parsed.label : null,
+    };
+  } catch {
+    // Private browsing can throw on storage access; treat it the same as
+    // "nothing remembered" rather than letting it crash the page.
+    return null;
+  }
+}
+
+function rememberArea(area: { lat: number; lng: number }, radiusMiles: number, label: string | null) {
+  try {
+    localStorage.setItem(
+      LAST_AREA_KEY,
+      JSON.stringify({ lat: area.lat, lng: area.lng, radiusMiles, label } satisfies RememberedArea),
+    );
+  } catch {
+    // Same as above — losing the memory is fine, throwing is not.
+  }
+}
 
 export function Discover({
   makes,
@@ -208,6 +250,19 @@ export function Discover({
     if (dx < -STOW_THRESHOLD) setManuallyStowed(true);
   }
   const listRef = useRef<HTMLUListElement>(null);
+
+  /*
+    Whether this render shows the globe, the map, or neither yet.
+
+    "pending" is the only value either the server or the client's first
+    render can honestly produce — the decision needs `navigator.connection`,
+    `matchMedia` and localStorage, none of which exist during SSR — so it is
+    also the only value that can be the initial state without a hydration
+    mismatch. The effect below resolves it to "globe" or "map" immediately
+    on mount, before the browser paints, so in practice "pending" is never
+    seen; it exists so the resolved value has something safe to start from.
+  */
+  const [mode, setMode] = useState<"pending" | "globe" | "map">("pending");
 
   // Anchor point for the radius. Null until the reader shares a location or
   // the map settles, in which case results are simply unbounded by distance.
@@ -395,32 +450,76 @@ export function Discover({
   }, [sort, runSearch]);
 
   /*
-    Ask once on load. Permission may be denied or unavailable, so this only
-    ever improves the default view — it never blocks it.
+    Decide, once, whether this visit opens on the globe or straight into the
+    map — and if it's the map, whether there is a remembered area to jump to
+    directly rather than asking geolocation again.
+
+    This is the one place `navigator.connection`, `matchMedia` and
+    localStorage get read; the decision itself is `shouldShowGlobe`, a pure
+    function tested without a browser. Permission may be denied or
+    unavailable either way, so geolocation only ever improves the default
+    view — it never blocks it.
   */
   useEffect(() => {
-    if (!("geolocation" in navigator)) return;
     let live = true;
-    // Deferred so the effect body itself does not synchronously set state.
-    queueMicrotask(() => live && setLocating(true));
+    const stored = readLastArea();
 
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        if (!live) return;
-        const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setCenter(next);
-        setLocating(false);
-        setLocationNote(null);
-        setAreaLabel("Near you");
-        void runSearch({ ...next, radiusMiles: 20 });
-      },
-      () => {
-        if (!live) return;
-        setLocating(false);
-        setLocationNote("Showing all areas — use Select area, or allow location.");
-      },
-      { timeout: 8000, maximumAge: 300_000 },
-    );
+    const nav = navigator as Navigator & {
+      connection?: { effectiveType?: string; saveData?: boolean };
+    };
+    const decision = shouldShowGlobe({
+      firstVisit: !stored,
+      saveData: Boolean(nav.connection?.saveData),
+      effectiveType: nav.connection?.effectiveType,
+      reducedMotion:
+        typeof window !== "undefined" &&
+        (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false),
+    });
+
+    // Deferred so the effect body itself does not synchronously set state —
+    // same convention as the geolocation callback below.
+    queueMicrotask(() => {
+      if (!live) return;
+
+      if (decision.globe) {
+        setMode("globe");
+        return;
+      }
+
+      setMode("map");
+
+      // A returning visitor with a remembered area goes straight there —
+      // nobody wants a location prompt on their fourth price check.
+      if (stored) {
+        setCenter({ lat: stored.lat, lng: stored.lng });
+        setRadiusMiles(stored.radiusMiles);
+        setAreaLabel(stored.label);
+        void runSearch({ lat: stored.lat, lng: stored.lng, radiusMiles: stored.radiusMiles });
+        return;
+      }
+
+      if (!("geolocation" in navigator)) return;
+      setLocating(true);
+
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          if (!live) return;
+          const next = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+          setCenter(next);
+          setLocating(false);
+          setLocationNote(null);
+          setAreaLabel("Near you");
+          rememberArea(next, 20, "Near you");
+          void runSearch({ ...next, radiusMiles: 20 });
+        },
+        () => {
+          if (!live) return;
+          setLocating(false);
+          setLocationNote("Showing all areas — use Select area, or allow location.");
+        },
+        { timeout: 8000, maximumAge: 300_000 },
+      );
+    });
 
     return () => {
       live = false;
@@ -429,14 +528,34 @@ export function Discover({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  /*
+    The globe's handoff: the camera has arrived somewhere, so switch to the
+    map-and-filters view centred there. Same remembering as the geolocation
+    path above, so the next visit skips the globe entirely.
+  */
+  const handleGlobeArrival = useCallback(
+    (area: { lat: number; lng: number }) => {
+      setCenter(area);
+      setRadiusMiles(20);
+      setAreaLabel("Near you");
+      setLocationNote(null);
+      rememberArea(area, 20, "Near you");
+      setMode("map");
+      void runSearch({ ...area, radiusMiles: 20 });
+    },
+    [runSearch],
+  );
+
   function chooseArea(area: Area) {
     const next = { lat: area.lat, lng: area.lng };
     setCenter(next);
     // A postcode gets a tight radius, a country a wide one.
     setRadiusMiles(area.suggestedRadiusMiles);
     // Nominatim labels are long; the first two parts identify the place.
-    setAreaLabel(area.label.split(",").slice(0, 2).join(",").trim());
+    const label = area.label.split(",").slice(0, 2).join(",").trim();
+    setAreaLabel(label);
     setLocationNote(null);
+    rememberArea(next, area.suggestedRadiusMiles, label);
     void runSearch({ ...next, radiusMiles: area.suggestedRadiusMiles });
   }
 
@@ -463,12 +582,30 @@ export function Discover({
 
   const selected = results.find((r) => r.id === selectedId) ?? null;
 
+  /*
+    Neither the server nor the very first client render can know which of
+    these two views this visit gets — see the `mode` state above — so both
+    render this same neutral shell instead of guessing. It resolves before
+    the browser paints in practice, so this is never actually seen.
+  */
+  if (mode === "pending") {
+    return <div className="map-root fixed inset-0 top-16 bg-grouped" aria-hidden="true" />;
+  }
+
+  // The globe owns the full screen (including its own header) until it
+  // hands off — see handleGlobeArrival, which is what flips `mode` to "map".
+  if (mode === "globe") {
+    return <Globe onNearby={handleGlobeArrival} />;
+  }
+
   return (
     <div className="map-root fixed inset-0 top-16">
       <MechanicMap
         mechanics={results}
         selectedId={selectedId}
         onSelect={setSelectedId}
+        center={center}
+        radiusMiles={radiusMiles}
         className="absolute inset-0"
       />
 
