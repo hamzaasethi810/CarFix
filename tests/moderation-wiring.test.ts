@@ -183,4 +183,42 @@ describe("a single validation issue surfaces its own message; several fall back 
     expect(body.error.message).toBe("Some of the information provided was not valid.");
     expect(body.error.details.length).toBe(result.error.issues.length);
   });
+
+  /*
+    The handle is as public as the display name — it shows as @name on the
+    profile and beside every report its owner files — so it is screened the
+    same way. The character rule still runs first, and ordinary handles that
+    merely contain an awkward substring must survive.
+  */
+  describe("the username is screened like a label", () => {
+    const register = (username: string) =>
+      registerSchema.safeParse({
+        email: "a@b.co",
+        password: "Str0ngPassw0rd!",
+        username,
+        displayName: "Dave",
+      });
+
+    it("refuses a profane handle", () => {
+      const result = register("shitmechanic");
+      expect(result.success).toBe(false);
+      if (result.success) return;
+      expect(result.error.issues[0].message).toBe(
+        "This can't be used as written. Please choose a different one.",
+      );
+    });
+
+    it("accepts ordinary handles, including ones with awkward substrings", () => {
+      for (const handle of ["dave_smith", "scunthorpe", "classic_cars", "assessor99"]) {
+        expect(register(handle).success, handle).toBe(true);
+      }
+    });
+
+    it("still reports the character rule rather than the screening", () => {
+      const result = register("Dave Smith");
+      expect(result.success).toBe(false);
+      if (result.success) return;
+      expect(result.error.issues[0].message).toContain("lowercase letters");
+    });
+  });
 });

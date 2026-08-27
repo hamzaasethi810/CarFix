@@ -65,11 +65,19 @@ export const registerSchema = z
   .object({
     email: z.string().email().max(254),
     password: z.string().min(12).max(200),
+    /*
+      Screened like a display name, and for the same reason: the handle shows
+      as @name on the public profile and beside every report its owner files,
+      so it is as visible as any post. The character rule runs first so an
+      invalid handle is told what characters are allowed rather than that it
+      cannot be used.
+    */
     username: z
       .string()
       .min(3)
       .max(30)
-      .regex(/^[a-z0-9_]+$/, "Use lowercase letters, numbers, and underscores only."),
+      .regex(/^[a-z0-9_]+$/, "Use lowercase letters, numbers, and underscores only.")
+      .pipe(moderatedLabel(30, 3)),
     displayName: moderatedLabel(60, 1),
   })
   .strict();
