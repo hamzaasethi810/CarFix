@@ -167,9 +167,15 @@ content onto its own surface.
 
 ### Buttons — machined aluminium
 
-Vertical brush pattern, bright top edge, dark bottom edge, a specular band that
-travels on hover. Pressing depresses. No pills anywhere; the current
+Horizontal brush pattern, bright top edge, dark bottom edge, a specular band
+that travels on hover. Pressing depresses. No pills anywhere; the current
 `rounded-full` treatment goes.
+
+The brush runs horizontally, across the long axis, and deliberately against the
+ground's vertical grain. Perpendicular grain is what makes the button read as a
+different material from the surface it sits on; matching the ground's direction
+makes it blend into it. This is a change from the original "vertical" wording,
+decided on 2026-08-27 after looking at both.
 
 ### Type
 
