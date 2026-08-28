@@ -215,9 +215,19 @@ export const popoverSurface =
   "bg-elevated shadow-raised border border-separator";
 
 export const buttonStyles = {
-  primary: `${BUTTON_BASE} ${MACHINED} bg-accent-fill text-on-accent hover:bg-accent-hover`,
-  secondary: `${BUTTON_BASE} ${MACHINED} bg-fill text-accent hover:opacity-80`,
-  destructive: `${BUTTON_BASE} ${MACHINED} bg-destructive-fill text-on-destructive hover:opacity-90`,
+  /*
+    The plate supplies its own alloy face and dark lettering, so these no
+    longer set a fill or a text colour — a green fill painted over the metal
+    was what made the old buttons read as coloured rectangles with a texture
+    rather than as machined parts.
+
+    Variant now shows in the edge rather than the face, the way a real control
+    panel distinguishes one switch from another: destructive gets a red rim,
+    primary a green one, secondary none.
+  */
+  primary: `${BUTTON_BASE} ${MACHINED} ring-1 ring-inset ring-accent-fill/70`,
+  secondary: `${BUTTON_BASE} ${MACHINED}`,
+  destructive: `${BUTTON_BASE} ${MACHINED} ring-1 ring-inset ring-destructive-fill/80`,
   // Text button: no material — a metal slab behind a link would misread as a control.
   plain: `${BUTTON_BASE} text-accent hover:bg-fill`,
 } as const;

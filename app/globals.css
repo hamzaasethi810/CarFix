@@ -20,10 +20,10 @@
   color-scheme: dark;
 
   /* Ground — deep forest green. Texture is applied on body, not here. */
-  --bg: #0E1F16;
-  --bg-elevated: #17301F;   /* raised work surface */
-  --bg-grouped: #12271A;
-  --bg-tertiary: #1B3624;
+  --bg: #060D09;
+  --bg-elevated: #101B14;   /* raised work surface */
+  --bg-grouped: #0A1410;
+  --bg-tertiary: #14231A;
   --fill-quaternary: rgba(220, 236, 226, 0.10);
 
   /* Label hierarchy — white and near-white, per the spec. */
@@ -202,29 +202,30 @@ html {
 body {
   background-color: var(--bg);
   /*
-    The ground is a material, not a flat fill: a vignette that pulls the
-    corners down from the centre, over a fine brushed-metal grain. Both are
-    gradients rather than an image — no extra request, nothing to fail to
-    load. Plan 2 puts a photoreal globe on this ground, and a sphere over a
-    flat fill reads as a sticker no matter how good the sphere is; this
-    texture is what it needs to sit against, so the alphas below are tuned to
-    be obvious at normal viewing distance, not merely present under a loupe.
+    The ground is a night-satellite view: lit roads running out past the
+    horizon, brighter where they meet, over a near-black green.
+
+    This replaced a vertical brushed grain. The grain read as slats — a
+    repeating linear gradient looks like material up close and like blinds at
+    a glance, and on a page whose subject is a map it said nothing about
+    driving. Roads do, and they give the globe something to sit over that
+    belongs to the same picture.
+
+    Drawn rather than fetched (scripts/generate-roads.mjs): the landing view's
+    whole cost argument is that it makes zero tile requests, and real road data
+    would break that on the one page every visitor sees first.
   */
   background-image:
-    /* vignette — corners fall away from the centre */
     radial-gradient(
-      ellipse at 50% 35%,
-      rgba(0, 0, 0, 0) 40%,
-      rgba(0, 0, 0, 0.4) 100%
+      ellipse at 50% 40%,
+      rgba(0, 0, 0, 0) 30%,
+      rgba(0, 0, 0, 0.55) 100%
     ),
-    /* brushed grain — a fine vertical tick, widened to 3px to avoid moiré */
-    repeating-linear-gradient(
-      90deg,
-      rgba(255, 255, 255, 0.05) 0px,
-      rgba(255, 255, 255, 0.05) 1px,
-      rgba(0, 0, 0, 0.05) 1px,
-      rgba(0, 0, 0, 0.05) 3px
-    );
+    url("/roads.svg"),
+    radial-gradient(ellipse at 50% 45%, rgba(28, 74, 48, 0.5) 0%, rgba(6, 13, 9, 0) 70%);
+  background-size: cover, 1600px 1000px, cover;
+  background-position: center, center, center;
+  background-repeat: no-repeat, repeat, no-repeat;
   background-attachment: fixed;
   color: var(--label);
   font-family:
@@ -309,20 +310,47 @@ h1,
   does. The inset edges are what give it thickness — without them this is just
   a gradient.
 */
+/*
+  A machined aluminium plate, riveted at the corners.
+
+  The earlier version tinted a dark control with a faint brush. That reads as
+  "textured button"; the reference reads as "a piece of metal bolted to the
+  page", and the difference is almost entirely the things below — a light
+  alloy face rather than a dark one, dark text cut into it, a hard bright
+  bevel along the top with a dark one under it, and four visible fasteners.
+
+  The rivets are background gradients rather than elements: they have to sit
+  under the label, survive any content, and cost nothing.
+*/
 .machined {
   position: relative;
   overflow: hidden;
-  background-image: repeating-linear-gradient(
-    180deg,
-    rgba(255, 255, 255, 0.05) 0px,
-    rgba(255, 255, 255, 0.05) 1px,
-    rgba(0, 0, 0, 0.05) 1px,
-    rgba(0, 0, 0, 0.05) 2px
-  );
+  color: #14201a;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
+  background-color: #b9bfba;
+  background-image:
+    /* four rivets, one per corner */
+    radial-gradient(circle at 10px 10px, rgba(255,255,255,0.95) 0 1.2px, rgba(90,96,92,0.95) 1.6px 3px, rgba(0,0,0,0.28) 3.2px 4.2px, transparent 4.4px),
+    radial-gradient(circle at calc(100% - 10px) 10px, rgba(255,255,255,0.95) 0 1.2px, rgba(90,96,92,0.95) 1.6px 3px, rgba(0,0,0,0.28) 3.2px 4.2px, transparent 4.4px),
+    radial-gradient(circle at 10px calc(100% - 10px), rgba(255,255,255,0.95) 0 1.2px, rgba(90,96,92,0.95) 1.6px 3px, rgba(0,0,0,0.28) 3.2px 4.2px, transparent 4.4px),
+    radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), rgba(255,255,255,0.95) 0 1.2px, rgba(90,96,92,0.95) 1.6px 3px, rgba(0,0,0,0.28) 3.2px 4.2px, transparent 4.4px),
+    /* horizontal brush, along the plate's long axis */
+    repeating-linear-gradient(
+      180deg,
+      rgba(255,255,255,0.16) 0px,
+      rgba(255,255,255,0.16) 1px,
+      rgba(0,0,0,0.10) 1px,
+      rgba(0,0,0,0.10) 2px
+    ),
+    /* the alloy itself: lit from above, falling away below */
+    linear-gradient(180deg, #e8ebe9 0%, #c3c9c5 42%, #9ba29d 58%, #cdd2cf 100%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.30),   /* bright top edge */
-    inset 0 -1px 0 rgba(0, 0, 0, 0.38),        /* dark bottom edge */
-    0 1px 2px rgba(0, 0, 0, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.45),
+    inset 1px 0 0 rgba(255, 255, 255, 0.35),
+    inset -1px 0 0 rgba(0, 0, 0, 0.25),
+    0 2px 4px rgba(0, 0, 0, 0.5),
+    0 6px 14px rgba(0, 0, 0, 0.35);
 }
 
 /* The specular band, parked off the left edge until hover moves it across. */
@@ -334,17 +362,18 @@ h1,
   background: linear-gradient(
     105deg,
     transparent 30%,
-    rgba(255, 255, 255, 0.22) 48%,
+    rgba(255, 255, 255, 0.55) 48%,
     transparent 66%
   );
   transform: translateX(-100%);
 }
 
 .machined:active {
-  /* Depress: the edges swap, so the light now comes from below. */
+  /* Pressed into the panel: the light now comes from below. */
   box-shadow:
-    inset 0 1px 3px rgba(0, 0, 0, 0.45),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.12);
+    inset 0 2px 5px rgba(0, 0, 0, 0.5),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.35),
+    0 1px 2px rgba(0, 0, 0, 0.4);
 }
 .machined:active > * {
   transform: translateY(1px);
@@ -609,7 +638,26 @@ body:has(.map-root) footer {
   position: absolute;
   inset: 0;
   border-radius: 50%;
+  /* Keeps the square map canvas inside the disc. */
   overflow: hidden;
+  /*
+    The atmosphere lives here, not on .globe-shading.
+
+    `overflow: hidden` clips this element's CHILDREN, and the shading overlay
+    is one — so an outer glow declared there was cropped at the disc's edge and
+    never appeared at all. An element's own outer box-shadow paints outside its
+    border box and is not clipped by its own overflow, so the halo has to be
+    declared on the clipping element itself.
+
+    A planet photographed from orbit has a band of scattered light standing off
+    its limb. Without it the globe reads as a circle cut out and pasted down,
+    which is the thing this whole treatment exists to avoid.
+  */
+  box-shadow:
+    0 0 0 1px rgba(126, 200, 255, 0.30),
+    0 0 22px rgba(90, 170, 240, 0.5),
+    0 0 70px rgba(60, 140, 220, 0.3),
+    0 0 140px rgba(40, 110, 190, 0.18);
 }
 
 /*
@@ -627,14 +675,28 @@ body:has(.map-root) footer {
   against this specific dark-navy texture; confirmed visible by re-sampling
   the same pixel column after adding this layer.
 */
+/*
+  The planet's shading and its atmosphere.
+
+  Two separate things doing two separate jobs. The inset shadows model a lit
+  sphere — dark where it curves away, bright where the light lands. The outer
+  glow is the atmosphere, and it is what stops the globe reading as a flat
+  circle stuck on the page: a real planet photographed from orbit has a band of
+  scattered blue standing off its limb, brightest on the lit side.
+
+  The atmosphere itself is on .globe-sphere, not here — see the note there
+  about overflow clipping a child's outer shadow.
+*/
 .globe-shading {
   position: absolute;
   inset: 0;
   border-radius: 50%;
   pointer-events: none;
   box-shadow:
-    inset -8px -10px 20px rgba(0, 0, 0, 0.45),
-    inset 3px 4px 6px rgba(255, 255, 255, 0.6);
+    /* terminator: the far side falling into shadow */
+    inset -10px -12px 26px rgba(0, 0, 0, 0.5),
+    /* the lit limb catching the light */
+    inset 4px 5px 8px rgba(190, 225, 255, 0.55);
 }
 
 /*

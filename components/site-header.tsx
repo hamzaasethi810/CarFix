@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { buttonStyles } from "@/components/ui";
 import { signOut } from "@/lib/auth";
 import Image from "next/image";
 
@@ -16,10 +17,13 @@ export function SiteHeader({
 }) {
   return (
     /*
-      The bar is a translucent material on its own plane above the content,
-      rather than an opaque block sharing the content's plane.
+      No banner. The reference has the wordmark and the nav floating straight
+      over the ground with nothing behind them — a solid strip cuts the page in
+      two and hides the roads the design is built on. What is left is a blur
+      just strong enough to keep white type legible when the globe drifts under
+      it, and no border, because a rule across the top is the banner again.
     */
-    <header className="sticky top-0 z-50 border-b border-separator bg-[color-mix(in_srgb,var(--bg-elevated)_78%,transparent)] backdrop-blur-xl backdrop-saturate-150">
+    <header className="sticky top-0 z-50 bg-transparent backdrop-blur-sm">
       <nav
         aria-label="Primary"
         className="w-full max-w-none px-3 sm:px-6 h-16 flex items-center gap-2 sm:gap-4"
@@ -101,7 +105,7 @@ export function SiteHeader({
               </Link>
               <Link
                 href="/register"
-                className="inline-flex items-center min-h-11 px-4 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold hover:bg-accent-hover transition-colors duration-150"
+                className={`${buttonStyles.primary} text-subhead`}
               >
                 Join
               </Link>
