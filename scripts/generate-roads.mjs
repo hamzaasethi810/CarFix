@@ -109,16 +109,16 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" wid
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <radialGradient id="hub">
-      <stop offset="0%" stop-color="#7fd7ff" stop-opacity="0.85"/>
-      <stop offset="100%" stop-color="#7fd7ff" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#7bf0a6" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#7bf0a6" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-${twigs.map((p) => `    <path d="${toPath(p)}" stroke="#4f9ec4" stroke-opacity="0.13" stroke-width="0.35"/>`).join("\n")}
-${branches.map((p) => `    <path d="${toPath(p)}" stroke="#5aabd2" stroke-opacity="0.22" stroke-width="0.5"/>`).join("\n")}
+${twigs.map((p) => `    <path d="${toPath(p)}" stroke="#2f8f57" stroke-opacity="0.16" stroke-width="0.35"/>`).join("\n")}
+${branches.map((p) => `    <path d="${toPath(p)}" stroke="#3faeb" stroke-opacity="0.26" stroke-width="0.5"/>`).join("\n")}
   </g>
   <g filter="url(#glow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
-${trunks.map((p) => `    <path d="${toPath(p)}" stroke="#8ad8f8" stroke-opacity="0.38" stroke-width="0.85"/>`).join("\n")}
+${trunks.map((p) => `    <path d="${toPath(p)}" stroke="#5ce08c" stroke-opacity="0.42" stroke-width="0.85"/>`).join("\n")}
   </g>
 ${hubs.map((h) => `  <circle cx="${h.x.toFixed(1)}" cy="${h.y.toFixed(1)}" r="5" fill="url(#hub)"/>`).join("\n")}
 </svg>

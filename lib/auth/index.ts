@@ -65,6 +65,32 @@ export const {
   unstable_update: refreshSessionCookie,
 } = NextAuth({
   secret: env.AUTH_SECRET,
+  /*
+    A cookie we cannot decrypt is a signed-out visitor, not a fault.
+
+    Auth.js logs JWTSessionError at error level and it fires on every single
+    request for the life of the cookie. It means the browser is holding a token
+    encrypted under a different secret — a rotated AUTH_SECRET, a cookie
+    carried over from another environment, or a stale one from an earlier run.
+    In every one of those cases the correct behaviour is exactly what already
+    happens: no session, and the person signs in again.
+
+    Left at error level it buries real problems in a scrolling wall, and it
+    invites someone to go hunting for a bug in the auth config that is not
+    there. Everything else still logs normally.
+  */
+  logger: {
+    error(error) {
+      if (error?.name === "JWTSessionError") {
+        console.warn(
+          "[auth] Ignoring a session cookie this secret cannot decrypt — " +
+            "treating the request as signed out. Clear cookies for this site to stop the notice.",
+        );
+        return;
+      }
+      console.error(error);
+    },
+  },
   session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7, updateAge: 60 * 15 },
   trustHost: true,
   pages: { signIn: "/login" },

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AttributionControl, Map as MapLibreGlMap, setWorkerUrl } from "maplibre-gl";
 import type { Map as MapLibreMap, StyleSpecification } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import Link from "next/link";
 import { buttonStyles } from "@/components/ui";
 import { AreaPicker, type Area } from "@/components/area-picker";
 import { CITY_ZOOM, descentPlan, type DescentStep } from "@/lib/map/descent";
@@ -169,7 +170,22 @@ const GLOBE_STYLE: StyleSpecification = {
     // fill. A flat background here is exactly what would make this read as
     // a sticker rather than an object sitting in the scene.
     { id: "space", type: "background", paint: { "background-color": "rgba(0,0,0,0)" } },
-    { id: EARTH_LAYER_ID, type: "raster", source: EARTH_SOURCE_ID },
+    {
+      id: EARTH_LAYER_ID,
+      type: "raster",
+      source: EARTH_SOURCE_ID,
+      paint: {
+        /*
+          No cross-fade. The default fades between resamplings as the camera
+          moves, and on a single static image being re-projected onto a
+          rotating sphere that reads as the whole planet smearing — the
+          "blurry mess" when you spin it. With the fade off each frame is
+          drawn once, sharply.
+        */
+        "raster-fade-duration": 0,
+        "raster-resampling": "linear",
+      },
+    },
   ],
   projection: { type: "globe" },
 };
@@ -238,7 +254,16 @@ export function Globe({
         globe ever looks detached from its shadow again, check this first.
       */
       zoom: 2.05,
-      minZoom: 0.3,
+      /*
+        Just under the resting zoom, not near zero.
+
+        Nothing on this view can zoom by hand — every handler is off — but the
+        descent drives the camera, and a stray move toward the old 0.3 floor
+        left a degenerate sphere a few pixels across with the shading and
+        shadow still sized for a full one. Fencing the bottom in means the
+        globe cannot reach a state it does not have artwork for.
+      */
+      minZoom: 1.9,
       /*
         High enough for the descent to actually arrive.
 
@@ -452,7 +477,7 @@ export function Globe({
       thing that determines how big the globe gets, and the wordmark/Nearby
       never compete with it for vertical space.
     */
-    <div className="map-root fixed inset-0 top-16 overflow-hidden">
+    <div className="absolute inset-0 overflow-hidden">
       <div className="absolute inset-0 flex items-center justify-center p-4">
         <div className="globe-stage">
           {/* Belongs to the page, not the map canvas — see .globe-ground in globals.css. */}
@@ -482,21 +507,19 @@ export function Globe({
         </div>
       </div>
 
-      <div className="absolute top-0 inset-x-0 pt-6 sm:pt-10 text-center pointer-events-none">
-        <h1
-          className="text-large-title font-bold text-label"
-          style={{ textShadow: "0 2px 20px rgba(0, 0, 0, 0.55)" }}
-        >
-          Gaari
-        </h1>
-      </div>
-
       {/*
-        pointer-events-none on the strip, auto back on the button: the empty
-        space either side of Nearby sits over the globe's drag-to-spin area,
-        and it should let that drag through rather than swallowing it.
+        The two things there is to do from here, where the wordmark used to be.
+
+        The name is already on the plate in the header, so repeating it over
+        the globe was a title with nothing to say — and it occupied the one
+        piece of space a visitor's eye lands on before the sphere. Two actions
+        earn that place instead.
+
+        pointer-events-none on the strip, auto back on the controls: the empty
+        space either side sits over the globe's drag-to-spin area and should
+        let a drag through rather than swallowing it.
       */}
-      <div className="absolute bottom-0 inset-x-0 pb-6 sm:pb-10 flex justify-center pointer-events-none">
+      <div className="absolute top-0 inset-x-0 pt-6 sm:pt-10 flex justify-center gap-3 pointer-events-none">
         <button
           type="button"
           onClick={handleNearby}
@@ -505,6 +528,9 @@ export function Globe({
         >
           Nearby
         </button>
+        <Link href="/experiences/new" className={`${buttonStyles.secondary} pointer-events-auto`}>
+          Log a service
+        </Link>
       </div>
 
       {/*

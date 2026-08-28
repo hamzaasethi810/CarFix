@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { MapMechanic } from "@/components/mechanic-map";
 import { buttonStyles, distance, money, num } from "@/components/ui";
 import { AreaPicker, type Area } from "@/components/area-picker";
+import { WrenchMark } from "@/components/wrench-mark";
 import { GoldCar } from "@/app/shops/[id]/subscription-panel";
 import { ServicePicker } from "@/components/service-picker";
 import { Globe } from "@/components/globe";
@@ -621,22 +622,32 @@ export function Discover({
     return <div className="map-root fixed inset-0 top-16 bg-grouped" aria-hidden="true" />;
   }
 
-  // The globe owns the full screen (including its own header) until it
-  // hands off — see handleGlobeArrival, which is what flips `mode` to "map".
-  if (mode === "globe") {
-    return <Globe mapStyle={mapStyle} onNearby={handleGlobeArrival} />;
-  }
+  /*
+    The globe is a backdrop, not a separate screen.
+
+    It used to own the whole viewport and return early, which meant the filter
+    bar — make, model, service, area, distance — simply did not exist until
+    after you had already committed to somewhere. Swapping only the layer
+    behind the chrome means the same panel serves both, so somebody can search
+    from the globe without being sent to a map first, and there is one filter
+    bar in this file rather than two that drift apart.
+  */
+  const onGlobe = mode === "globe";
 
   return (
     <div className="map-root fixed inset-0 top-16">
-      <MechanicMap mapStyle={mapStyle} onZoomedOut={returnToGlobe}
-        mechanics={results}
-        selectedId={selectedId}
-        onSelect={setSelectedId}
-        center={center}
-        radiusMiles={radiusMiles}
-        className="absolute inset-0"
-      />
+      {onGlobe ? (
+        <Globe mapStyle={mapStyle} onNearby={handleGlobeArrival} />
+      ) : (
+        <MechanicMap mapStyle={mapStyle} onZoomedOut={returnToGlobe}
+          mechanics={results}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+          center={center}
+          radiusMiles={radiusMiles}
+          className="absolute inset-0"
+        />
+      )}
 
       {/*
         Functional layer. Everything below floats above the map on Liquid Glass;
@@ -651,7 +662,16 @@ export function Discover({
         the first letter of "Make" were all underneath it.
       */}
       <div
-        className="pointer-events-none absolute inset-0 flex flex-col"
+        /*
+          On the globe the chrome runs bottom-up, matching the reference: the
+          two actions sit above the sphere and the filter bar sits under it,
+          so neither covers the thing you came to look at. On the map the
+          filter bar belongs at the top, where it has always been, because the
+          results list owns the bottom-left.
+        */
+        className={`pointer-events-none absolute inset-0 flex ${
+          onGlobe ? "flex-col-reverse" : "flex-col"
+        }`}
         style={{
           paddingLeft: "env(safe-area-inset-left)",
           paddingRight: "env(safe-area-inset-right)",
@@ -730,8 +750,13 @@ export function Discover({
               className={`${filtersOpen ? "grid" : "hidden"} gap-2.5 sm:gap-3 grid-cols-2 lg:grid-cols-5 [&>*]:min-w-0
                 max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain`}
             >
-              {/* Says the panel moves, and gives the thumb something to aim at. */}
-              <div className="col-span-2 lg:col-span-5 -mt-1 mb-0.5 flex justify-center">
+              {/*
+                The wrench marks the search bar, the way the reference puts a
+                tool beside its fields. It sits with the drag handle so it
+                costs no row of its own on a phone.
+              */}
+              <div className="col-span-2 lg:col-span-5 -mt-1 mb-0.5 flex items-center justify-center gap-3">
+                <WrenchMark className="h-5 w-5 shrink-0 opacity-90" />
                 <span aria-hidden="true" className="h-1 w-9 rounded-control bg-white/15" />
               </div>
 
@@ -898,7 +923,16 @@ export function Discover({
         </div>
 
         {/* Results share the flex column with the bar, so they never overlap it. */}
-        <div className="flex-1 min-h-0 flex flex-col sm:flex-row sm:items-stretch relative z-10">
+        {/*
+          The results list, hidden while the globe is up: there is nothing to
+          list before a search has run, and an empty panel over the globe is
+          just a shape in the way of the thing the page is for.
+        */}
+        <div
+          className={`flex-1 min-h-0 flex flex-col sm:flex-row sm:items-stretch relative z-10 ${
+            onGlobe ? "hidden" : ""
+          }`}
+        >
           <div
             className={`pointer-events-auto px-3 pb-3 sm:px-4 sm:pb-4 w-full sm:w-96 mt-auto sm:mt-0 flex flex-col min-h-0 motion-safe:transition-transform motion-safe:duration-300 ${
               panelStowed ? "-translate-x-[calc(100%+1rem)]" : "translate-x-0"

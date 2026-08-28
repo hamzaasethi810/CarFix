@@ -20,10 +20,10 @@
   color-scheme: dark;
 
   /* Ground — deep forest green. Texture is applied on body, not here. */
-  --bg: #060D09;
-  --bg-elevated: #101B14;   /* raised work surface */
-  --bg-grouped: #0A1410;
-  --bg-tertiary: #14231A;
+  --bg: #050A14;
+  --bg-elevated: #0D1524;   /* raised work surface */
+  --bg-grouped: #081020;
+  --bg-tertiary: #101C2E;
   --fill-quaternary: rgba(220, 236, 226, 0.10);
 
   /* Label hierarchy — white and near-white, per the spec. */
@@ -203,7 +203,12 @@ body {
   background-color: var(--bg);
   /*
     The ground is a night-satellite view: lit roads running out past the
-    horizon, brighter where they meet, over a near-black green.
+    horizon, brighter where they meet, over a near-black blue.
+
+    Blue rather than green so the globe sits in the same air as the page
+    instead of being cut out of it — the sphere's own atmosphere is blue, and
+    against a green ground the two never belonged to one picture. The road
+    lights stay green, which is where the brand colour lives now.
 
     This replaced a vertical brushed grain. The grain read as slats — a
     repeating linear gradient looks like material up close and like blinds at
@@ -217,12 +222,12 @@ body {
   */
   background-image:
     radial-gradient(
-      ellipse at 50% 40%,
-      rgba(0, 0, 0, 0) 30%,
-      rgba(0, 0, 0, 0.55) 100%
+      ellipse at 50% 42%,
+      rgba(0, 0, 0, 0) 26%,
+      rgba(0, 0, 0, 0.62) 100%
     ),
     url("/roads.svg"),
-    radial-gradient(ellipse at 50% 45%, rgba(28, 74, 48, 0.5) 0%, rgba(6, 13, 9, 0) 70%);
+    radial-gradient(ellipse at 50% 45%, rgba(16, 46, 74, 0.55) 0%, rgba(5, 10, 20, 0) 72%);
   background-size: cover, 1600px 1000px, cover;
   background-position: center, center, center;
   background-repeat: no-repeat, repeat, no-repeat;
