@@ -1,5 +1,6 @@
 "use client";
 
+import { AnchoredMenu } from "@/components/anchored-menu";
 import { popoverSurface } from "@/components/ui";
 import { useEffect, useRef, useState } from "react";
 
@@ -42,6 +43,10 @@ export function AreaPicker({
     onOpenChange?.(open);
   }, [open, onOpenChange]);
   const popRef = useRef<HTMLDivElement>(null);
+  /* The trigger's box — what the portalled popover anchors to. */
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  /* The popover itself, once portalled: no longer inside popRef. */
+  const panelRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -52,7 +57,16 @@ export function AreaPicker({
 
   useEffect(() => {
     function onDown(e: MouseEvent) {
-      if (popRef.current && !popRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      /*
+        The panel is portalled to document.body now, so it is not inside
+        popRef. Without checking it too, typing an address counts as clicking
+        outside and closes the popover mid-keystroke — which is exactly what
+        "the address stays stuck in the box" was.
+      */
+      if (popRef.current?.contains(target)) return;
+      if (panelRef.current?.contains(target)) return;
+      setOpen(false);
     }
     function onEsc(e: KeyboardEvent) {
       if (e.key === "Escape") setOpen(false);
@@ -97,6 +111,7 @@ export function AreaPicker({
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
+        ref={triggerRef}
         aria-expanded={open}
         aria-haspopup="dialog"
         className="inline-flex items-center gap-2 min-h-11 px-4 rounded-control bg-white/[0.06] hover:bg-fill text-subhead font-medium transition-colors duration-150 max-w-full"
@@ -105,11 +120,12 @@ export function AreaPicker({
         <span className="truncate">{current ?? "Select area"}</span>
       </button>
 
-      {open && (
+      <AnchoredMenu anchorRef={triggerRef} open={open}>
         <div
+          ref={panelRef}
           role="dialog"
           aria-label="Choose an area"
-          className={`absolute z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-glass p-4 ${popoverSurface}`}
+          className={`w-[min(22rem,calc(100vw-2rem))] rounded-glass p-4 ${popoverSurface}`}
         >
           <form onSubmit={submit} className="space-y-3">
             <label className="block">
@@ -162,7 +178,7 @@ export function AreaPicker({
             </ul>
           )}
         </div>
-      )}
+      </AnchoredMenu>
     </div>
   );
 }

@@ -153,6 +153,16 @@ export function MechanicMap({
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const markersRef = useRef<Map<string, Marker>>(new Map());
+  /*
+    Set when a selection originates from clicking a pin on the map, so the
+    pan-to-selection effect below can sit it out. Selecting from the list
+    should bring the shop into view; selecting a pin means you were already
+    looking at it, and panning then slides it out from under the cursor and
+    carries every other marker off-screen with it. That is what "clicking a
+    shop makes everything disappear" actually was.
+  */
+  const selectedFromMapRef = useRef(false);
+
   const fallbackAppliedRef = useRef(false);
 
   // Markers are (re)drawn from source data on every viewport change, so they
@@ -334,7 +344,10 @@ export function MechanicMap({
           el.setAttribute("aria-label", `${m.name}, ${m.city}, ${m.state}`);
           // The pin shape reads without relying on its colour.
           el.innerHTML = `<div class="pin"><span>🔧</span></div>`;
-          const select = () => onSelectRef.current(id);
+          const select = () => {
+            selectedFromMapRef.current = true;
+            onSelectRef.current(id);
+          };
           // See the cluster branch above — without stopPropagation this click
           // also reaches the map's own background-click handler, which clears
           // the selection this same click just set.
@@ -431,9 +444,15 @@ export function MechanicMap({
     };
   }, [mechanics, selectedId]);
 
-  // Pan to whichever result the reader picked in the list.
+  // Pan to whichever result the reader picked IN THE LIST — never one they
+  // clicked on the map, which is already in view by definition.
   useEffect(() => {
     if (!selectedId) return;
+    if (selectedFromMapRef.current) {
+      // Consume the flag so the next list selection pans normally.
+      selectedFromMapRef.current = false;
+      return;
+    }
     const target = mechanics.find((m) => m.id === selectedId);
     const map = mapRef.current;
     if (!target || !map) return;

@@ -26,10 +26,24 @@ describe("floating menus", () => {
   it.each(POPOVERS)("$what does not use translucent glass", ({ file }) => {
     const src = read(file);
 
-    // The line that positions the floating surface.
+    /*
+      The line that carries the floating surface's material.
+
+      Two shapes now, because these menus are portalled out of the filter
+      panel that used to clip them: one still positions itself with
+      `absolute z-N`, the other is placed by AnchoredMenu and only carries a
+      className. Matching `popoverSurface` or a rounded-glass panel catches
+      both. The assertion below is what actually matters and is unchanged —
+      a floating menu must be opaque, because a translucent one over a map is
+      unreadable.
+    */
     const floating = src
       .split("\n")
-      .filter((l) => /absolute z-\d/.test(l) && /className/.test(l));
+      .filter(
+        (l) =>
+          /className/.test(l) &&
+          (/absolute z-\d/.test(l) || /popoverSurface/.test(l) || /rounded-glass/.test(l)),
+      );
 
     expect(floating.length).toBeGreaterThan(0);
     for (const line of floating) {

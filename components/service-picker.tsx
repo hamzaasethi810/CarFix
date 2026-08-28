@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { AnchoredMenu } from "@/components/anchored-menu";
 
 export type ServiceOption = { id: string; name: string; category: string };
 
@@ -42,6 +43,8 @@ export function ServicePicker({
   }, [open, onOpenChange]);
   const [active, setActive] = useState(-1);
   const boxRef = useRef<HTMLDivElement>(null);
+  /* The input's own box — what the portalled menu anchors itself to. */
+  const fieldRef = useRef<HTMLDivElement>(null);
 
   // One request for the whole list; filtering afterwards is instant.
   useEffect(() => {
@@ -57,11 +60,21 @@ export function ServicePicker({
 
   useEffect(() => {
     function onDown(e: MouseEvent) {
-      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      /*
+        The menu now lives in a portal on document.body, so it is NOT inside
+        boxRef any more. Without the second check, clicking an option counts as
+        an outside click and closes the menu before the choice lands — the
+        picker would look like it simply refused to accept anything.
+      */
+      const inField = boxRef.current?.contains(target);
+      const inMenu = (target as HTMLElement)?.closest?.(`#${CSS.escape(listId)}`);
+      if (!inField && !inMenu) setOpen(false);
     }
     document.addEventListener("mousedown", onDown);
     return () => document.removeEventListener("mousedown", onDown);
-  }, []);
+    // listId is used inside, so it belongs here even though useId keeps it stable.
+  }, [listId]);
 
   const selected = useMemo(() => all.find((s) => s.id === value) ?? null, [all, value]);
 
@@ -121,7 +134,7 @@ export function ServicePicker({
         {label}
       </label>
 
-      <div className="relative">
+      <div className="relative" ref={fieldRef}>
         <input
           id={id}
           type="text"
@@ -158,11 +171,11 @@ export function ServicePicker({
         )}
       </div>
 
-      {open && (
+      <AnchoredMenu anchorRef={fieldRef} open={open}>
         <ul
           id={listId}
           role="listbox"
-          className="absolute z-50 mt-1 w-full max-h-72 overflow-y-auto rounded-control bg-elevated shadow-raised border border-separator py-1"
+          className="max-h-72 overflow-y-auto rounded-control bg-elevated shadow-raised border border-separator py-1"
         >
           <li
             role="option"
@@ -198,7 +211,7 @@ export function ServicePicker({
             <li className="px-3 py-3 text-subhead text-secondary">No service matched.</li>
           )}
         </ul>
-      )}
+      </AnchoredMenu>
     </div>
   );
 }
