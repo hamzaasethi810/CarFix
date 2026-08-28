@@ -57,7 +57,6 @@ const rand = rng(20260827);
 const COLS = 62;
 const ROWS = 40;
 const CELL_W = W / COLS;
-const CELL_H = H / ROWS;
 
 /*
   The grid is laid on the ground and then looked at from low down, not drawn
