@@ -39,68 +39,71 @@ const rand = rng(20260827);
   spots in the reference.
 */
 /*
-  Routes, not a graph.
+  A street network: a warped grid, not curves and not a graph.
 
-  Two earlier versions joined scattered points to their nearest neighbours.
-  Both read as a constellation or a spiderweb, and for the same reason: a
-  nearest-neighbour graph on random points triangulates, so every cell is a
-  little polygon and every line ends at a vertex. Roads do not look like that.
-  A road is a long continuous run that holds a heading, bends gently, and
-  throws off branches — and it is the branching, not the connecting, that makes
-  a network read as somewhere people drive.
+  Three attempts got here. Nearest-neighbour graphs read as a constellation and
+  then a spiderweb — such a graph triangulates, so every cell is a little
+  polygon. Long branching walks read as flight paths or contour lines, because
+  nothing ever closed. What a road network actually looks like from above is
+  BLOCKS: roads meeting at right angles, enclosing cells, the grid bending and
+  breaking up as it runs out from the centre.
 
-  So each road here is a walk: pick a start and a heading, step forward with a
-  small random turn, and occasionally spawn a child walk at an angle. Trunk
-  roads are long and bright, their branches shorter and dimmer, and the third
-  generation dimmer still.
+  So: a grid of junctions, each shoved off its lattice point, joined to its
+  right and lower neighbours. Some links are dropped so the mesh is not
+  uniform, and whole rows and columns are promoted to arterials, which is what
+  gives the eye a route to follow.
 */
 
-const trunks = [];
-const branches = [];
-const twigs = [];
+const COLS = 62;
+const ROWS = 40;
+const CELL_W = W / COLS;
+const CELL_H = H / ROWS;
 
-function walk(x, y, heading, steps, wander, into) {
-  const pts = [[x, y]];
-  let h = heading;
-  for (let i = 0; i < steps; i++) {
-    h += (rand() - 0.5) * wander;
-    x += Math.cos(h) * 14;
-    y += Math.sin(h) * 14;
-    // Let routes leave the frame; roads do not stop at the edge of a picture.
-    if (x < -80 || x > W + 80 || y < -80 || y > H + 80) break;
-    pts.push([x, y]);
+/* Junctions, jittered off the lattice so nothing reads as graph paper. */
+const grid = [];
+for (let r = 0; r <= ROWS; r++) {
+  const row = [];
+  for (let c = 0; c <= COLS; c++) {
+    row.push({
+      x: c * CELL_W + (rand() - 0.5) * CELL_W * 1.05,
+      y: r * CELL_H + (rand() - 0.5) * CELL_H * 1.05,
+    });
   }
-  if (pts.length > 2) into.push(pts);
-  return { x, y, h, pts };
+  grid.push(row);
 }
 
-/* Trunks: long runs crossing the whole frame. */
-for (let i = 0; i < 26; i++) {
-  const edge = Math.floor(rand() * 4);
-  const x = edge === 0 ? 0 : edge === 1 ? W : rand() * W;
-  const y = edge === 2 ? 0 : edge === 3 ? H : rand() * H;
-  const toward = Math.atan2(H / 2 - y, W / 2 - x) + (rand() - 0.5) * 1.1;
-  const trunk = walk(x, y, toward, 120, 0.16, trunks);
+/* Every few rows and columns carries more traffic and is drawn brighter. */
+const bigRow = new Set();
+const bigCol = new Set();
+for (let r = 0; r <= ROWS; r++) if (rand() < 0.10) bigRow.add(r);
+for (let c = 0; c <= COLS; c++) if (rand() < 0.10) bigCol.add(c);
 
-  /* Branches leave the trunk at a shallow angle, as slip roads do. */
-  for (let b = 0; b < 5; b++) {
-    const at = trunk.pts[Math.floor(rand() * trunk.pts.length)];
-    if (!at) continue;
-    const side = rand() < 0.5 ? 1 : -1;
-    const br = walk(at[0], at[1], trunk.h + side * (0.5 + rand() * 0.7), 34 + rand() * 30, 0.3, branches);
+const arterial = [];
+const local = [];
 
-    for (let t = 0; t < 3; t++) {
-      const at2 = br.pts[Math.floor(rand() * br.pts.length)];
-      if (!at2) continue;
-      walk(at2[0], at2[1], br.h + (rand() - 0.5) * 2.2, 10 + rand() * 16, 0.5, twigs);
-    }
+/* A gentle bow on each link; dead-straight blocks look like a wireframe. */
+function link(a, b, big) {
+  const mx = (a.x + b.x) / 2 + (rand() - 0.5) * 5;
+  const my = (a.y + b.y) / 2 + (rand() - 0.5) * 5;
+  const d = `M${a.x.toFixed(1)} ${a.y.toFixed(1)} Q${mx.toFixed(1)} ${my.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}`;
+  (big ? arterial : local).push(d);
+}
+
+for (let r = 0; r <= ROWS; r++) {
+  for (let c = 0; c <= COLS; c++) {
+    const here = grid[r][c];
+    const bigH = bigRow.has(r);
+    const bigV = bigCol.has(c);
+    // Arterials run unbroken; local streets drop out here and there, which is
+    // what keeps the grid from reading as graph paper.
+    if (c < COLS && (bigH ? rand() < 0.94 : rand() < 0.72)) link(here, grid[r][c + 1], bigH);
+    if (r < ROWS && (bigV ? rand() < 0.94 : rand() < 0.72)) link(here, grid[r + 1][c], bigV);
   }
 }
 
-const toPath = (pts) => "M" + pts.map(([x, y]) => `${x.toFixed(1)} ${y.toFixed(1)}`).join(" L");
-
-/* Junctions: where a branch leaves a trunk, which is where light pools. */
-const hubs = branches.map((b) => ({ x: b[0][0], y: b[0][1] })).filter(() => rand() < 0.45);
+/* Junctions where two arterials cross: the bright spots in the reference. */
+const hubs = [];
+for (const r of bigRow) for (const c of bigCol) hubs.push(grid[r][c]);
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
   <defs>
@@ -114,11 +117,10 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" wid
     </radialGradient>
   </defs>
   <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-${twigs.map((p) => `    <path d="${toPath(p)}" stroke="#2f8f57" stroke-opacity="0.16" stroke-width="0.35"/>`).join("\n")}
-${branches.map((p) => `    <path d="${toPath(p)}" stroke="#3faeb" stroke-opacity="0.26" stroke-width="0.5"/>`).join("\n")}
+${local.map((d) => `    <path d="${d}" stroke="#39ad68" stroke-opacity="0.26" stroke-width="0.4"/>`).join("\n")}
   </g>
   <g filter="url(#glow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
-${trunks.map((p) => `    <path d="${toPath(p)}" stroke="#5ce08c" stroke-opacity="0.42" stroke-width="0.85"/>`).join("\n")}
+${arterial.map((d) => `    <path d="${d}" stroke="#5ce08c" stroke-opacity="0.34" stroke-width="0.7"/>`).join("\n")}
   </g>
 ${hubs.map((h) => `  <circle cx="${h.x.toFixed(1)}" cy="${h.y.toFixed(1)}" r="5" fill="url(#hub)"/>`).join("\n")}
 </svg>
@@ -126,6 +128,6 @@ ${hubs.map((h) => `  <circle cx="${h.x.toFixed(1)}" cy="${h.y.toFixed(1)}" r="5"
 
 await writeFile("public/roads.svg", svg, "utf8");
 console.log(
-  `wrote public/roads.svg — ${trunks.length} trunks, ${branches.length} branches, ` +
-    `${twigs.length} local roads, ${hubs.length} junctions`,
+  `wrote public/roads.svg — ${arterial.length} arterials, ${local.length} streets, ` +
+    `${hubs.length} junctions`,
 );

@@ -39,7 +39,18 @@ if (typeof window !== "undefined") {
   sphere occupying at most half the viewport never waits on a multi-megabyte
   download.
 */
-const EARTH_TEXTURE_URL = "/earth-dark.jpg";
+/*
+  The Mercator-warped copy, not the raw equirectangular original.
+
+  MapLibre's image source interpolates between its corners in Mercator space,
+  while an equirectangular image is linear in latitude. The two agree at the
+  equator and diverge toward the poles, so the raw texture came out with the
+  mid-latitudes squeezed together — continents visibly squashed through the
+  middle of the sphere. scripts/reproject-earth.mjs pre-warps the rows so the
+  linear interpolation lands true; regenerate it if the source is ever
+  replaced.
+*/
+const EARTH_TEXTURE_URL = "/earth-dark-mercator.jpg";
 
 const EARTH_SOURCE_ID = "earth";
 const EARTH_LAYER_ID = "earth-surface";

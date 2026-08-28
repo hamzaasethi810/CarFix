@@ -322,10 +322,11 @@ h1,
   "textured button"; the reference reads as "a piece of metal bolted to the
   page", and the difference is almost entirely the things below — a light
   alloy face rather than a dark one, dark text cut into it, a hard bright
-  bevel along the top with a dark one under it, and four visible fasteners.
+  bevel along the top with a dark one under it.
 
-  The rivets are background gradients rather than elements: they have to sit
-  under the label, survive any content, and cost nothing.
+  Rivets were tried and dropped: at the size most of these controls render,
+  four corner fasteners crowd the label and read as decoration rather than
+  construction. The bevel carries it alone.
 */
 .machined {
   position: relative;
@@ -334,23 +335,44 @@ h1,
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
   background-color: #b9bfba;
   background-image:
-    /* horizontal brush, along the plate's long axis */
+    /*
+      A fine brush, not stripes. The 1px-on-1px pattern was coarse enough to
+      read as corduroy at normal viewing distance; real brushed alloy is a
+      dense scatter of very fine scratches, so the period is tighter and the
+      contrast much lower.
+    */
     repeating-linear-gradient(
       180deg,
-      rgba(255,255,255,0.16) 0px,
-      rgba(255,255,255,0.16) 1px,
-      rgba(0,0,0,0.10) 1px,
-      rgba(0,0,0,0.10) 2px
+      rgba(255,255,255,0.10) 0px,
+      rgba(255,255,255,0.10) 0.5px,
+      rgba(0,0,0,0.07) 0.5px,
+      rgba(0,0,0,0.07) 1.5px
     ),
-    /* the alloy itself: lit from above, falling away below */
-    linear-gradient(180deg, #e8ebe9 0%, #c3c9c5 42%, #9ba29d 58%, #cdd2cf 100%);
+    /*
+      The alloy. Two bright bands rather than one: metal has a sharp specular
+      roll-off near the top, a darker body, then a returning sheen where the
+      lower curve catches bounced light. A single top-to-bottom ramp is what
+      makes a "metal" gradient read as grey plastic.
+    */
+    linear-gradient(
+      180deg,
+      #fdfefd 0%,
+      #dfe4e1 8%,
+      #b7beba 34%,
+      #8d9490 52%,
+      #a8afab 68%,
+      #d7dcd9 92%,
+      #9aa19d 100%
+    );
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.45),
-    inset 1px 0 0 rgba(255, 255, 255, 0.35),
-    inset -1px 0 0 rgba(0, 0, 0, 0.25),
-    0 2px 4px rgba(0, 0, 0, 0.5),
-    0 6px 14px rgba(0, 0, 0, 0.35);
+    inset 0 1px 0 rgba(255, 255, 255, 1),
+    inset 0 2px 1px rgba(255, 255, 255, 0.55),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.55),
+    inset 0 -2px 2px rgba(0, 0, 0, 0.28),
+    inset 1px 0 0 rgba(255, 255, 255, 0.42),
+    inset -1px 0 0 rgba(0, 0, 0, 0.32),
+    0 1px 1px rgba(0, 0, 0, 0.55),
+    0 3px 8px rgba(0, 0, 0, 0.45);
 }
 
 /* The specular band, parked off the left edge until hover moves it across. */
@@ -567,7 +589,7 @@ body:has(.map-root) footer {
 */
 .globe-stage {
   position: relative;
-  width: min(46vmin, 560px);
+  width: min(38vmin, 480px);
   aspect-ratio: 1 / 1;
 }
 

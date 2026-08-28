@@ -23,7 +23,7 @@ export function SiteHeader({
       just strong enough to keep white type legible when the globe drifts under
       it, and no border, because a rule across the top is the banner again.
     */
-    <header className="sticky top-0 z-50 bg-transparent backdrop-blur-sm">
+    <header className="sticky top-0 z-50 bg-transparent">
       <nav
         aria-label="Primary"
         className="w-full max-w-none px-3 sm:px-6 h-16 flex items-center gap-2 sm:gap-4"
