@@ -10,12 +10,7 @@ import {
 import type { GeoJSONSource, Map as MapLibreMap, MapGeoJSONFeature, Marker } from "maplibre-gl";
 import type { FeatureCollection, Point } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
-import {
-  FALLBACK_ATTRIBUTION,
-  fallbackStyleUrl,
-  isQuotaFailure,
-  mapStyleUrl,
-} from "@/lib/map/style";
+import { FALLBACK_ATTRIBUTION, fallbackStyleUrl, isQuotaFailure } from "@/lib/map/style";
 
 /*
   MapLibre locates its own worker script from `import.meta.url` at run time,
@@ -132,6 +127,7 @@ function startedOnFallback(): boolean {
   page imports it via next/dynamic with ssr: false).
 */
 export function MechanicMap({
+  mapStyle,
   mechanics,
   selectedId,
   onSelect,
@@ -139,6 +135,12 @@ export function MechanicMap({
   radiusMiles = 0,
   className = "",
 }: {
+  /**
+   * The tile style, resolved on the server (see app/page.tsx). Passed in
+   * rather than read from process.env here so the MapTiler key does not need
+   * a NEXT_PUBLIC_ prefix, which Vercel refuses on a Sensitive variable.
+   */
+  mapStyle: string;
   mechanics: MapMechanic[];
   selectedId: string | null;
   onSelect: (id: string | null) => void;
@@ -179,7 +181,7 @@ export function MechanicMap({
       container: containerRef.current,
       style: fallbackAppliedRef.current
         ? fallbackStyleUrl()
-        : mapStyleUrl(process.env.NEXT_PUBLIC_MAPTILER_KEY),
+        : mapStyle,
       center: [-77.15, 38.9],
       zoom: 10,
       /*
@@ -232,7 +234,12 @@ export function MechanicMap({
       map.remove();
       mapRef.current = null;
     };
-  }, []);
+    /*
+      mapStyle is listed for correctness rather than because it changes: it is
+      resolved once on the server per page load. The guard at the top of this
+      effect means a re-run would be a no-op anyway.
+    */
+  }, [mapStyle]);
 
   // Rebuild the clustered source whenever the result set changes, and redraw
   // the HTML markers whenever the visible viewport, or the source data, does.

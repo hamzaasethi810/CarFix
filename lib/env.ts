@@ -40,12 +40,22 @@ const serverEnvSchema = z.object({
 
   /*
     Map tiles. Optional — without it the map falls back to a keyless dark
-    style (see lib/map/style.ts). This is NEXT_PUBLIC because the browser,
-    not this server, makes the tile requests. A MapTiler key is
-    domain-restricted rather than secret, so shipping it to the client is not
-    a leak.
+    style (see lib/map/style.ts).
+
+    Read on the server and handed to the browser as a finished style URL by
+    app/page.tsx, rather than inlined with a NEXT_PUBLIC_ prefix. The value
+    still reaches the client either way — the browser is what fetches tiles,
+    so it has to — but Vercel will not let a variable marked Sensitive carry
+    that prefix, and requiring it would mean choosing between the dashboard's
+    protection and the app working at all.
+
+    What actually protects this key is the domain allowlist in the MapTiler
+    dashboard, not secrecy. Set it there.
+
+    NEXT_PUBLIC_MAPTILER_KEY is still accepted so existing local .env files
+    keep working.
   */
-  NEXT_PUBLIC_MAPTILER_KEY: blankAsUndefined(z.string().min(1)),
+  MAPTILER_KEY: blankAsUndefined(z.string().min(1)),
 
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
 });
@@ -71,6 +81,9 @@ const withVercelAliases = (raw: NodeJS.ProcessEnv) => ({
   UPSTASH_REDIS_REST_URL: raw.UPSTASH_REDIS_REST_URL || raw.KV_REST_API_URL,
   UPSTASH_REDIS_REST_TOKEN: raw.UPSTASH_REDIS_REST_TOKEN || raw.KV_REST_API_TOKEN,
   MIGRATE_DATABASE_URL: raw.MIGRATE_DATABASE_URL || raw.DATABASE_URL_UNPOOLED,
+  // Either spelling works, so an existing .env with the NEXT_PUBLIC_ name
+  // keeps running while Vercel gets the unprefixed one it will accept.
+  MAPTILER_KEY: raw.MAPTILER_KEY || raw.NEXT_PUBLIC_MAPTILER_KEY,
 });
 
 export const env = serverEnvSchema.parse(withVercelAliases(process.env));

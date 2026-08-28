@@ -1,3 +1,4 @@
+import { serverMapStyleUrl } from "@/lib/map/server-style";
 import { getMakes } from "@/lib/services/taxonomy";
 import { Discover } from "./discover";
 
@@ -14,5 +15,16 @@ export default async function HomePage() {
   */
   const makes = await getMakes();
 
-  return <Discover makes={makes} initial={[]} />;
+  /*
+    The tile style is resolved here, on the server, and handed down as a
+    finished URL.
+
+    The key still reaches the browser — it must, since the browser is what
+    requests tiles — but this way it does not need a NEXT_PUBLIC_ prefix,
+    which Vercel refuses on a variable marked Sensitive. The domain allowlist
+    in the MapTiler dashboard is what actually protects it.
+  */
+  const mapStyle = serverMapStyleUrl();
+
+  return <Discover makes={makes} initial={[]} mapStyle={mapStyle} />;
 }

@@ -84,9 +84,16 @@ function rememberArea(area: { lat: number; lng: number }, radiusMiles: number, l
 export function Discover({
   makes,
   initial,
+  /*
+    The tile style, resolved on the server (see app/page.tsx) rather than read
+    from a NEXT_PUBLIC_ variable here. Passed on to both maps so neither
+    reaches for process.env of its own.
+  */
+  mapStyle,
 }: {
   makes: Option[];
   initial: Result[];
+  mapStyle: string;
 }) {
   const [makeId, setMakeId] = useState("");
   const [models, setModels] = useState<Option[]>([]);
@@ -595,12 +602,12 @@ export function Discover({
   // The globe owns the full screen (including its own header) until it
   // hands off — see handleGlobeArrival, which is what flips `mode` to "map".
   if (mode === "globe") {
-    return <Globe onNearby={handleGlobeArrival} />;
+    return <Globe mapStyle={mapStyle} onNearby={handleGlobeArrival} />;
   }
 
   return (
     <div className="map-root fixed inset-0 top-16">
-      <MechanicMap
+      <MechanicMap mapStyle={mapStyle}
         mechanics={results}
         selectedId={selectedId}
         onSelect={setSelectedId}

@@ -7,12 +7,7 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import { buttonStyles } from "@/components/ui";
 import { AreaPicker, type Area } from "@/components/area-picker";
 import { CITY_ZOOM, descentPlan, type DescentStep } from "@/lib/map/descent";
-import {
-  FALLBACK_ATTRIBUTION,
-  fallbackStyleUrl,
-  isQuotaFailure,
-  mapStyleUrl,
-} from "@/lib/map/style";
+import { FALLBACK_ATTRIBUTION, fallbackStyleUrl, isQuotaFailure } from "@/lib/map/style";
 
 /*
   Same vendored-worker fix as components/mechanic-map.tsx: MapLibre resolves
@@ -86,13 +81,6 @@ function startedOnFallback(): boolean {
     return false;
   }
 }
-
-/*
-  Read once at module scope rather than per-descent: NEXT_PUBLIC_ variables are
-  inlined at build time, so this is a constant, not a lookup. Absent, the map
-  falls back to the keyless source — see lib/map/style.ts.
-*/
-const MAPTILER_KEY = process.env.NEXT_PUBLIC_MAPTILER_KEY;
 
 /**
  * Animate one leg and resolve when the camera stops.
@@ -186,7 +174,14 @@ const GLOBE_STYLE: StyleSpecification = {
   projection: { type: "globe" },
 };
 
-export function Globe({ onNearby }: { onNearby: (area: { lat: number; lng: number }) => void }) {
+export function Globe({
+  mapStyle,
+  onNearby,
+}: {
+  /** Resolved on the server so the key needs no NEXT_PUBLIC_ prefix. */
+  mapStyle: string;
+  onNearby: (area: { lat: number; lng: number }) => void;
+}) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
 
@@ -377,7 +372,7 @@ export function Globe({ onNearby }: { onNearby: (area: { lat: number; lng: numbe
       };
 
       const plan = descentPlan({ ...to, zoom: CITY_ZOOM });
-      const streetStyle = startedOnFallback() ? fallbackStyleUrl() : mapStyleUrl(MAPTILER_KEY);
+      const streetStyle = startedOnFallback() ? fallbackStyleUrl() : mapStyle;
 
       /*
         Reduced motion means no flight at all — not a faster one. The camera
@@ -416,7 +411,9 @@ export function Globe({ onNearby }: { onNearby: (area: { lat: number; lng: numbe
       finish();
       onNearby(to);
     },
-    [onNearby],
+    // mapStyle is stable for the page's life (resolved server-side), but
+    // listed rather than omitted so the dependency stays honest.
+    [mapStyle, onNearby],
   );
 
   /*
