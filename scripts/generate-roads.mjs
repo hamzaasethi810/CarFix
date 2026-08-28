@@ -59,15 +59,39 @@ const ROWS = 40;
 const CELL_W = W / COLS;
 const CELL_H = H / ROWS;
 
+/*
+  The grid is laid on the ground and then looked at from low down, not drawn
+  flat on the page.
+
+  This is what makes the roads run almost horizontally across the frame, the
+  way they do in the reference: a ground plane seen at a shallow angle
+  compresses distance toward a horizon, so lines that would head away from you
+  flatten out and stack, while the ones crossing your path stay wide. Drawn
+  flat, the same grid reads as a net thrown over the screen.
+
+  Perspective, simply: a row's distance from the viewer sets its scale, and
+  everything at that distance is scaled about the vanishing point.
+*/
+const HORIZON = H * 0.16;   // where the furthest row converges
+const CAMERA = 0.55;        // how quickly distance compresses; lower is flatter
+
+function project(u, v) {
+  // v runs 0 (far) to 1 (near); depth is what shrinks with distance.
+  const depth = CAMERA + (1 - CAMERA) * v;
+  return {
+    x: W / 2 + (u - W / 2) * (depth / 1) * 1.9,
+    y: HORIZON + (H - HORIZON) * (depth - CAMERA) / (1 - CAMERA) * 1.0,
+  };
+}
+
 /* Junctions, jittered off the lattice so nothing reads as graph paper. */
 const grid = [];
 for (let r = 0; r <= ROWS; r++) {
   const row = [];
   for (let c = 0; c <= COLS; c++) {
-    row.push({
-      x: c * CELL_W + (rand() - 0.5) * CELL_W * 1.05,
-      y: r * CELL_H + (rand() - 0.5) * CELL_H * 1.05,
-    });
+    const u = c * CELL_W + (rand() - 0.5) * CELL_W * 1.05;
+    const v = r / ROWS + ((rand() - 0.5) * 1.05) / ROWS;
+    row.push(project(u, Math.max(0, Math.min(1, v))));
   }
   grid.push(row);
 }
@@ -96,8 +120,8 @@ for (let r = 0; r <= ROWS; r++) {
     const bigV = bigCol.has(c);
     // Arterials run unbroken; local streets drop out here and there, which is
     // what keeps the grid from reading as graph paper.
-    if (c < COLS && (bigH ? rand() < 0.94 : rand() < 0.72)) link(here, grid[r][c + 1], bigH);
-    if (r < ROWS && (bigV ? rand() < 0.94 : rand() < 0.72)) link(here, grid[r + 1][c], bigV);
+    if (c < COLS && (bigH ? rand() < 0.96 : rand() < 0.80)) link(here, grid[r][c + 1], bigH);
+    if (r < ROWS && (bigV ? rand() < 0.90 : rand() < 0.55)) link(here, grid[r + 1][c], bigV);
   }
 }
 
