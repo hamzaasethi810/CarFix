@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { buttonStyles } from "@/components/ui";
+import { WrenchMark } from "@/components/wrench-mark";
 import { signOut } from "@/lib/auth";
-import Image from "next/image";
 
 const navLink =
   "inline-flex items-center min-h-11 px-3 -mx-1 rounded-control text-subhead text-secondary hover:text-label hover:bg-fill transition-colors duration-150";
@@ -33,24 +33,14 @@ export function SiteHeader({
           className="inline-flex items-center gap-2 min-h-11 pr-2 sm:pr-4 text-title3 font-bold tracking-tight"
         >
           {/*
-            The plate carries the name, so no wordmark sits beside it.
-
-            The white it was drawn on has been cut away rather than left in:
-            this header is translucent and blurs whatever is behind it, which
-            on the map page is the map, so a white rectangle would have shown
-            as a white rectangle.
-
-            priority, because it is the first thing above the fold on every
-            page and lazy-loading it only buys a flash of empty header.
+            A drawn mark rather than an image: it takes its alloy from the same
+            gradient the buttons use, so it belongs to the page instead of
+            sitting on it, and it needs no second asset to stay sharp at any
+            header height. The wordmark sits beside it now, since the wrench
+            carries no name of its own.
           */}
-          <Image
-            src="/gaari-logo.png"
-            alt="Gaari"
-            width={284}
-            height={132}
-            priority
-            className="h-10 w-auto shrink-0"
-          />
+          <WrenchMark className="h-9 w-9 shrink-0" />
+          <span className="text-label">Gaari</span>
         </Link>
 
         {isAuthed && (
