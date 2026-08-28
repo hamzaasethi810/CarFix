@@ -95,6 +95,35 @@ for (let r = 0; r <= ROWS; r++) {
   grid.push(row);
 }
 
+/*
+  Towns. Without these the grid is evenly dense everywhere, which reads as
+  graph paper however much each point is jittered — the reference's character
+  comes from tight clusters separated by open ground.
+*/
+const TOWNS = 14;
+const towns = Array.from({ length: TOWNS }, () => ({
+  x: rand() * W,
+  y: HORIZON + rand() * (H - HORIZON),
+  pull: 0.25 + rand() * 0.45,
+  reach: 90 + rand() * 190,
+}));
+
+for (const row of grid) {
+  for (const p of row) {
+    for (const t of towns) {
+      const dx = t.x - p.x;
+      const dy = t.y - p.y;
+      const d = Math.hypot(dx, dy);
+      if (d > t.reach || d === 0) continue;
+      // Falls off with distance, so a town tugs its own streets tight and
+      // leaves the ground between towns open.
+      const k = (1 - d / t.reach) * t.pull;
+      p.x += dx * k;
+      p.y += dy * k;
+    }
+  }
+}
+
 /* Every few rows and columns carries more traffic and is drawn brighter. */
 const bigRow = new Set();
 const bigCol = new Set();
@@ -104,11 +133,13 @@ for (let c = 0; c <= COLS; c++) if (rand() < 0.10) bigCol.add(c);
 const arterial = [];
 const local = [];
 
-/* A gentle bow on each link; dead-straight blocks look like a wireframe. */
+/*
+  Straight segments. Roads meet at shared junctions; the varied cell sizes and
+  the perspective already keep the network from reading as flat graph paper,
+  so a bow here only makes it look like contour lines instead of streets.
+*/
 function link(a, b, big) {
-  const mx = (a.x + b.x) / 2 + (rand() - 0.5) * 5;
-  const my = (a.y + b.y) / 2 + (rand() - 0.5) * 5;
-  const d = `M${a.x.toFixed(1)} ${a.y.toFixed(1)} Q${mx.toFixed(1)} ${my.toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}`;
+  const d = `M${a.x.toFixed(1)} ${a.y.toFixed(1)} L${b.x.toFixed(1)} ${b.y.toFixed(1)}`;
   (big ? arterial : local).push(d);
 }
 
@@ -135,15 +166,21 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" wid
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <radialGradient id="hub">
-      <stop offset="0%" stop-color="#7bf0a6" stop-opacity="0.85"/>
-      <stop offset="100%" stop-color="#7bf0a6" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#bfe8ff" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#bfe8ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="bloom">
+      <stop offset="0%" stop-color="#3ddc84" stop-opacity="0.22"/>
+      <stop offset="60%" stop-color="#2aa862" stop-opacity="0.07"/>
+      <stop offset="100%" stop-color="#1c7a46" stop-opacity="0"/>
     </radialGradient>
   </defs>
+${towns.map((t) => `  <ellipse cx="${t.x.toFixed(1)}" cy="${t.y.toFixed(1)}" rx="${(t.reach * 1.5).toFixed(0)}" ry="${(t.reach * 0.55).toFixed(0)}" fill="url(#bloom)"/>`).join("\n")}
   <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-${local.map((d) => `    <path d="${d}" stroke="#39ad68" stroke-opacity="0.26" stroke-width="0.4"/>`).join("\n")}
+${local.map((d) => `    <path d="${d}" stroke="#4a90c2" stroke-opacity="0.30" stroke-width="0.4"/>`).join("\n")}
   </g>
   <g filter="url(#glow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
-${arterial.map((d) => `    <path d="${d}" stroke="#5ce08c" stroke-opacity="0.34" stroke-width="0.7"/>`).join("\n")}
+${arterial.map((d) => `    <path d="${d}" stroke="#7fc4e8" stroke-opacity="0.5" stroke-width="0.8"/>`).join("\n")}
   </g>
 ${hubs.map((h) => `  <circle cx="${h.x.toFixed(1)}" cy="${h.y.toFixed(1)}" r="5" fill="url(#hub)"/>`).join("\n")}
 </svg>
