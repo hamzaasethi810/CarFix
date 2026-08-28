@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Field, Select, SubmitButton, TextInput } from "@/components/form";
 import { isWellFormedVin, normalizeVin } from "@/lib/vin";
 import { ErrorText } from "@/components/ui";
+import { buttonStyles } from "@/components/ui";
 
 type Option = { id: string; name: string };
 
@@ -201,7 +202,7 @@ export function AddVehicleForm({ makes }: { makes: Option[] }) {
                 type="button"
                 onClick={saveDecoded}
                 disabled={pending}
-                className="flex-1 min-h-11 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold disabled:opacity-50"
+                className={`${buttonStyles.primary} flex-1 disabled:opacity-50 text-subhead`}
               >
                 {pending ? "Adding…" : "Add this car"}
               </button>

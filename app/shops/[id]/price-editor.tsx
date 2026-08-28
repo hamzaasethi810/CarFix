@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Card, ErrorText, money } from "@/components/ui";
 import { Field, Select, TextInput } from "@/components/form";
+import { buttonStyles } from "@/components/ui";
 
 type Price = {
   serviceId: string;
@@ -128,7 +129,7 @@ export function PriceEditor({
         <button
           type="submit"
           disabled={pending}
-          className="min-h-11 px-5 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold disabled:opacity-50"
+          className={`${buttonStyles.primary} px-5 disabled:opacity-50 text-subhead`}
         >
           {pending ? "Saving…" : "Save price"}
         </button>

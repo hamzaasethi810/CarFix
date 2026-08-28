@@ -1,7 +1,7 @@
 "use client";
 
 import { AnchoredMenu } from "@/components/anchored-menu";
-import { popoverSurface } from "@/components/ui";
+import { buttonStyles, popoverSurface } from "@/components/ui";
 import { useEffect, useRef, useState } from "react";
 
 export type Area = { label: string; lat: number; lng: number; suggestedRadiusMiles: number };
@@ -147,7 +147,7 @@ export function AreaPicker({
             <button
               type="submit"
               disabled={loading || query.trim().length < 2}
-              className="w-full min-h-11 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold disabled:opacity-50"
+              className={`${buttonStyles.primary} w-full disabled:opacity-50 text-subhead`}
             >
               {loading ? "Looking up…" : "Find this area"}
             </button>

@@ -6,6 +6,7 @@ import { Card, ErrorText } from "@/components/ui";
 import { Field, SubmitButton, TextArea, TextInput } from "@/components/form";
 import { AddressFields, emptyAddress, type AddressValue } from "@/components/address-fields";
 import { usesStates } from "@/lib/geo/regions";
+import { buttonStyles } from "@/components/ui";
 
 type Added = { id: string; name: string; resolvedTo: string; message: string };
 type Duplicate = { id: string; name: string };
@@ -90,7 +91,7 @@ export function AddShopForm() {
         <div className="flex flex-wrap gap-2 pt-1">
           <Link
             href={`/mechanics/${added.id}`}
-            className="inline-flex items-center min-h-11 px-5 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold"
+            className={`${buttonStyles.primary} px-5 text-subhead`}
           >
             View it
           </Link>
@@ -162,7 +163,7 @@ export function AddShopForm() {
           <div className="flex flex-wrap gap-2 pt-1">
             <Link
               href={`/mechanics/${duplicate.id}`}
-              className="inline-flex items-center min-h-11 px-5 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold"
+              className={`${buttonStyles.primary} px-5 text-subhead`}
             >
               Open {duplicate.name}
             </Link>

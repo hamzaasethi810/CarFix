@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Card, ErrorText, formatDate } from "@/components/ui";
+import { buttonStyles } from "@/components/ui";
 
 type Status = "NONE" | "ACTIVE" | "PAST_DUE" | "CANCELED";
 
@@ -106,7 +107,7 @@ export function SubscriptionPanel({
               type="button"
               onClick={() => go("subscribe")}
               disabled={pending !== null}
-              className="inline-flex items-center justify-center min-h-11 px-6 rounded-control bg-accent-fill text-on-accent text-headline font-semibold hover:bg-accent-hover transition-colors duration-150 disabled:opacity-50"
+              className={`${buttonStyles.primary} justify-center px-6 disabled:opacity-50 text-subhead`}
             >
               {pending === "subscribe" ? "Opening…" : "Subscribe"}
             </button>

@@ -311,7 +311,7 @@ h1,
   a gradient.
 */
 /*
-  A machined aluminium plate, riveted at the corners.
+  A machined aluminium plate.
 
   The earlier version tinted a dark control with a faint brush. That reads as
   "textured button"; the reference reads as "a piece of metal bolted to the
@@ -329,11 +329,6 @@ h1,
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.45);
   background-color: #b9bfba;
   background-image:
-    /* four rivets, one per corner */
-    radial-gradient(circle at 10px 10px, rgba(255,255,255,0.95) 0 1.2px, rgba(90,96,92,0.95) 1.6px 3px, rgba(0,0,0,0.28) 3.2px 4.2px, transparent 4.4px),
-    radial-gradient(circle at calc(100% - 10px) 10px, rgba(255,255,255,0.95) 0 1.2px, rgba(90,96,92,0.95) 1.6px 3px, rgba(0,0,0,0.28) 3.2px 4.2px, transparent 4.4px),
-    radial-gradient(circle at 10px calc(100% - 10px), rgba(255,255,255,0.95) 0 1.2px, rgba(90,96,92,0.95) 1.6px 3px, rgba(0,0,0,0.28) 3.2px 4.2px, transparent 4.4px),
-    radial-gradient(circle at calc(100% - 10px) calc(100% - 10px), rgba(255,255,255,0.95) 0 1.2px, rgba(90,96,92,0.95) 1.6px 3px, rgba(0,0,0,0.28) 3.2px 4.2px, transparent 4.4px),
     /* horizontal brush, along the plate's long axis */
     repeating-linear-gradient(
       180deg,

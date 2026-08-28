@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { popoverSurface } from "@/components/ui";
+import { buttonStyles, popoverSurface } from "@/components/ui";
 import { AddressFields, emptyAddress, type AddressValue } from "@/components/address-fields";
 import { usesStates } from "@/lib/geo/regions";
 
@@ -365,7 +365,7 @@ function AddShopInline({
 
       <div className="flex flex-wrap gap-2">
         <button type="button" onClick={submit} disabled={pending}
-          className="inline-flex items-center min-h-11 px-4 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold disabled:opacity-50">
+          className={`${buttonStyles.primary} px-4 disabled:opacity-50 text-subhead`}>
           {pending ? "Adding…" : "Add and select"}
         </button>
         <button type="button" onClick={onCancel} disabled={pending}

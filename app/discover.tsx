@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { MapMechanic } from "@/components/mechanic-map";
-import { distance, money, num } from "@/components/ui";
+import { buttonStyles, distance, money, num } from "@/components/ui";
 import { AreaPicker, type Area } from "@/components/area-picker";
 import { GoldCar } from "@/app/shops/[id]/subscription-panel";
 import { ServicePicker } from "@/components/service-picker";
@@ -553,6 +553,28 @@ export function Discover({
     [runSearch],
   );
 
+  /*
+    Back to the globe.
+
+    The remembered area has to be cleared, not just the mode flipped: that
+    record is what tells a returning visitor's next visit to skip the globe,
+    and leaving it in place would mean the globe reappears and is immediately
+    dismissed again. Asking for the globe is also saying "not here", so
+    forgetting where "here" was is the honest reading.
+  */
+  const returnToGlobe = useCallback(() => {
+    try {
+      localStorage.removeItem(LAST_AREA_KEY);
+    } catch {
+      // Private browsing can refuse storage; the mode change below still works.
+    }
+    setResults([]);
+    setSelectedId(null);
+    setCenter(null);
+    setAreaLabel(null);
+    setMode("globe");
+  }, []);
+
   function chooseArea(area: Area) {
     const next = { lat: area.lat, lng: area.lng };
     setCenter(next);
@@ -607,7 +629,7 @@ export function Discover({
 
   return (
     <div className="map-root fixed inset-0 top-16">
-      <MechanicMap mapStyle={mapStyle}
+      <MechanicMap mapStyle={mapStyle} onZoomedOut={returnToGlobe}
         mechanics={results}
         selectedId={selectedId}
         onSelect={setSelectedId}
@@ -775,6 +797,23 @@ export function Discover({
               <div className="col-span-2 lg:col-span-5 flex flex-wrap items-center gap-2 sm:gap-3 pt-1">
                 <AreaPicker current={areaLabel} onChoose={chooseArea} onOpenChange={noteMenu} />
 
+                {/*
+                  A named way back to the globe.
+
+                  Zooming out far enough also returns there, but a gesture
+                  nobody discovers is no route at all — and it is unreachable
+                  entirely for anyone navigating by keyboard. This is the
+                  discoverable one.
+                */}
+                <button
+                  type="button"
+                  onClick={returnToGlobe}
+                  className={`${buttonStyles.secondary} text-subhead`}
+                >
+                  <span aria-hidden="true" className="mr-1.5">&#127758;</span>
+                  Globe
+                </button>
+
                 {/* Verified reads as a toggle chip rather than a bare checkbox. */}
                 <button
                   type="button"
@@ -848,7 +887,7 @@ export function Discover({
                     type="button"
                     onClick={() => void runSearch()}
                     disabled={loading}
-                    className="min-h-11 px-6 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold shadow-sm disabled:opacity-50 whitespace-nowrap"
+                    className={`${buttonStyles.primary} px-6 text-subhead whitespace-nowrap`}
                   >
                     {loading ? "Searching…" : "Search"}
                   </button>
@@ -1024,7 +1063,7 @@ export function Discover({
                         setSubscribedOnly(false);
                         if (center) void runSearch({ ...center, radiusMiles: Math.min(200, radiusMiles * 2) });
                       }}
-                      className="inline-flex items-center min-h-11 px-4 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold"
+                      className={`${buttonStyles.primary} text-subhead`}
                     >
                       Broaden the search
                     </button>
@@ -1153,7 +1192,7 @@ export function Discover({
 
               <Link
                 href={`/mechanics/${selected.id}`}
-                className="mt-3 flex items-center justify-center min-h-11 rounded-control bg-accent-fill text-on-accent text-subhead font-semibold"
+                className={`${buttonStyles.primary} mt-3 w-full text-subhead`}
               >
                 View shop
               </Link>
