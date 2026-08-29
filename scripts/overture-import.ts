@@ -4,6 +4,7 @@ import { createInterface } from "node:readline";
 import { createInterface as createPromptInterface } from "node:readline/promises";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "../lib/generated/prisma/client";
+import { withStrictSsl } from "../lib/db-url";
 import {
   normalisePlace,
   SAME_PLACE_DEGREES,
@@ -33,7 +34,7 @@ import {
 */
 
 const prisma = new PrismaClient({
-  adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }),
+  adapter: new PrismaPg({ connectionString: withStrictSsl(process.env.DATABASE_URL!) }),
 });
 
 const BATCH = 1000;
