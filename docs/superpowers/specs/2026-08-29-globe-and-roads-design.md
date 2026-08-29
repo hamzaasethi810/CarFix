@@ -88,14 +88,22 @@ first.
 
 The network is a **Lloyd-relaxed Voronoi diagram**, drawn in two tiers:
 
-- ~1400 sites, 2 relaxation passes, for evenly-sized irregular cells
-- **tier 1**: every cell edge at 0.5px in dim desaturated slate, low opacity
-- **tier 2**: ~16 arterials, each a long chain walked across adjacent cell
+- ~420 sites, 2 relaxation passes, for evenly-sized irregular cells
+- **tier 1**: every cell edge at 0.6px in dim desaturated slate, opacity ~0.16
+- **tier 2**: ~10 arterials, each a long chain walked across adjacent cell
   edges, at ~3px in bright cyan under a Gaussian glow filter
-- bloom nodes where arterials cross
+- bloom nodes only where arterials cross, ~12 of them
 
-Green bloom becomes 8-12 scattered irregular radial patches of varying size
-and opacity, replacing the current single horizontal band.
+Green bloom becomes 7 scattered irregular radial patches of varying size and
+opacity, replacing the current single horizontal band.
+
+**Calmer than the reference, deliberately.** The reference's ground is packed
+with small cells; at 2560x1440 those numbers give cells roughly 90px across
+against the reference's 20-40px, and roughly a third the arterial count. The
+reference is a static hero image with nothing layered over it. This ground
+sits beneath a globe, a button row, and a filter bar, and has to stay
+background. Density is the first thing to cut if it competes; it is not a
+fidelity target.
 
 `d3-delaunay` is added as a **devDependency**. The script runs at author time
 and commits an SVG, so nothing reaches the client bundle. This is preferred
