@@ -6,7 +6,6 @@ import Link from "next/link";
 import type { MapMechanic } from "@/components/mechanic-map";
 import { buttonStyles, distance, money, num } from "@/components/ui";
 import { AreaPicker, type Area } from "@/components/area-picker";
-import { WrenchMark } from "@/components/wrench-mark";
 import { GoldCar } from "@/app/shops/[id]/subscription-panel";
 import { ServicePicker } from "@/components/service-picker";
 import { Globe } from "@/components/globe";
@@ -750,13 +749,8 @@ export function Discover({
               className={`${filtersOpen ? "grid" : "hidden"} gap-2.5 sm:gap-3 grid-cols-2 lg:grid-cols-5 [&>*]:min-w-0
                 max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain`}
             >
-              {/*
-                The wrench marks the search bar, the way the reference puts a
-                tool beside its fields. It sits with the drag handle so it
-                costs no row of its own on a phone.
-              */}
-              <div className="col-span-2 lg:col-span-5 -mt-1 mb-0.5 flex items-center justify-center gap-3">
-                <WrenchMark className="h-5 w-5 shrink-0 opacity-90" />
+              {/* Says the panel moves, and gives the thumb something to aim at. */}
+              <div className="col-span-2 lg:col-span-5 -mt-1 mb-0.5 flex justify-center">
                 <span aria-hidden="true" className="h-1 w-9 rounded-control bg-white/15" />
               </div>
 
