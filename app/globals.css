@@ -578,19 +578,74 @@ body:has(.map-root) footer {
   is sized for exactly that — see components/globe.tsx) and so .globe-ground
   below has something of known size to sit under.
 
-  46vmin rather than something closer to the ~58% the sphere could visually
+  52vmin rather than something closer to the ~58% the sphere could visually
   support: the wordmark and Nearby are layered over the same box rather than
   sharing flex space with the stage (see the layout comment in
   components/globe.tsx), so vmin is the only thing controlling how close the
-  sphere gets to them. 844×390 — the landscape phone that has broken this
-  site twice — has only a 390px vmin dimension after the header; 46vmin
-  leaves roughly 95px clear above and below the sphere there, enough for both
-  overlays without touching it.
+  sphere gets to them at most sizes. 844×390 — the landscape phone that has
+  broken this site twice — still needs help beyond vmin alone: see the
+  `.globe-chrome` override below.
 */
 .globe-stage {
   position: relative;
-  width: min(38vmin, 480px);
+  width: min(52vmin, 620px);
   aspect-ratio: 1 / 1;
+}
+
+/*
+  A second, smaller cap for short windows — 844×390 specifically, plus
+  anything shaped like it.
+
+  vmin alone can't do this: the wrapper's bottom bias (`.globe-chrome` below)
+  is a fixed 8rem/10rem, which does not shrink with the viewport the way the
+  stage's own vmin width does. On a 326px-tall box under the header that bias
+  eats 160px, pinning the flex centre within 7px of the button row above
+  regardless of how small the *stage* gets — measured down to a ~60px stage,
+  which still touched. Adding a second, smaller vmin term next to the one
+  above (`min(52vmin, 620px, 24vmin, 150px)`) can't fix that either: two vmin
+  terms are always in the same fixed ratio to each other (24vmin is always
+  exactly half of 52vmin) no matter the actual viewport height, so a smaller
+  coefficient shrinks the globe by the same proportion on *every* screen,
+  desktop included, rather than only on short ones. What actually
+  distinguishes "short" from "merely narrow" is the window's absolute pixel
+  height, which only a fixed-height media query can key off; vmin/vh units
+  alone are ratios and cannot express that threshold.
+
+  max-height: 800px is generous on purpose — comfortably past the ~783px
+  point (worked out from the boxes above: bias + stage must leave viewport
+  height minus 216px of clearance, and the unmodified 52vmin/8rem-10rem
+  combination stops fitting that below ~783px tall) where the unmodified
+  combination starts failing the same way, so nothing shaped like a short
+  laptop window slips between this rule and the default.
+
+  Both numbers here were fitted against the same button-row/filter-bar
+  geometry as `.globe-chrome`'s override, at 844×390: 24vmin keeps the stage
+  proportional above that, 150px is a ceiling so it does not balloon back up
+  as height approaches 800px.
+*/
+@media (max-height: 800px) {
+  .globe-stage {
+    width: min(24vmin, 150px);
+  }
+}
+
+/*
+  Shrinks `.globe-stage`'s upward bias to match, at the same breakpoint.
+
+  Unlayered, deliberately: Tailwind v4 puts its utilities (including the
+  `pb-32 sm:pb-40` on this element in components/globe.tsx) in `@layer
+  utilities`, and a plain, unlayered rule always wins over anything in a
+  layer regardless of specificity or source order — so this overrides those
+  classes at this breakpoint without `!important` or fighting Tailwind's own
+  cascade. See the `.globe-stage` short-window rule just above for the
+  numbers this was fitted against; the same 216px-of-headroom budget applies
+  here; `min(4rem, 15vh)` is comfortably inside it at 844×390 (a 22px margin
+  above the button row) and stays proportionally similar up to 800px tall.
+*/
+@media (max-height: 800px) {
+  .globe-chrome {
+    padding-bottom: min(4rem, 15vh);
+  }
 }
 
 /*

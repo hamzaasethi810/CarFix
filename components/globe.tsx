@@ -489,7 +489,27 @@ export function Globe({
       never compete with it for vertical space.
     */
     <div className="absolute inset-0 overflow-hidden">
-      <div className="absolute inset-0 flex items-center justify-center p-4">
+      {/*
+        Biased upward, not centred.
+
+        The stage box runs the full height under the header, but the bottom
+        third of that is the filter bar. Centring in the box puts the globe
+        low, half of it behind the panel; the padding lifts the optical centre
+        into the space that is actually visible. Kept as padding rather than a
+        translate so it still shrinks correctly at short viewports.
+
+        `globe-chrome` (styling in globals.css) carries one more override on
+        top of the pb-32/sm:pb-40 here: a fixed 8rem/10rem bias is fine on
+        anything tall enough to absorb it, but on a short window it doesn't
+        shrink at all, unlike the stage's own vmin sizing. At 844x390 it eats
+        160px of a 326px-tall box, pinning the flex centre within 7px of the
+        button row above no matter how small the stage gets — no vmin figure
+        can clear both the buttons and the filter bar at once there (checked:
+        even a ~60px stage still touched both). See the comment on that
+        override for why it has to live in a plain media query rather than
+        another vmin term next to .globe-stage's own.
+      */}
+      <div className="absolute inset-0 flex items-center justify-center p-4 pb-32 sm:pb-40 globe-chrome">
         <div className="globe-stage">
           {/* Belongs to the page, not the map canvas — see .globe-ground in globals.css. */}
           <div className="globe-ground" aria-hidden="true" />
@@ -530,7 +550,7 @@ export function Globe({
         space either side sits over the globe's drag-to-spin area and should
         let a drag through rather than swallowing it.
       */}
-      <div className="absolute top-0 inset-x-0 pt-6 sm:pt-10 flex justify-center gap-3 pointer-events-none">
+      <div className="absolute top-0 inset-x-0 pt-6 sm:pt-10 flex justify-center gap-6 sm:gap-10 pointer-events-none">
         <button
           type="button"
           onClick={handleNearby}
