@@ -29,7 +29,20 @@ const VIEWPORTS = [
   { name: "phone", width: 390, height: 844 },
   { name: "phone-landscape", width: 844, height: 390 },
   { name: "tablet", width: 820, height: 1180 },
+  /*
+    A laptop as the BROWSER sees it, not as the display measures.
+
+    This list said 1440x900 — a screen size. A browser gives the page far less
+    than that once its own chrome is subtracted, around 780px on the same
+    machine. The gap hid a real bug: a `max-height: 800px` rule collapsed the
+    globe to 150px for most desktop visitors while this audit, testing a
+    900px-tall viewport, reported everything fine.
+
+    So both are here now. The 900 row keeps the tall-window case; the 780 row
+    is what people actually have.
+  */
   { name: "desktop", width: 1440, height: 900 },
+  { name: "laptop", width: 1440, height: 780 },
 ];
 
 /** Signed-out routes. Anything behind auth redirects to /login, which is itself worth seeing. */
