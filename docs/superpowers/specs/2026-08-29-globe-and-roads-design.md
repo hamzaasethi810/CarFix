@@ -157,6 +157,12 @@ Also in this step:
 - **The contact shadow and rim light in `globals.css` assume a fixed sphere
   size.** They must become relative to the stage, or they will detach at the
   new sizes — reintroducing the bug this step exists to fix.
+- **The `@media (max-height: 480px)` override must be re-fitted.** It caps the
+  stage at `min(26vmin, 140px)` and was measured against the current
+  `min(52vmin, 620px)` geometry and `.globe-chrome`'s current padding. Raising
+  the base size invalidates that measurement. The 844x390 landscape phone has
+  broken this page twice; the cap must be re-measured against the new
+  geometry, not carried over.
 
 ## Step 3 — Surface fidelity
 
