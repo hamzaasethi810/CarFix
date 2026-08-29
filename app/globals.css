@@ -588,6 +588,25 @@ body:has(.map-root) footer {
 */
 .globe-stage {
   position: relative;
+  /*
+    The atmosphere lives here, not on .globe-sphere.
+
+    The sphere carries `clip-path: circle(50%)` so WebKit masks the WebGL
+    canvas cleanly — but clip-path clips an element's OWN box-shadow too, not
+    just its children, so declaring the halo there removed it entirely. The
+    globe went back to a hard-edged disc with nothing standing off the limb,
+    which is the exact "pasted on" look the halo exists to prevent.
+
+    This element is the same box as the sphere (which is inset: 0 inside it)
+    and is not clipped, so the same shadow renders correctly from here. The
+    border-radius only shapes the shadow; there is no background to round.
+  */
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px rgba(126, 200, 255, 0.30),
+    0 0 22px rgba(90, 170, 240, 0.5),
+    0 0 70px rgba(60, 140, 220, 0.3),
+    0 0 140px rgba(40, 110, 190, 0.18);
   width: min(52vmin, 620px);
   aspect-ratio: 1 / 1;
 }
@@ -755,11 +774,6 @@ body:has(.map-root) footer {
     its limb. Without it the globe reads as a circle cut out and pasted down,
     which is the thing this whole treatment exists to avoid.
   */
-  box-shadow:
-    0 0 0 1px rgba(126, 200, 255, 0.30),
-    0 0 22px rgba(90, 170, 240, 0.5),
-    0 0 70px rgba(60, 140, 220, 0.3),
-    0 0 140px rgba(40, 110, 190, 0.18);
 }
 
 /*
