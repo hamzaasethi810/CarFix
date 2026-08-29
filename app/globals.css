@@ -228,9 +228,21 @@ body {
     ),
     url("/roads.svg"),
     radial-gradient(ellipse at 50% 45%, rgba(16, 46, 74, 0.55) 0%, rgba(5, 10, 20, 0) 72%);
-  background-size: cover, 1600px 1000px, cover;
+  /*
+    `cover`, not a pixel size, and never `repeat`.
+
+    roads.svg is a single composition with a definite frame, not a swatch. It
+    used to be repeated at 1600x1000, and it does not wrap — so every window
+    larger than that showed the tile's own edges as hard rectangular seams
+    around the globe, measured at 3.3x the surrounding ground's pixel
+    variation. Scaling one copy to cover means there is no second tile to
+    disagree with the first. On very tall or very narrow windows `cover` crops
+    the composition, which is correct: it is a background, and losing its
+    edges costs nothing.
+  */
+  background-size: cover, cover, cover;
   background-position: center, center, center;
-  background-repeat: no-repeat, repeat, no-repeat;
+  background-repeat: no-repeat, no-repeat, no-repeat;
   background-attachment: fixed;
   color: var(--label);
   font-family:

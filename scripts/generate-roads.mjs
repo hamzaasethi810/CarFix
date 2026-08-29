@@ -1,13 +1,27 @@
 /*
   Generates the road network that lies under the globe.
 
-  The reference is a night-satellite view: thin lit roads running out to the
-  horizon, brighter where they meet. Real road data would be the obvious
-  source, but the landing page must cost zero tile requests — that is the whole
-  budget argument the globe was built around — so this is drawn instead.
+  ONE composition, not a tile. The previous version emitted a 1600x1000 image
+  that the CSS repeated, and it did not wrap: the perspective projection put a
+  blank strip across the top of every tile and a dark band below it, so on any
+  window larger than the tile those discontinuities became hard rectangular
+  seams. Measured on a 2560x1440 window they landed at x=480/2080 and
+  y=220/1220 — a pixel discontinuity 3.3x the surrounding ground — which read
+  as a box drawn around the globe. Emitting a single frame drawn with
+  `background-size: cover` removes them by construction: there is no second
+  tile to disagree with the first.
 
-  Deterministic: a fixed seed, so the pattern is identical on every run and the
-  committed SVG never churns in a diff for no reason.
+  The reference art (gaari_inspo.png) is two tiers with a large contrast ratio
+  between them — a dim fine mesh of irregular cells that reads as texture, and
+  a few bright cyan arterials that carry the whole look. A single-weight
+  network, which is what the old warped grid produced, reads as a fishing net
+  instead.
+
+  Deliberately calmer than the reference: that is a static hero image, while
+  this ground sits under a globe, a button row and a filter bar. Cells here
+  run ~90px against the reference's 20-40px.
+
+  Deterministic: fixed seed, so the committed SVG never churns in a diff.
 
     node scripts/generate-roads.mjs
 
@@ -15,11 +29,21 @@
 */
 
 import { writeFile } from "node:fs/promises";
+import { Delaunay } from "d3-delaunay";
 
-const W = 1600;
-const H = 1000;
+const W = 2560;
+const H = 1440;
 
-/* Mulberry32 — small, seeded, and good enough for scattering lines. */
+/*
+  Site count sets cell size, and cell size is the whole "busy or calm" dial.
+  420 sites over 2560x1440 gives roughly 8800px^2 per cell — about 90px
+  across. The reference sits nearer 20-40px; this is deliberately sparser.
+*/
+const SITES = 420;
+const LLOYD_PASSES = 2;
+const ARTERIALS = 13;
+
+/* Mulberry32 — small, seeded, and good enough for scattering points. */
 function rng(seed) {
   return () => {
     seed |= 0;
@@ -30,171 +54,272 @@ function rng(seed) {
   };
 }
 
-const rand = rng(20260827);
+const rand = rng(20260829);
 
 /*
-  Junctions first, then roads between near neighbours. Building the network
-  from points rather than drawing strokes freehand is what makes it read as a
-  road system: roads meet at shared nodes, and those junctions are the bright
-  spots in the reference.
+  Lloyd relaxation: replace each site with its cell's centroid, twice.
+
+  Raw uniform-random sites clump, leaving some cells tiny and others huge,
+  which reads as noise rather than as a street network. Two passes is enough
+  to even the cells out while keeping them irregular; more passes march the
+  whole thing toward a hexagonal grid, which is the regularity we are trying
+  to avoid.
 */
-/*
-  A street network: a warped grid, not curves and not a graph.
-
-  Three attempts got here. Nearest-neighbour graphs read as a constellation and
-  then a spiderweb — such a graph triangulates, so every cell is a little
-  polygon. Long branching walks read as flight paths or contour lines, because
-  nothing ever closed. What a road network actually looks like from above is
-  BLOCKS: roads meeting at right angles, enclosing cells, the grid bending and
-  breaking up as it runs out from the centre.
-
-  So: a grid of junctions, each shoved off its lattice point, joined to its
-  right and lower neighbours. Some links are dropped so the mesh is not
-  uniform, and whole rows and columns are promoted to arterials, which is what
-  gives the eye a route to follow.
-*/
-
-/*
-  Denser than feels necessary on paper. Compared side by side against the
-  reference at 1440x900, the earlier 62x40 grid read as noticeably sparser —
-  the reference's ground is packed with small cells, and cell COUNT is what
-  carries that, not line weight. Raising the count and dropping the opacity a
-  little keeps the same overall brightness while making the texture finer.
-*/
-const COLS = 94;
-const ROWS = 58;
-const CELL_W = W / COLS;
-
-/*
-  The grid is laid on the ground and then looked at from low down, not drawn
-  flat on the page.
-
-  This is what makes the roads run almost horizontally across the frame, the
-  way they do in the reference: a ground plane seen at a shallow angle
-  compresses distance toward a horizon, so lines that would head away from you
-  flatten out and stack, while the ones crossing your path stay wide. Drawn
-  flat, the same grid reads as a net thrown over the screen.
-
-  Perspective, simply: a row's distance from the viewer sets its scale, and
-  everything at that distance is scaled about the vanishing point.
-*/
-const HORIZON = H * 0.16;   // where the furthest row converges
-const CAMERA = 0.55;        // how quickly distance compresses; lower is flatter
-
-function project(u, v) {
-  // v runs 0 (far) to 1 (near); depth is what shrinks with distance.
-  const depth = CAMERA + (1 - CAMERA) * v;
-  return {
-    x: W / 2 + (u - W / 2) * (depth / 1) * 1.9,
-    y: HORIZON + (H - HORIZON) * (depth - CAMERA) / (1 - CAMERA) * 1.0,
-  };
+let points = new Float64Array(SITES * 2);
+for (let i = 0; i < SITES; i++) {
+  points[2 * i] = rand() * W;
+  points[2 * i + 1] = rand() * H;
 }
 
-/* Junctions, jittered off the lattice so nothing reads as graph paper. */
-const grid = [];
-for (let r = 0; r <= ROWS; r++) {
-  const row = [];
-  for (let c = 0; c <= COLS; c++) {
-    const u = c * CELL_W + (rand() - 0.5) * CELL_W * 1.05;
-    const v = r / ROWS + ((rand() - 0.5) * 1.05) / ROWS;
-    row.push(project(u, Math.max(0, Math.min(1, v))));
+for (let pass = 0; pass < LLOYD_PASSES; pass++) {
+  const d = new Delaunay(points);
+  const v = d.voronoi([0, 0, W, H]);
+  const next = new Float64Array(SITES * 2);
+  for (let i = 0; i < SITES; i++) {
+    const poly = v.cellPolygon(i);
+    if (!poly) {
+      next[2 * i] = points[2 * i];
+      next[2 * i + 1] = points[2 * i + 1];
+      continue;
+    }
+    let sx = 0;
+    let sy = 0;
+    for (const [px, py] of poly) {
+      sx += px;
+      sy += py;
+    }
+    next[2 * i] = sx / poly.length;
+    next[2 * i + 1] = sy / poly.length;
   }
-  grid.push(row);
+  points = next;
+}
+
+const delaunay = new Delaunay(points);
+const voronoi = delaunay.voronoi([0, 0, W, H]);
+
+/*
+  The Voronoi edge graph, built from the Delaunay dual.
+
+  Each Delaunay triangle has a circumcentre, and that circumcentre is a
+  Voronoi vertex. Two triangles that share a Delaunay half-edge have
+  circumcentres joined by a Voronoi edge. So triangle index doubles as vertex
+  id, which is what makes the arterial walk below cheap: it is a walk over
+  triangle indices.
+*/
+const cc = voronoi.circumcenters;
+const { halfedges } = delaunay;
+
+const vx = (id) => cc[2 * id];
+const vy = (id) => cc[2 * id + 1];
+
+/* A generous margin: off-frame vertices are fine, infinite ones are not. */
+const MARGIN = 400;
+const inFrame = (id) => {
+  const x = vx(id);
+  const y = vy(id);
+  return (
+    Number.isFinite(x) &&
+    Number.isFinite(y) &&
+    x > -MARGIN &&
+    x < W + MARGIN &&
+    y > -MARGIN &&
+    y < H + MARGIN
+  );
+};
+
+const edges = []; // [aId, bId]
+
+for (let e = 0; e < halfedges.length; e++) {
+  const opposite = halfedges[e];
+  // -1 is a hull edge with no second cell; skip. `opposite < e` is the same
+  // edge seen from the other side, so this keeps exactly one copy of each.
+  if (opposite === -1 || opposite < e) continue;
+  const a = Math.floor(e / 3);
+  const b = Math.floor(opposite / 3);
+  if (a === b) continue;
+  /*
+    Drop edges touching a runaway circumcentre.
+
+    A nearly-degenerate triangle — three almost-collinear sites — has its
+    circumcentre out at infinity. Those vertices are legitimate Voronoi
+    geometry but they are useless here: the clip path would hide the line
+    itself, while the arterial walk would happily route THROUGH such a vertex
+    and emit a spike shooting across the whole frame from nowhere. Excluding
+    them from the graph entirely is what keeps the walk sane.
+  */
+  if (!inFrame(a) || !inFrame(b)) continue;
+  edges.push([a, b]);
 }
 
 /*
-  Towns. Without these the grid is evenly dense everywhere, which reads as
-  graph paper however much each point is jittered — the reference's character
-  comes from tight clusters separated by open ground.
-*/
-const TOWNS = 20;
-const towns = Array.from({ length: TOWNS }, () => ({
-  x: rand() * W,
-  y: HORIZON + rand() * (H - HORIZON),
-  pull: 0.25 + rand() * 0.45,
-  reach: 90 + rand() * 190,
-}));
+  Arterials are drawn ACROSS the ground, not along the cell edges.
 
-for (const row of grid) {
-  for (const p of row) {
-    for (const t of towns) {
-      const dx = t.x - p.x;
-      const dy = t.y - p.y;
-      const d = Math.hypot(dx, dy);
-      if (d > t.reach || d === 0) continue;
-      // Falls off with distance, so a town tugs its own streets tight and
-      // leaves the ground between towns open.
-      const k = (1 - d / t.reach) * t.pull;
-      p.x += dx * k;
-      p.y += dy * k;
+  The first attempt walked the Voronoi graph, always taking the straightest
+  available continuation. It looked like a circuit board: cell boundaries meet
+  at roughly 120 degrees, so "straightest available" still turns hard at every
+  junction, and the line zigzagged around cells and closed into loops instead
+  of going anywhere. The reference's bright roads plainly cut across the
+  terrain rather than tracing it.
+
+  So: a heading that drifts slowly. Start off-frame, step forward, turn by a
+  small random amount each step. Momentum is what makes it read as a road —
+  a line that commits to a direction for a long way, bending gently, the way a
+  highway does.
+*/
+function drawArterial() {
+  // Start outside the frame so the road enters and leaves rather than
+  // beginning in mid-air. A visible endpoint reads as a broken line.
+  const edge = Math.floor(rand() * 4);
+  const span = rand();
+  let x;
+  let y;
+  let heading;
+  if (edge === 0) {
+    x = -80;
+    y = span * H;
+    heading = 0;
+  } else if (edge === 1) {
+    x = W + 80;
+    y = span * H;
+    heading = Math.PI;
+  } else if (edge === 2) {
+    x = span * W;
+    y = -80;
+    heading = Math.PI / 2;
+  } else {
+    x = span * W;
+    y = H + 80;
+    heading = -Math.PI / 2;
+  }
+  // Fan the entry angle so roads cross at shallow angles instead of all
+  // running parallel to an axis.
+  heading += (rand() - 0.5) * 1.5;
+
+  const STEP = 46;
+  const MAX_STEPS = 78;
+  const points = [[x, y]];
+  for (let i = 0; i < MAX_STEPS; i++) {
+    /*
+      A very small per-step turn.
+
+      At 0.22 the roads came out as huge continuous arcs sweeping across the
+      whole frame — they read as orbital light-trails rather than as anything
+      lying on the ground. Roads are mostly straight, bending occasionally.
+      0.085 over a 46px step is a bend you notice across the frame's width and
+      not before that.
+    */
+    heading += (rand() - 0.5) * 0.085;
+    x += Math.cos(heading) * STEP;
+    y += Math.sin(heading) * STEP;
+    points.push([x, y]);
+    if (x < -160 || x > W + 160 || y < -160 || y > H + 160) break;
+  }
+  return points;
+}
+
+const arterialPaths = [];
+for (let i = 0; i < ARTERIALS; i++) {
+  const path = drawArterial();
+  if (path.length >= 10) arterialPaths.push(path);
+}
+
+/*
+  Nodes go where two arterials actually cross.
+
+  Genuine segment intersections, not "a vertex two walks happened to share" —
+  that earlier proxy produced 84 beads strung along the roads, which read as a
+  circuit diagram rather than as junctions. A real crossing is rare, which is
+  what makes it worth lighting up.
+*/
+function segmentCrossing(p1, p2, p3, p4) {
+  const d = (p2[0] - p1[0]) * (p4[1] - p3[1]) - (p2[1] - p1[1]) * (p4[0] - p3[0]);
+  if (Math.abs(d) < 1e-9) return null;
+  const t = ((p3[0] - p1[0]) * (p4[1] - p3[1]) - (p3[1] - p1[1]) * (p4[0] - p3[0])) / d;
+  const u = ((p3[0] - p1[0]) * (p2[1] - p1[1]) - (p3[1] - p1[1]) * (p2[0] - p1[0])) / d;
+  if (t < 0 || t > 1 || u < 0 || u > 1) return null;
+  return [p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1])];
+}
+
+const nodes = [];
+for (let a = 0; a < arterialPaths.length; a++) {
+  for (let b = a + 1; b < arterialPaths.length; b++) {
+    for (let i = 0; i + 1 < arterialPaths[a].length; i++) {
+      for (let j = 0; j + 1 < arterialPaths[b].length; j++) {
+        const hit = segmentCrossing(
+          arterialPaths[a][i],
+          arterialPaths[a][i + 1],
+          arterialPaths[b][j],
+          arterialPaths[b][j + 1],
+        );
+        if (hit && hit[0] > 0 && hit[0] < W && hit[1] > 0 && hit[1] < H) nodes.push(hit);
+      }
     }
   }
 }
 
-/* Every few rows and columns carries more traffic and is drawn brighter. */
-const bigRow = new Set();
-const bigCol = new Set();
-for (let r = 0; r <= ROWS; r++) if (rand() < 0.10) bigRow.add(r);
-for (let c = 0; c <= COLS; c++) if (rand() < 0.10) bigCol.add(c);
+/* Green bloom, scattered rather than banded. */
+const BLOOMS = 7;
+const blooms = Array.from({ length: BLOOMS }, () => ({
+  x: rand() * W,
+  y: rand() * H,
+  rx: 220 + rand() * 380,
+  ry: 140 + rand() * 240,
+  o: 0.05 + rand() * 0.07,
+}));
 
-const arterial = [];
-const local = [];
+const num = (n) => n.toFixed(1);
 
 /*
-  Straight segments. Roads meet at shared junctions; the varied cell sizes and
-  the perspective already keep the network from reading as flat graph paper,
-  so a bow here only makes it look like contour lines instead of streets.
+  Midpoint-quadratic smoothing: each vertex becomes a control point and the
+  curve passes through the midpoints between them. Straight `L` segments
+  between 46px steps left visible kinks at every turn, which is exactly the
+  faceted look this rewrite is undoing.
 */
-function link(a, b, big) {
-  const d = `M${a.x.toFixed(1)} ${a.y.toFixed(1)} L${b.x.toFixed(1)} ${b.y.toFixed(1)}`;
-  (big ? arterial : local).push(d);
-}
-
-for (let r = 0; r <= ROWS; r++) {
-  for (let c = 0; c <= COLS; c++) {
-    const here = grid[r][c];
-    const bigH = bigRow.has(r);
-    const bigV = bigCol.has(c);
-    // Arterials run unbroken; local streets drop out here and there, which is
-    // what keeps the grid from reading as graph paper.
-    if (c < COLS && (bigH ? rand() < 0.96 : rand() < 0.80)) link(here, grid[r][c + 1], bigH);
-    if (r < ROWS && (bigV ? rand() < 0.90 : rand() < 0.55)) link(here, grid[r + 1][c], bigV);
+const pathFor = (pts) => {
+  if (pts.length < 3) return pts.map((p, i) => `${i === 0 ? "M" : "L"}${num(p[0])} ${num(p[1])}`).join("");
+  let d = `M${num(pts[0][0])} ${num(pts[0][1])}`;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const mx = (pts[i][0] + pts[i + 1][0]) / 2;
+    const my = (pts[i][1] + pts[i + 1][1]) / 2;
+    d += `Q${num(pts[i][0])} ${num(pts[i][1])} ${num(mx)} ${num(my)}`;
   }
-}
-
-/* Junctions where two arterials cross: the bright spots in the reference. */
-const hubs = [];
-for (const r of bigRow) for (const c of bigCol) hubs.push(grid[r][c]);
+  const last = pts[pts.length - 1];
+  return d + `L${num(last[0])} ${num(last[1])}`;
+};
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">
   <defs>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="1.1" result="b"/>
+    <clipPath id="frame"><rect x="0" y="0" width="${W}" height="${H}"/></clipPath>
+    <filter id="arterial-glow" x="-15%" y="-15%" width="130%" height="130%">
+      <feGaussianBlur stdDeviation="2.4" result="b"/>
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
-    <radialGradient id="hub">
-      <stop offset="0%" stop-color="#bfe8ff" stop-opacity="0.9"/>
-      <stop offset="100%" stop-color="#bfe8ff" stop-opacity="0"/>
+    <radialGradient id="node">
+      <stop offset="0%" stop-color="#dcf2ff" stop-opacity="0.95"/>
+      <stop offset="45%" stop-color="#7fc4e8" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#7fc4e8" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="bloom">
-      <stop offset="0%" stop-color="#3ddc84" stop-opacity="0.22"/>
-      <stop offset="60%" stop-color="#2aa862" stop-opacity="0.07"/>
+      <stop offset="0%" stop-color="#3ddc84" stop-opacity="1"/>
+      <stop offset="55%" stop-color="#2aa862" stop-opacity="0.32"/>
       <stop offset="100%" stop-color="#1c7a46" stop-opacity="0"/>
     </radialGradient>
   </defs>
-${towns.map((t) => `  <ellipse cx="${t.x.toFixed(1)}" cy="${t.y.toFixed(1)}" rx="${(t.reach * 1.5).toFixed(0)}" ry="${(t.reach * 0.55).toFixed(0)}" fill="url(#bloom)"/>`).join("\n")}
-  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-${local.map((d) => `    <path d="${d}" stroke="#4a90c2" stroke-opacity="0.34" stroke-width="0.6"/>`).join("\n")}
+  <g clip-path="url(#frame)">
+${blooms.map((b) => `    <ellipse cx="${num(b.x)}" cy="${num(b.y)}" rx="${num(b.rx)}" ry="${num(b.ry)}" fill="url(#bloom)" opacity="${b.o.toFixed(3)}"/>`).join("\n")}
+    <g fill="none" stroke="#5c7f9e" stroke-opacity="0.22" stroke-width="0.6" stroke-linecap="round">
+${edges.map(([a, b]) => `      <path d="M${num(vx(a))} ${num(vy(a))}L${num(vx(b))} ${num(vy(b))}"/>`).join("\n")}
+    </g>
+    <g fill="none" stroke="#63c8ff" stroke-opacity="0.38" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" filter="url(#arterial-glow)">
+${arterialPaths.map((p) => `      <path d="${pathFor(p)}"/>`).join("\n")}
+    </g>
+${nodes.map(([x, y]) => `    <circle cx="${num(x)}" cy="${num(y)}" r="12" fill="url(#node)"/>`).join("\n")}
   </g>
-  <g filter="url(#glow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
-${arterial.map((d) => `    <path d="${d}" stroke="#7fc4e8" stroke-opacity="0.42" stroke-width="0.7"/>`).join("\n")}
-  </g>
-${hubs.map((h) => `  <circle cx="${h.x.toFixed(1)}" cy="${h.y.toFixed(1)}" r="5" fill="url(#hub)"/>`).join("\n")}
 </svg>
 `;
 
 await writeFile("public/roads.svg", svg, "utf8");
 console.log(
-  `wrote public/roads.svg — ${arterial.length} arterials, ${local.length} streets, ` +
-    `${hubs.length} junctions`,
+  `wrote public/roads.svg — ${edges.length} cell edges, ` +
+    `${arterialPaths.length} arterials, ${nodes.length} nodes`,
 );

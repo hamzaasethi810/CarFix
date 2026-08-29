@@ -43,6 +43,16 @@ const VIEWPORTS = [
   */
   { name: "desktop", width: 1440, height: 900 },
   { name: "laptop", width: 1440, height: 780 },
+  /*
+    Larger than the road composition itself.
+
+    Every other viewport here is smaller than the background art, so a
+    background that tiles, seams, or runs out looks perfect in all of them.
+    That is not hypothetical: roads.svg repeated at 1600x1000 and showed hard
+    rectangular seams on any window bigger than that, invisible to this audit
+    for exactly this reason. This row is the one that looks.
+  */
+  { name: "wide", width: 2560, height: 1440 },
 ];
 
 /** Signed-out routes. Anything behind auth redirects to /login, which is itself worth seeing. */
