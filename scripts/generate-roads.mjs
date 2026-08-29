@@ -54,8 +54,15 @@ const rand = rng(20260827);
   gives the eye a route to follow.
 */
 
-const COLS = 62;
-const ROWS = 40;
+/*
+  Denser than feels necessary on paper. Compared side by side against the
+  reference at 1440x900, the earlier 62x40 grid read as noticeably sparser —
+  the reference's ground is packed with small cells, and cell COUNT is what
+  carries that, not line weight. Raising the count and dropping the opacity a
+  little keeps the same overall brightness while making the texture finer.
+*/
+const COLS = 94;
+const ROWS = 58;
 const CELL_W = W / COLS;
 
 /*
@@ -100,7 +107,7 @@ for (let r = 0; r <= ROWS; r++) {
   graph paper however much each point is jittered — the reference's character
   comes from tight clusters separated by open ground.
 */
-const TOWNS = 14;
+const TOWNS = 20;
 const towns = Array.from({ length: TOWNS }, () => ({
   x: rand() * W,
   y: HORIZON + rand() * (H - HORIZON),
@@ -177,10 +184,10 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" wid
   </defs>
 ${towns.map((t) => `  <ellipse cx="${t.x.toFixed(1)}" cy="${t.y.toFixed(1)}" rx="${(t.reach * 1.5).toFixed(0)}" ry="${(t.reach * 0.55).toFixed(0)}" fill="url(#bloom)"/>`).join("\n")}
   <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-${local.map((d) => `    <path d="${d}" stroke="#4a90c2" stroke-opacity="0.30" stroke-width="0.4"/>`).join("\n")}
+${local.map((d) => `    <path d="${d}" stroke="#4a90c2" stroke-opacity="0.24" stroke-width="0.35"/>`).join("\n")}
   </g>
   <g filter="url(#glow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
-${arterial.map((d) => `    <path d="${d}" stroke="#7fc4e8" stroke-opacity="0.5" stroke-width="0.8"/>`).join("\n")}
+${arterial.map((d) => `    <path d="${d}" stroke="#7fc4e8" stroke-opacity="0.42" stroke-width="0.7"/>`).join("\n")}
   </g>
 ${hubs.map((h) => `  <circle cx="${h.x.toFixed(1)}" cy="${h.y.toFixed(1)}" r="5" fill="url(#hub)"/>`).join("\n")}
 </svg>
