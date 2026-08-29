@@ -597,35 +597,44 @@ body:has(.map-root) footer {
   anything shaped like it.
 
   vmin alone can't do this: the wrapper's bottom bias (`.globe-chrome` below)
-  is a fixed 8rem/10rem, which does not shrink with the viewport the way the
-  stage's own vmin width does. On a 326px-tall box under the header that bias
-  eats 160px, pinning the flex centre within 7px of the button row above
-  regardless of how small the *stage* gets — measured down to a ~60px stage,
-  which still touched. Adding a second, smaller vmin term next to the one
-  above (`min(52vmin, 620px, 24vmin, 150px)`) can't fix that either: two vmin
-  terms are always in the same fixed ratio to each other (24vmin is always
-  exactly half of 52vmin) no matter the actual viewport height, so a smaller
-  coefficient shrinks the globe by the same proportion on *every* screen,
-  desktop included, rather than only on short ones. What actually
-  distinguishes "short" from "merely narrow" is the window's absolute pixel
-  height, which only a fixed-height media query can key off; vmin/vh units
-  alone are ratios and cannot express that threshold.
+  is a fixed padding that does not shrink with the viewport the way the
+  stage's own vmin width does, so nothing prevents the stage from growing
+  into the button row above as height shrinks. What actually distinguishes
+  "short" from "merely narrow" is the window's absolute pixel height, which
+  only a fixed-height media query can key off; vmin/vh units alone are
+  ratios and cannot express that threshold.
 
-  max-height: 800px is generous on purpose — comfortably past the ~783px
-  point (worked out from the boxes above: bias + stage must leave viewport
-  height minus 216px of clearance, and the unmodified 52vmin/8rem-10rem
-  combination stops fitting that below ~783px tall) where the unmodified
-  combination starts failing the same way, so nothing shaped like a short
-  laptop window slips between this rule and the default.
+  max-height: 480px catches the 844×390 landscape phone (and anything
+  shaped like it) without touching ordinary laptops: at 1440×780 or
+  1366×720 — real browser chrome heights on common screens, not the screen's
+  own height — 52vmin alone already renders a large globe with no help from
+  either override (see the comment on `.globe-stage` above).
 
-  Both numbers here were fitted against the same button-row/filter-bar
-  geometry as `.globe-chrome`'s override, at 844×390: 24vmin keeps the stage
-  proportional above that, 150px is a ceiling so it does not balloon back up
-  as height approaches 800px.
+  This override IS still needed at that breakpoint: tested by removing it
+  outright (keeping only `.globe-chrome`'s padding override below) and
+  measuring the unclipped 52vmin stage at 844×390 — it came out to 202.8px,
+  overlapping the button row above by ~44px and the filter bar below by
+  ~11px. So a cap is required; the number just has to be fitted to the
+  geometry that's actually live now, not the one a stale comment assumed.
+
+  Fitted directly against that live geometry — `.globe-chrome`'s current
+  `min(4rem, 15vh)` bottom bias, not the old fixed 8rem/10rem the previous
+  figure (24vmin/150px) was computed against — by measuring the flex centre
+  at 844×390 (y≈205.75, from the map's content box) against the real button
+  row (bottom at y=148) and filter bar (top at y=296). The binding
+  constraint is the top: the button row sits close enough to the flex
+  centre that it, not the filter bar, caps how big the stage can get.
+  26vmin (101px at 844×390) leaves a 7px margin above the button row and a
+  40px margin above the filter bar — as large as the geometry allows with a
+  deliberate safety margin, up from the previous 24vmin's ~94px/11px/43px.
+  140px is a ceiling carried over from the old rule; at this rule's new
+  480px threshold vmin alone never reaches it (26vmin tops out at 124.8px
+  when height is 480), so it no longer binds anywhere — kept only as a
+  backstop, not because it does anything today.
 */
-@media (max-height: 800px) {
+@media (max-height: 480px) {
   .globe-stage {
-    width: min(24vmin, 150px);
+    width: min(26vmin, 140px);
   }
 }
 
@@ -637,12 +646,12 @@ body:has(.map-root) footer {
   utilities`, and a plain, unlayered rule always wins over anything in a
   layer regardless of specificity or source order — so this overrides those
   classes at this breakpoint without `!important` or fighting Tailwind's own
-  cascade. See the `.globe-stage` short-window rule just above for the
-  numbers this was fitted against; the same 216px-of-headroom budget applies
-  here; `min(4rem, 15vh)` is comfortably inside it at 844×390 (a 22px margin
-  above the button row) and stays proportionally similar up to 800px tall.
+  cascade. See the `.globe-stage` short-window rule just above for how the
+  live geometry was measured at 844×390; `min(4rem, 15vh)` is what that
+  measurement was taken against (a 22px margin above the button row) and
+  stays proportionally similar up to 480px tall.
 */
-@media (max-height: 800px) {
+@media (max-height: 480px) {
   .globe-chrome {
     padding-bottom: min(4rem, 15vh);
   }
@@ -717,6 +726,22 @@ body:has(.map-root) footer {
   border-radius: 50%;
   /* Keeps the square map canvas inside the disc. */
   overflow: hidden;
+  /*
+    Belt and braces with the border-radius above, not a duplicate of it.
+
+    WebKit composites a WebGL canvas onto its own GPU layer, and clips that
+    layer to an `overflow: hidden` + `border-radius` ancestor with a coarse
+    polygon approximation rather than a true circular mask — the canvas comes
+    out octagonal, faceted corners and all, while a plain CSS box (this
+    element's own box-shadow atmosphere, painted by the compositor's ordinary
+    rounded-rect path) clips correctly right next to it. `clip-path` clips
+    every browser's compositor with an actual geometric path instead of the
+    rounded-rect fast path, so the same canvas that comes out a polygon under
+    border-radius alone comes out a circle here. Harmless where the bug
+    doesn't reproduce: circle(50%) on a square box is the same circle
+    border-radius: 50% already draws.
+  */
+  clip-path: circle(50%);
   /*
     The atmosphere lives here, not on .globe-shading.
 

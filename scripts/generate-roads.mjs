@@ -184,7 +184,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" wid
   </defs>
 ${towns.map((t) => `  <ellipse cx="${t.x.toFixed(1)}" cy="${t.y.toFixed(1)}" rx="${(t.reach * 1.5).toFixed(0)}" ry="${(t.reach * 0.55).toFixed(0)}" fill="url(#bloom)"/>`).join("\n")}
   <g fill="none" stroke-linecap="round" stroke-linejoin="round">
-${local.map((d) => `    <path d="${d}" stroke="#4a90c2" stroke-opacity="0.24" stroke-width="0.35"/>`).join("\n")}
+${local.map((d) => `    <path d="${d}" stroke="#4a90c2" stroke-opacity="0.34" stroke-width="0.6"/>`).join("\n")}
   </g>
   <g filter="url(#glow)" fill="none" stroke-linecap="round" stroke-linejoin="round">
 ${arterial.map((d) => `    <path d="${d}" stroke="#7fc4e8" stroke-opacity="0.42" stroke-width="0.7"/>`).join("\n")}
