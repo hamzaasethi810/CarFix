@@ -224,28 +224,15 @@ html {
 body {
   background-color: var(--bg);
   /*
-    The bench: warm paper under one overhead light.
+    Flat.
 
-    The road plane that used to live here was a perspective composition built
-    to sit behind the globe, and it was on `body`, so it also sat behind every
-    login form and policy page — converging on nothing. A background should be
-    a surface the interface rests on, not a picture competing with it.
-
-    The fibre is deliberately below the threshold of notice. A texture you can
-    see is a texture arguing with the content in front of it.
+    Two textured grounds have now been tried and both were wrong: a
+    perspective road plane that converged on nothing behind a login form, and
+    a paper fibre that was still a pattern arguing with the content over it.
+    A background's job is to be the surface everything else sits on. This one
+    is a single colour and stays out of the way; the cards, the plate and the
+    car are what carry the identity.
   */
-  background-image:
-    radial-gradient(ellipse at 50% -8%, rgba(255, 255, 255, 0.85) 0%, rgba(239, 234, 224, 0) 58%),
-    repeating-linear-gradient(
-      94deg,
-      rgba(30, 33, 29, 0.014) 0px,
-      rgba(30, 33, 29, 0.014) 2px,
-      rgba(0, 0, 0, 0) 2px,
-      rgba(0, 0, 0, 0) 5px
-    );
-  background-size: cover, auto;
-  background-position: center, center;
-  background-repeat: no-repeat, repeat;
   background-attachment: fixed;
   color: var(--label);
   font-family:
@@ -1133,5 +1120,37 @@ body:has(.map-root) footer {
   .globe-stage--arriving .globe-ground,
   .globe-stage--arriving .globe-shading {
     transition: none;
+  }
+}
+
+/*
+  A step in the scroll story.
+
+  Opacity and transform only, so showing one costs no layout. 260ms because
+  these appear as you scroll past them — slow enough to read as a considered
+  fade, fast enough that a quick scroll does not leave the page half-empty.
+
+  Ease-out: they are entering. `ease-in` here would delay the movement at
+  exactly the moment the eye is on it.
+*/
+.story-step {
+  opacity: 0;
+  transform: translateY(10px);
+  transition:
+    opacity 260ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 260ms cubic-bezier(0.23, 1, 0.32, 1);
+  pointer-events: none;
+}
+
+.story-step[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-step {
+    transition-duration: 120ms;
+    transform: none;
   }
 }
