@@ -1,45 +1,31 @@
 import Link from "next/link";
-import { CarHero } from "@/components/landing/car-hero";
-import { Reveal } from "@/components/landing/reveal";
+import { ScrollStory, type Beat } from "@/components/landing/scroll-story";
 import { buttonStyles } from "@/components/ui";
 import { getProofNumbers } from "@/lib/services/stats";
 
 /*
-  The landing page.
+  The landing page: one scroll, one car, five beats.
 
-  It used to be the search tool: a globe and a filter bar, and no way to tell
-  what the site was for. The tool lives at /search now. This page says what
-  Gaari is, shows that there is real data behind it, and hands you over.
+  It used to be the search tool, which left a visitor looking at a globe and a
+  filter bar with no idea what the site was for. The tool lives at /search now.
+  This page's argument is that the same record serves someone who just wants to
+  know whether a bill was fair and someone specifying a titanium system, so the
+  car is taken apart on the way down: opened up, resprayed, then followed to
+  the back.
 */
 export const revalidate = 300;
 
-const TRUST = [
-  {
-    title: "Owners, not shops",
-    body: "Every price comes from the person who paid it. Shops cannot post their own rates.",
-  },
-  {
-    title: "Receipts are proof, not data",
-    body: "A receipt is scanned to confirm the job happened, then deleted. It is never stored.",
-  },
-  {
-    title: "Moderated",
-    body: "Reviews and shop replies are checked before anyone sees them.",
-  },
-];
+const GREEN = "#27703F";
+const BLUE = "#1F4E8C";
 
 export default async function HomePage() {
   const stats = await getProofNumbers();
 
   /*
-    A count of zero is not proof, it is an admission.
-
-    The panel exists to show there is real data behind the site, and
-    "0 Reported services" argues the opposite far more loudly than the other
-    two numbers argue for it. Zeros are dropped, and if every number is zero
-    the whole panel stays away rather than pleading an empty case.
+    A count of zero is not proof, it is an admission. Zeros are dropped and
+    the row lays out to whatever is left.
   */
-  const shown: [number, string][] = (
+  const counts: [number, string][] = (
     [
       [stats?.experiences ?? 0, "Reported services"],
       [stats?.shops ?? 0, "Garages"],
@@ -47,11 +33,11 @@ export default async function HomePage() {
     ] as [number, string][]
   ).filter(([n]) => n > 0);
 
-  return (
-    <main>
-      <section className="pt-10 sm:pt-16">
-        <CarHero />
-        <div className="mx-auto max-w-3xl px-6 pt-14 pb-20 text-center">
+  const beats: Beat[] = [
+    {
+      paint: GREEN,
+      panel: (
+        <div>
           <h1 className="text-large-title sm:text-[3.25rem] sm:leading-[1.05] text-balance">
             Know what it should cost.
           </h1>
@@ -59,70 +45,86 @@ export default async function HomePage() {
             See what real owners paid their mechanic, for your exact make, model
             and year. Real prices, not quotes.
           </p>
-          <div className="mt-9 flex flex-wrap justify-center gap-3">
-            <Link href="/search" className={buttonStyles.primary}>
-              Find shops near me
-            </Link>
-            <Link href="/experiences/new" className={buttonStyles.secondary}>
-              Log a service
-            </Link>
-          </div>
         </div>
-      </section>
-
-      {shown.length > 0 && (
-        <Reveal>
-          <section className="border-y border-separator bg-grouped">
+      ),
+    },
+    {
+      paint: GREEN,
+      hood: 1,
+      panel: (
+        <div>
+          <h2 className="text-title1">Real mechanics, real bills</h2>
+          <p className="text-body text-secondary mt-4 max-w-xl mx-auto text-balance">
+            Brakes, oil, clutches, diagnostics. What the shop charged and what
+            the same job costs elsewhere, so you know before you agree to it.
+          </p>
+        </div>
+      ),
+    },
+    {
+      paint: BLUE,
+      panel: (
+        <div>
+          <h2 className="text-title1">Wraps, paint and bodywork</h2>
+          <p className="text-body text-secondary mt-4 max-w-xl mx-auto text-balance">
+            Full wraps, PPF, respray. Work that never has a list price, priced
+            by the people who paid for it.
+          </p>
+        </div>
+      ),
+    },
+    {
+      paint: BLUE,
+      exhaust: 1,
+      camera: { x: -22, scale: 1.5 },
+      panel: (
+        <div>
+          <h2 className="text-title1">Exhausts, tuning and builds</h2>
+          <p className="text-body text-secondary mt-4 max-w-xl mx-auto text-balance">
+            Titanium systems, remaps, forced induction. The enthusiast end of
+            the shop, costed the same way as an oil change.
+          </p>
+        </div>
+      ),
+    },
+    {
+      paint: BLUE,
+      panel: (
+        <div>
+          <h2 className="text-title1 text-balance">
+            Whatever you drive it for.
+          </h2>
+          {counts.length > 0 && (
             <div
-              className="mx-auto max-w-4xl px-6 py-16 grid gap-6 text-center"
-              style={{ gridTemplateColumns: `repeat(${shown.length}, minmax(0, 1fr))` }}
+              className="mt-8 grid gap-8"
+              style={{ gridTemplateColumns: `repeat(${counts.length}, minmax(0, 1fr))` }}
             >
-              {shown.map(([n, label]) => (
-                <div key={label as string}>
-                  <div className="font-condensed font-bold text-large-title leading-none tabular-nums text-accent">
-                    {(n as number).toLocaleString("en-US")}
+              {counts.map(([n, label]) => (
+                <div key={label}>
+                  <div className="font-condensed font-bold text-title1 leading-none tabular-nums text-accent">
+                    {n.toLocaleString("en-US")}
                   </div>
-                  <div className="text-footnote text-secondary mt-2">
-                    {label as string}
-                  </div>
+                  <div className="text-caption text-secondary mt-1">{label}</div>
                 </div>
               ))}
             </div>
-          </section>
-        </Reveal>
-      )}
-
-      <Reveal>
-        <section className="mx-auto max-w-4xl px-6 py-24">
-          <h2 className="text-title1 text-center">Why you can believe it</h2>
-          <dl className="mt-12 grid gap-10 sm:grid-cols-3">
-            {TRUST.map((t) => (
-              <div key={t.title}>
-                <dt className="text-headline font-semibold">{t.title}</dt>
-                <dd className="text-subhead text-secondary mt-2">{t.body}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      </Reveal>
-
-      <Reveal>
-        <section className="border-t border-separator">
-          <div className="mx-auto max-w-2xl px-6 py-24 text-center">
-            <h2 className="text-title1 text-balance">
-              See what your next service should cost.
-            </h2>
-            <p className="text-body text-secondary mt-4">
-              Free to join. Free to look.
-            </p>
-            <div className="mt-8">
-              <Link href="/login" className={`${buttonStyles.primary} px-8`}>
-                Get started
-              </Link>
-            </div>
+          )}
+          <div className="mt-9 flex flex-wrap justify-center gap-3">
+            <Link href="/login" className={`${buttonStyles.primary} px-8`}>
+              Get started
+            </Link>
+            <Link href="/search" className={buttonStyles.secondary}>
+              Find shops near me
+            </Link>
           </div>
-        </section>
-      </Reveal>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <main>
+      <ScrollStory beats={beats} />
     </main>
   );
 }

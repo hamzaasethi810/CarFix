@@ -899,27 +899,23 @@ body:has(.map-root) footer {
   border-radius: 50%;
   pointer-events: none;
   /*
-    Fractions of --globe-d (declared on .globe-stage, inherited here), not
-    pixels. These were -10/-12/26 and 4/5/8, fitted to a 620px sphere; at the
-    new sizes a fixed-pixel terminator sits in the wrong place on the limb and
-    the shading stops reading as curvature. Same ratios, so it looks identical
-    at 620px.
+    Curvature shading for a DAYTIME planet on a light page.
+
+    These values were fitted for a night globe against near-black, where a
+    heavy terminator was the only thing giving the sphere any roundness. On a
+    lit blue-and-green Earth over paper the same values draw a thick black
+    ring: half the planet in gloom and a hard dark edge all the way round,
+    which is what made it look broken rather than round.
+
+    A lit planet is bright almost to its limb, with the light falling off only
+    in the last few percent. So: a much softer terminator, and the highlight
+    carries more of the work.
   */
   box-shadow:
-    /*
-      The terminator, softened.
-
-      At 0.5 alpha over a wide blur this drew a dark band a little inside the
-      limb, and with no cast shadow outside the sphere to compare it against
-      it read as THE shadow — in the wrong place, inside the globe. It is
-      curvature shading, not a shadow: it belongs at the edge of legibility.
-      The cast shadow now lives on .globe-stage, outside the disc.
-    */
-    inset calc(var(--globe-d) * -0.012) calc(var(--globe-d) * -0.014)
-      calc(var(--globe-d) * 0.05) rgba(0, 0, 0, 0.28),
-    /* the lit limb catching the light */
-    inset calc(var(--globe-d) * 0.0065) calc(var(--globe-d) * 0.0081)
-      calc(var(--globe-d) * 0.0129) rgba(190, 225, 255, 0.55);
+    inset calc(var(--globe-d) * -0.01) calc(var(--globe-d) * -0.012)
+      calc(var(--globe-d) * 0.085) rgba(12, 22, 40, 0.3),
+    inset calc(var(--globe-d) * 0.006) calc(var(--globe-d) * 0.008)
+      calc(var(--globe-d) * 0.02) rgba(255, 253, 245, 0.5);
 }
 
 /*
@@ -1124,31 +1120,83 @@ body:has(.map-root) footer {
 }
 
 /*
-  A section arriving as you scroll to it.
+  A panel in the scroll story.
 
-  Opacity and transform only, so a reveal costs no layout. 320ms and a slower
-  curve than the UI elsewhere: these are read rather than operated, and a
-  section that snaps in reads as a jump instead of an arrival.
+  Stacked in one box and cross-faded, so the car keeps a fixed relationship to
+  whatever is being said. Opacity and transform only: switching panels costs
+  no layout. Ease-out, because a panel is entering, and `ease-in` would delay
+  the movement at exactly the moment the eye lands on it.
 
-  Ease-out because it is entering. `ease-in` would delay the movement at
-  exactly the moment the eye lands on it.
+  `min-height` rather than a fixed height: the panels differ in length, and a
+  fixed box either clips the longest or leaves the shortest floating in space.
 */
-.reveal {
-  opacity: 0;
-  transform: translateY(14px);
-  transition:
-    opacity 320ms cubic-bezier(0.23, 1, 0.32, 1),
-    transform 320ms cubic-bezier(0.23, 1, 0.32, 1);
+.story-panels {
+  position: relative;
+  min-height: 15rem;
 }
 
-.reveal[data-shown="true"] {
-  opacity: 1;
-  transform: none;
+/*
+  The camera move. Slower than a UI transition and eased both ways, because
+  this is a shot changing rather than a control responding: it should gather
+  speed and settle, not snap.
+*/
+.story-camera {
+  transform-origin: 62% 60%;
+  transition: transform 900ms cubic-bezier(0.65, 0, 0.35, 1);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal {
+  .story-camera {
+    transition: none;
+    transform: none !important;
+  }
+}
+
+.story-panel {
+  position: absolute;
+  inset: 0 1.5rem auto;
+  text-align: center;
+  opacity: 0;
+  transform: translateY(12px);
+  transition:
+    opacity 300ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 300ms cubic-bezier(0.23, 1, 0.32, 1);
+  /* Off until shown, so a hidden panel's button cannot be clicked or tabbed. */
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.story-panel[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+/*
+  Reduced motion: no sticky viewport and no travel. The track collapses to its
+  content and the panels stack down the page as ordinary sections, which is
+  the same information without anything moving.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .story-track {
+    height: auto !important;
+  }
+  .story-sticky {
+    position: static;
+    height: auto;
+    display: block;
+    padding: 3rem 0;
+  }
+  .story-panels {
+    min-height: 0;
+  }
+  .story-panel {
+    position: static;
+    opacity: 1;
+    visibility: visible;
     transform: none;
-    transition-duration: 140ms;
+    pointer-events: auto;
+    margin-bottom: 3.5rem;
   }
 }
