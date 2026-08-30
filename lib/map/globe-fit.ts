@@ -13,19 +13,33 @@
     d = k * 2^zoom      k drifts 139.45 (z=1.4) -> 120.73 (z=2.6). Not a
                         constant, so no single fitted value is right.
 
-    d = project() span  Close, but short by 1-4%, drifting with zoom. A
-                        sphere's visible limb under perspective sits inside
-                        the point 90 degrees of longitude away, and the gap
-                        widens as the camera approaches. At a 620px stage 4%
-                        is a ~12px ring: the very defect being fixed.
+    d = project() span  Close, but consistently short, and the gap widens
+                        with zoom. A sphere's visible limb under perspective
+                        sits inside the point 90 degrees of longitude away,
+                        and the camera gets nearer as zoom rises. Small, but
+                        the whole defect being fixed here is a ring a few
+                        percent wide, so a few percent matters.
 
   So: solve numerically against project(), then divide out the measured
   shortfall below.
 */
 
 /*
-  Rendered diameter over projected diameter, measured in Chrome against
-  MapLibre GL 6.6.0 with an 800px square container.
+  Projected diameter over rendered diameter, measured in Chrome against
+  MapLibre GL 6.6.0 with a 1200px square container.
+
+  The first version of this table read 0.991 down to 0.956 and was WRONG. It
+  was measured by scanning for pixels above a brightness threshold, which
+  counts the atmospheric glow standing off the limb as part of the sphere —
+  so the rendered diameter came out too large and the ratio too small, and the
+  solver over-corrected. These are measured the way scripts/verify-globe-fit
+  measures: by blue dominance, which is what actually separates the sphere
+  from the ground behind it.
+
+  The range runs to 3.2 rather than stopping at 2.6 because the stage cap is
+  now 760px. Samples are clamped, not extrapolated, so a table that ends
+  before the zoom the page actually uses silently under-corrects — which it
+  did: a 760px stage came out 1.2% short against a table ending at 2.6.
 
   If MapLibre changes how zoom maps to globe radius these stop being true.
   scripts/verify-globe-fit.mjs is what catches that: it renders the real page
@@ -33,11 +47,13 @@
   of quietly detaching the globe from its shadow again.
 */
 export const LIMB_SAMPLES: ReadonlyArray<{ zoom: number; ratio: number }> = [
-  { zoom: 1.4, ratio: 0.991 },
-  { zoom: 1.7, ratio: 0.986 },
-  { zoom: 2.05, ratio: 0.975 },
-  { zoom: 2.3, ratio: 0.967 },
-  { zoom: 2.6, ratio: 0.956 },
+  { zoom: 1.4, ratio: 1.0016 },
+  { zoom: 1.7, ratio: 0.9993 },
+  { zoom: 2.05, ratio: 0.9991 },
+  { zoom: 2.3, ratio: 0.9976 },
+  { zoom: 2.6, ratio: 0.993 },
+  { zoom: 2.9, ratio: 0.9887 },
+  { zoom: 3.2, ratio: 0.981 },
 ];
 
 /**

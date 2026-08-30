@@ -614,12 +614,23 @@ body:has(.map-root) footer {
     border-radius only shapes the shadow; there is no background to round.
   */
   border-radius: 50%;
+  /*
+    One variable, because the halo here and the inset shading on
+    .globe-shading are both fractions of it. They used to be absolute pixel
+    values fitted to a 620px sphere, which is fine only while the sphere is
+    always 620px — and it no longer is: components/globe.tsx now solves zoom
+    from this box's measured width, so the sphere is whatever this says. The
+    fractions below are the old pixel values over that old 620px stage, so
+    the halo looks the same at 620px and now scales with the globe instead of
+    detaching from it.
+  */
+  --globe-d: min(62vmin, 760px);
   box-shadow:
     0 0 0 1px rgba(126, 200, 255, 0.30),
-    0 0 22px rgba(90, 170, 240, 0.5),
-    0 0 70px rgba(60, 140, 220, 0.3),
-    0 0 140px rgba(40, 110, 190, 0.18);
-  width: min(52vmin, 620px);
+    0 0 calc(var(--globe-d) * 0.0355) rgba(90, 170, 240, 0.5),
+    0 0 calc(var(--globe-d) * 0.113) rgba(60, 140, 220, 0.3),
+    0 0 calc(var(--globe-d) * 0.226) rgba(40, 110, 190, 0.18);
+  width: var(--globe-d);
   aspect-ratio: 1 / 1;
 }
 
@@ -638,34 +649,39 @@ body:has(.map-root) footer {
   max-height: 480px catches the 844×390 landscape phone (and anything
   shaped like it) without touching ordinary laptops: at 1440×780 or
   1366×720 — real browser chrome heights on common screens, not the screen's
-  own height — 52vmin alone already renders a large globe with no help from
-  either override (see the comment on `.globe-stage` above).
+  own height — the base rule alone already renders a large globe with no help
+  from either override (see the comment on `.globe-stage` above).
 
-  This override IS still needed at that breakpoint: tested by removing it
-  outright (keeping only `.globe-chrome`'s padding override below) and
-  measuring the unclipped 52vmin stage at 844×390 — it came out to 202.8px,
-  overlapping the button row above by ~44px and the filter bar below by
-  ~11px. So a cap is required; the number just has to be fitted to the
-  geometry that's actually live now, not the one a stale comment assumed.
+  This override IS still needed at that breakpoint. Without it the base rule
+  applies, and the base is now 62vmin (raised from 52vmin once the sphere
+  started tracking its container), which at 844×390 would be 242px — far into
+  the button row above and the filter panel below.
 
-  Fitted directly against that live geometry — `.globe-chrome`'s current
-  `min(4rem, 15vh)` bottom bias, not the old fixed 8rem/10rem the previous
-  figure (24vmin/150px) was computed against — by measuring the flex centre
-  at 844×390 (y≈205.75, from the map's content box) against the real button
-  row (bottom at y=148) and filter bar (top at y=296). The binding
-  constraint is the top: the button row sits close enough to the flex
-  centre that it, not the filter bar, caps how big the stage can get.
-  26vmin (101px at 844×390) leaves a 7px margin above the button row and a
-  40px margin above the filter bar — as large as the geometry allows with a
-  deliberate safety margin, up from the previous 24vmin's ~94px/11px/43px.
-  140px is a ceiling carried over from the old rule; at this rule's new
-  480px threshold vmin alone never reaches it (26vmin tops out at 124.8px
-  when height is 480), so it no longer binds anywhere — kept only as a
-  backstop, not because it does anything today.
+  26vmin re-measured against the live geometry on 2026-08-30, after the base
+  grew and after the sphere began filling the stage exactly rather than
+  sitting inside it: the stage renders 101px, spanning y=155 to y=256, with
+  the button row ending at y=148 and the filter panel starting at y=345. That
+  is 7px of clearance above and 89px below. The binding constraint is still
+  the top — the button row, not the panel, is what caps this — so 26vmin
+  stays. Growing it trades that 7px away two pixels at a time, since the
+  stage expands in both directions from the flex centre.
+
+  140px is a ceiling carried over from an older rule; at this rule's 480px
+  threshold vmin alone never reaches it (26vmin tops out at 124.8px when
+  height is 480), so it binds nowhere today — kept only as a backstop.
 */
 @media (max-height: 480px) {
   .globe-stage {
-    width: min(26vmin, 140px);
+    /*
+      Override the VARIABLE, not the width.
+
+      The base rule sets `width: var(--globe-d)` and sizes the halo and the
+      inset shading from the same variable. Capping `width` alone here would
+      leave those shadows scaled for a 62vmin globe wrapped around a 26vmin
+      one — a halo several times the size of the sphere it belongs to. Setting
+      the variable moves all three together.
+    */
+    --globe-d: min(26vmin, 140px);
   }
 }
 
@@ -820,11 +836,20 @@ body:has(.map-root) footer {
   inset: 0;
   border-radius: 50%;
   pointer-events: none;
+  /*
+    Fractions of --globe-d (declared on .globe-stage, inherited here), not
+    pixels. These were -10/-12/26 and 4/5/8, fitted to a 620px sphere; at the
+    new sizes a fixed-pixel terminator sits in the wrong place on the limb and
+    the shading stops reading as curvature. Same ratios, so it looks identical
+    at 620px.
+  */
   box-shadow:
     /* terminator: the far side falling into shadow */
-    inset -10px -12px 26px rgba(0, 0, 0, 0.5),
+    inset calc(var(--globe-d) * -0.0161) calc(var(--globe-d) * -0.0194)
+      calc(var(--globe-d) * 0.0419) rgba(0, 0, 0, 0.5),
     /* the lit limb catching the light */
-    inset 4px 5px 8px rgba(190, 225, 255, 0.55);
+    inset calc(var(--globe-d) * 0.0065) calc(var(--globe-d) * 0.0081)
+      calc(var(--globe-d) * 0.0129) rgba(190, 225, 255, 0.55);
 }
 
 /*

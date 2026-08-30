@@ -10,8 +10,8 @@ describe("limbRatio", () => {
 
   it("interpolates between samples", () => {
     const mid = limbRatio(1.55);
-    expect(mid).toBeLessThan(0.991);
-    expect(mid).toBeGreaterThan(0.986);
+    expect(mid).toBeLessThan(1.0016);
+    expect(mid).toBeGreaterThan(0.9993);
   });
 
   it("clamps outside the measured range rather than extrapolating", () => {
@@ -30,11 +30,13 @@ describe("fitZoom", () => {
     real container size, not for an invented one.
   */
   const measured = [
-    { zoom: 1.4, projected: 364.7 },
-    { zoom: 1.7, projected: 433.8 },
-    { zoom: 2.05, projected: 526.8 },
-    { zoom: 2.3, projected: 601.5 },
-    { zoom: 2.6, projected: 699.9 },
+    { zoom: 1.4, projected: 408.7 },
+    { zoom: 1.7, projected: 491.7 },
+    { zoom: 2.05, projected: 606.4 },
+    { zoom: 2.3, projected: 701.3 },
+    { zoom: 2.6, projected: 830.2 },
+    { zoom: 2.9, projected: 975.8 },
+    { zoom: 3.2, projected: 1138.0 },
   ];
 
   const projectedDiameterAt = (z: number): number => {
@@ -55,7 +57,7 @@ describe("fitZoom", () => {
   const renderedAt = (z: number) => projectedDiameterAt(z) / limbRatio(z);
 
   it("finds a zoom whose RENDERED diameter matches the target", () => {
-    for (const target of [380, 450, 540, 620, 700]) {
+    for (const target of [420, 540, 620, 760, 900, 1100]) {
       const z = fitZoom(projectedDiameterAt, target);
       expect(Math.abs(renderedAt(z) - target) / target).toBeLessThan(0.01);
     }
@@ -68,14 +70,16 @@ describe("fitZoom", () => {
       the correction, the projected diameter will equal the target instead of
       falling short of it, and this fails.
     */
-    const z = fitZoom(projectedDiameterAt, 620);
-    expect(projectedDiameterAt(z)).toBeLessThan(620);
-    expect(renderedAt(z)).toBeCloseTo(620, 0);
+    // Picked high in the range, where the correction is largest: near the
+    // bottom it is a fraction of a percent and the assertion proves little.
+    const z = fitZoom(projectedDiameterAt, 1100);
+    expect(projectedDiameterAt(z)).toBeLessThan(1100);
+    expect(renderedAt(z)).toBeCloseTo(1100, 0);
   });
 
   it("returns a larger zoom for a larger container", () => {
-    expect(fitZoom(projectedDiameterAt, 700)).toBeGreaterThan(
-      fitZoom(projectedDiameterAt, 400),
+    expect(fitZoom(projectedDiameterAt, 900)).toBeGreaterThan(
+      fitZoom(projectedDiameterAt, 450),
     );
   });
 
