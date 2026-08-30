@@ -647,7 +647,18 @@ body:has(.map-root) footer {
     0 0 0 1px rgba(126, 200, 255, 0.42),
     0 0 calc(var(--globe-d) * 0.0355) rgba(90, 170, 240, 0.58),
     0 0 calc(var(--globe-d) * 0.113) rgba(60, 140, 220, 0.3),
-    0 0 calc(var(--globe-d) * 0.226) rgba(40, 110, 190, 0.18);
+    0 0 calc(var(--globe-d) * 0.226) rgba(40, 110, 190, 0.18),
+    /*
+      A dark shadow OUTSIDE the sphere, offset downward.
+
+      Everything above it is atmosphere — light thrown outward — and the only
+      dark the globe had was an inset on .globe-shading, which sits within the
+      disc. So the shadow read as painted onto the planet rather than cast by
+      it. This is the cast one: it falls below and behind, away from the light
+      that lights the rest of the page from the upper left.
+    */
+    0 calc(var(--globe-d) * 0.045) calc(var(--globe-d) * 0.1)
+      rgba(0, 0, 0, 0.55);
   width: var(--globe-d);
   aspect-ratio: 1 / 1;
 }
@@ -862,9 +873,17 @@ body:has(.map-root) footer {
     at 620px.
   */
   box-shadow:
-    /* terminator: the far side falling into shadow */
-    inset calc(var(--globe-d) * -0.0161) calc(var(--globe-d) * -0.0194)
-      calc(var(--globe-d) * 0.0419) rgba(0, 0, 0, 0.5),
+    /*
+      The terminator, softened.
+
+      At 0.5 alpha over a wide blur this drew a dark band a little inside the
+      limb, and with no cast shadow outside the sphere to compare it against
+      it read as THE shadow — in the wrong place, inside the globe. It is
+      curvature shading, not a shadow: it belongs at the edge of legibility.
+      The cast shadow now lives on .globe-stage, outside the disc.
+    */
+    inset calc(var(--globe-d) * -0.012) calc(var(--globe-d) * -0.014)
+      calc(var(--globe-d) * 0.05) rgba(0, 0, 0, 0.28),
     /* the lit limb catching the light */
     inset calc(var(--globe-d) * 0.0065) calc(var(--globe-d) * 0.0081)
       calc(var(--globe-d) * 0.0129) rgba(190, 225, 255, 0.55);
