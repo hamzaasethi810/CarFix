@@ -30,7 +30,7 @@ export function Car({
   exhaust?: number;
 }) {
   return (
-    <svg viewBox="0 -46 480 196" className={className} aria-hidden="true" focusable="false">
+    <svg viewBox="0 -46 496 196" className={className} aria-hidden="true" focusable="false">
       <defs>
         {/*
           One gradient, driven by the `paint` prop.
@@ -84,148 +84,179 @@ export function Car({
         </radialGradient>
       </defs>
 
-      <ellipse cx="240" cy="129" rx="196" ry="7" fill="rgba(30,33,29,0.2)" />
-
-      {/* The bay under the clamshell, revealed as it lifts. */}
-      <g
-        style={{ opacity: hood, transition: "opacity 500ms ease-out" }}
-      >
-        <rect x="52" y="60" width="96" height="22" rx="3" fill="#2B322D" />
-        <rect x="60" y="65" width="80" height="5" rx="2.5" fill="#59635C" />
-        <rect x="64" y="73" width="28" height="5" rx="2.5" fill="#7C8880" />
-        <rect x="100" y="73" width="36" height="5" rx="2.5" fill="#49524C" />
-      </g>
+      <ellipse cx="238" cy="106" rx="196" ry="8" fill="rgba(30,33,29,0.22)" />
 
       {/*
-        Body, minus the front clamshell, which hinges separately.
+        The body.
 
-        The nose sits below the front axle line, the screen base is barely
-        behind the front wheel, and the deck runs long and flat to a high tail.
+        LOW POINTED NOSE on the left, HIGH BLUNT TAIL on the right. An earlier
+        version had those the other way round, which made the silhouette read
+        as facing right — so the bonnet looked like it was at the back and the
+        pipes at the front, even though both were on the correct ends. Which
+        way a car faces is decided by this profile, not by where the details
+        are hung.
       */}
       <path
-        d="M20 106
-           C12 106 7 101 8 93
-           L11 86 C13 79 20 75 30 74
-           L104 68
-           L150 48 C168 40 190 36 214 36
-           L262 36 C286 38 300 46 310 60
-           L330 74
-           L430 82 C452 85 466 92 468 100
-           L468 102 C468 105 464 106 458 106
+        d="M14 96
+           L18 85 C21 76 29 72 41 70
+           L150 66
+           L208 41 C219 37 230 36 242 36
+           L278 36 C292 37 302 42 309 51
+           L352 64
+           L440 68 C458 70 468 75 470 84
+           L470 96
+           C470 101 466 104 458 104
+           L26 104
+           C18 104 13 101 14 96
            Z"
         fill={paint}
         style={{ transition: "fill 700ms cubic-bezier(0.23, 1, 0.32, 1)" }}
       />
       <path
-        d="M20 106
-           C12 106 7 101 8 93
-           L11 86 C13 79 20 75 30 74
-           L104 68
-           L150 48 C168 40 190 36 214 36
-           L262 36 C286 38 300 46 310 60
-           L330 74
-           L430 82 C452 85 466 92 468 100
-           L468 102 C468 105 464 106 458 106
+        d="M14 96
+           L18 85 C21 76 29 72 41 70
+           L150 66
+           L208 41 C219 37 230 36 242 36
+           L278 36 C292 37 302 42 309 51
+           L352 64
+           L440 68 C458 70 468 75 470 84
+           L470 96
+           C470 101 466 104 458 104
+           L26 104
+           C18 104 13 101 14 96
            Z"
         fill="url(#sl-shade)"
       />
 
       {/*
-        The clamshell, hinged at its rear edge where a real one is, so raising
-        it swings the nose up and leaves the scuttle in place.
-      */}
-      {/*
-        The clamshell, hinged at its rear edge where a real one is, so raising
-        it swings the nose up and leaves the scuttle in place.
+        The bay, drawn AFTER the body and BEFORE the clamshell.
 
-        Rotated in CSS rather than via the SVG `transform` attribute, with
-        `transformBox: view-box` so the origin resolves in viewBox units. That
-        is what makes the lift a transition the compositor can run; the
-        attribute form would snap between beats.
+        It was painted first, which put it behind the bodywork: lifting the
+        bonnet revealed more paint instead of an engine. Paint order is the
+        whole mechanism here — the bay has to sit between the body it is set
+        into and the panel that covers it.
+      */}
+      <g style={{ opacity: hood, transition: "opacity 500ms ease-out" }}>
+        <path d="M46 74 L146 66 L148 80 L50 86 Z" fill="#242A26" />
+        <rect x="58" y="70" width="72" height="5" rx="2.5" fill="#5C665F" />
+        <rect x="62" y="78" width="26" height="5" rx="2.5" fill="#828E86" />
+        <rect x="96" y="77" width="38" height="5" rx="2.5" fill="#49524C" />
+      </g>
+
+
+      {/*
+        The clamshell, hinged at the scuttle where a real one is.
+
+        The angle is POSITIVE: SVG's y axis points down, so a positive angle
+        turns clockwise on screen, and the bonnet lies to the LEFT of its
+        hinge, which makes clockwise the direction that lifts it. Negative
+        swung the nose down through the road.
+
+        translate -> rotate -> translate back, rather than a bare rotate with
+        `transform-origin`: browsers disagree on what `transform-box` makes
+        that origin relative to, and carrying the pivot in the transform
+        depends on nothing.
       */}
       <g
         style={{
-          /*
-            translate → rotate → translate back, rather than a bare rotate
-            with `transform-origin`.
-
-            `transform-box` decides what an SVG transform-origin is measured
-            against, and browsers do not agree on the default: the first
-            version set `view-box` and the panel still rotated about the
-            element's own corner, swinging the bonnet down through the road
-            instead of lifting it. Carrying the pivot in the transform itself
-            depends on nothing.
-          */
-          transform: `translate(150px, 64px) rotate(${hood * 38}deg) translate(-150px, -64px)`,
+          transform: `translate(151px, 67px) rotate(${hood * 40}deg) translate(-151px, -67px)`,
           transition: "transform 700ms cubic-bezier(0.23, 1, 0.32, 1)",
         }}
       >
         <path
-          d="M30 74 L104 68 L150 48 L152 66 L104 74 L33 80 Z"
+          d="M18 85 C21 76 29 72 41 70 L150 66 L152 78 L44 84 L20 93 Z"
           fill={paint}
           style={{ transition: "fill 700ms cubic-bezier(0.23, 1, 0.32, 1)" }}
         />
-        <path d="M30 74 L104 68 L150 48 L152 66 L104 74 L33 80 Z" fill="url(#sl-shade)" />
-        <path d="M38 75 L146 68" fill="none" stroke="rgba(255,255,255,0.32)" strokeWidth="1.6" />
+        <path
+          d="M18 85 C21 76 29 72 41 70 L150 66 L152 78 L44 84 L20 93 Z"
+          fill="url(#sl-shade)"
+        />
+        {/* the shut line, and the headlight it runs into */}
+        <path d="M34 78 L148 70" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.4" />
+        <path d="M22 84 L46 80 L48 88 L24 91 Z" fill="#E9EEF0" opacity="0.85" />
       </g>
 
-      {/* roofline */}
+      {/* roofline catching the overhead light */}
       <path
-        d="M152 47 C170 39 192 35 216 35 L260 35 C284 37 298 45 308 59"
+        d="M210 40 C221 37 232 36 243 36 L277 36 C291 37 301 42 308 51"
         fill="none"
-        stroke="rgba(255,255,255,0.45)"
-        strokeWidth="2.5"
+        stroke="rgba(255,255,255,0.5)"
+        strokeWidth="2.4"
         strokeLinecap="round"
       />
 
-      {/* cabin, pushed forward over the front axle */}
-      <path d="M160 62 C178 45 198 39 220 38 L244 38 L244 62 Z" fill="url(#sl-glass)" />
-      <path d="M252 38 L258 38 C280 40 292 47 300 58 L252 58 Z" fill="url(#sl-glass)" />
+      {/* glasshouse, raked hard, pushed forward over the front axle */}
+      <path d="M164 64 L210 42 C221 39 232 38 243 38 L248 38 L248 64 Z" fill="url(#sl-glass)" />
+      <path d="M256 38 L276 38 C289 39 298 44 304 52 L310 62 L256 62 Z" fill="url(#sl-glass)" />
+      {/* the pillar between them */}
+      <path d="M248 38 L256 38 L256 64 L248 64 Z" fill="rgba(0,0,0,0.22)" />
 
-      {/* the side intake: the detail that says the engine is behind you */}
-      <path d="M306 70 L352 66 L358 82 L306 84 Z" fill="rgba(0,0,0,0.4)" />
-      <path d="M312 73 L348 70" stroke="rgba(255,255,255,0.16)" strokeWidth="2" />
+      {/* side intake ahead of the rear arch: the engine is behind the cabin */}
+      <path d="M312 70 L356 66 L362 82 L312 84 Z" fill="rgba(0,0,0,0.42)" />
+      <path d="M318 73 L352 70" stroke="rgba(255,255,255,0.18)" strokeWidth="2" />
 
-      {/* sill and the crease along flat flanks */}
-      <path d="M44 92 L448 88" fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth="1.4" />
-      <path d="M50 100 L444 97" fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth="4.5" strokeLinecap="round" />
+      {/* door shut line and the crease down flat flanks */}
+      <path d="M168 62 L172 96" fill="none" stroke="rgba(0,0,0,0.22)" strokeWidth="1.2" />
+      <path d="M40 84 L448 80" fill="none" stroke="rgba(255,255,255,0.15)" strokeWidth="1.3" />
+      <path d="M44 99 L446 96" fill="none" stroke="rgba(0,0,0,0.3)" strokeWidth="4" strokeLinecap="round" />
 
-      {/* Titanium pipes, and their heat when the exhaust beat runs. */}
+      {/* Titanium pipes, low on the tail face, and their heat. */}
       <g>
-        <circle
-          cx="472"
-          cy="99"
-          r={10 + exhaust * 14}
-          fill="url(#sl-flame)"
-          style={{ opacity: exhaust, transition: "opacity 450ms ease-out, r 450ms ease-out" }}
-        />
-        {[95, 104].map((cy) => (
+        <circle cx="483" cy="94" r={9 + exhaust * 14} fill="url(#sl-flame)"
+          style={{ opacity: exhaust, transition: "opacity 450ms ease-out, r 450ms ease-out" }} />
+        {[89, 98].map((cy) => (
           <g key={cy}>
-            <rect x="452" y={cy - 4} width="22" height="8" rx="4" fill="#9AA3A6" />
-            <rect x="452" y={cy - 4} width="22" height="3" rx="1.5" fill="#D6DCDE" opacity="0.85" />
-            <ellipse cx="473" cy={cy} rx="2.6" ry="3.6" fill="#3B4245" />
+            <rect x="463" y={cy - 4} width="20" height="8" rx="4" fill="#9AA3A6" />
+            <rect x="463" y={cy - 4} width="20" height="3" rx="1.5" fill="#DCE2E4" opacity="0.85" />
+            <ellipse cx="482" cy={cy} rx="2.4" ry="3.4" fill="#3B4245" />
           </g>
         ))}
       </g>
 
-      {[118, 372].map((cx) => (
+      {/*
+        Arch shading.
+
+        Drawn as a thin dark arc hugging the top of each wheel, not as an
+        ellipse. The first attempt used ellipses painted after the body, which
+        put a dark blob ON the paint around each wheel instead of a shadow
+        under the arch — the wheels looked stuck to the side of the car rather
+        than sitting inside it.
+      */}
+      {[112, 368].map((cx) => (
+        <path
+          key={cx}
+          d={`M${cx - 31} 100 A31 31 0 0 1 ${cx + 31} 100`}
+          fill="none"
+          stroke="rgba(0,0,0,0.45)"
+          strokeWidth="7"
+        />
+      ))}
+
+      {[112, 368].map((cx) => (
         <g key={cx}>
-          <circle cx={cx} cy="100" r="29" fill="#14100F" />
-          <circle cx={cx} cy="100" r="15" fill="url(#sl-hub)" />
-          {Array.from({ length: 8 }).map((_, i) => {
-            const a = (i / 8) * Math.PI * 2;
+          <circle cx={cx} cy="98" r="28" fill="#14100F" />
+          <circle cx={cx} cy="98" r="21" fill="#241F1D" />
+          <circle cx={cx} cy="98" r="15" fill="url(#sl-hub)" />
+          {Array.from({ length: 10 }).map((_, i) => {
+            const a = (i / 10) * Math.PI * 2;
             return (
-              <circle
+              <rect
                 key={i}
-                cx={cx + Math.cos(a) * 9.2}
-                cy={100 + Math.sin(a) * 9.2}
-                r="2.1"
-                fill="#5A625D"
+                x={cx - 1.4}
+                y={98 - 15}
+                width="2.8"
+                height="11"
+                rx="1.4"
+                fill="#8C948F"
+                transform={`rotate(${(i / 10) * 360} ${cx} 98)`}
               />
             );
           })}
+          <circle cx={cx} cy="98" r="4.5" fill="#5A625D" />
         </g>
       ))}
+
     </svg>
   );
 }
