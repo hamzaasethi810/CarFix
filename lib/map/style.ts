@@ -15,8 +15,27 @@
 const OPENFREEMAP_DARK = "https://tiles.openfreemap.org/styles/dark";
 
 export function mapStyleUrl(maptilerKey: string | undefined): string {
-  if (!maptilerKey) return OPENFREEMAP_DARK;
-  return `https://api.maptiler.com/maps/streets-v2-dark/style.json?key=${maptilerKey}`;
+  /*
+    Trimmed and escaped, because this took production down once.
+
+    MAPTILER_KEY was stored on Vercel with whitespace around it — a stray space
+    or newline is trivially easy to capture when pasting a key into a dashboard
+    field, and nothing in the dashboard shows it. The URL came out as
+    `...style.json?key= <key> `, MapTiler rejected every tile request, and the
+    map silently never loaded in production while working on every developer
+    machine whose .env happened to be clean.
+
+    A key that is only whitespace is treated as no key at all: a blank key
+    builds a URL that fails on every tile, which is strictly worse than the
+    keyless basemap we already fall back to.
+
+    encodeURIComponent because this value is interpolated into a query string.
+    A key containing & or = would otherwise change the URL's shape rather than
+    just its key parameter.
+  */
+  const key = maptilerKey?.trim();
+  if (!key) return OPENFREEMAP_DARK;
+  return `https://api.maptiler.com/maps/streets-v2-dark/style.json?key=${encodeURIComponent(key)}`;
 }
 
 /*

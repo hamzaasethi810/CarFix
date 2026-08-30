@@ -38,3 +38,35 @@ describe("mapStyleUrl", () => {
     expect(mapStyleUrl("abc123").toLowerCase()).toContain("dark");
   });
 });
+
+describe("mapStyleUrl and whitespace", () => {
+  /*
+    A real production outage. The MAPTILER_KEY environment variable was saved
+    with whitespace around it — trivially easy when a key is pasted into a
+    dashboard field — and the resulting URL was
+
+      ...style.json?key= Or0z3...ra
+
+    which MapTiler rejects, so the map never loaded on production while
+    working perfectly on a local machine whose .env happened to be clean.
+  */
+  it("trims a key that arrives with whitespace", () => {
+    const url = mapStyleUrl("  abc123  ");
+    expect(url).toContain("key=abc123");
+    expect(url).not.toContain(" ");
+  });
+
+  it("trims a key that arrives with a trailing newline", () => {
+    expect(mapStyleUrl("abc123\n")).toContain("key=abc123");
+  });
+
+  it("treats a whitespace-only key as no key at all", () => {
+    // Falling back to the keyless source is right here: a blank key produces a
+    // URL that 403s on every tile, which is worse than the free basemap.
+    expect(mapStyleUrl("   ")).toBe(mapStyleUrl(undefined));
+  });
+
+  it("escapes a key so it cannot break out of the query string", () => {
+    expect(mapStyleUrl("a&b=c")).toContain("key=a%26b%3Dc");
+  });
+});
