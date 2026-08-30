@@ -162,6 +162,42 @@ function flyLeg(map: MapLibreMap, step: DescentStep): Promise<void> {
   });
 }
 
+/*
+  A lat/long grid drawn onto the sphere.
+
+  The reference globe carries one, and it does a lot of work: an unmarked
+  sphere lit from one side reads as a flat disc, while a grid that curves with
+  the surface makes it read as round. Generated rather than fetched — a
+  graticule is a few dozen lines of arithmetic and the landing view must cost
+  zero network requests.
+
+  30 degrees apart. Denser reads as a wireframe rather than a planet.
+*/
+function graticule(): GeoJSON.FeatureCollection<GeoJSON.LineString> {
+  const features: GeoJSON.Feature<GeoJSON.LineString>[] = [];
+  const line = (coordinates: [number, number][]): void => {
+    features.push({
+      type: "Feature",
+      properties: {},
+      geometry: { type: "LineString", coordinates },
+    });
+  };
+
+  for (let lng = -180; lng < 180; lng += 30) {
+    const coords: [number, number][] = [];
+    // 5-degree steps: fine enough that the curve is smooth once projected onto
+    // the sphere, coarse enough to keep the feature count trivial.
+    for (let lat = -80; lat <= 80; lat += 5) coords.push([lng, lat]);
+    line(coords);
+  }
+  for (let lat = -60; lat <= 60; lat += 30) {
+    const coords: [number, number][] = [];
+    for (let lng = -180; lng <= 180; lng += 5) coords.push([lng, lat]);
+    line(coords);
+  }
+  return { type: "FeatureCollection", features };
+}
+
 const GLOBE_STYLE: StyleSpecification = {
   version: 8,
   sources: {
@@ -175,6 +211,7 @@ const GLOBE_STYLE: StyleSpecification = {
         [-180, -MERCATOR_LAT_LIMIT],
       ],
     },
+    graticule: { type: "geojson", data: graticule() },
   },
   layers: [
     // Transparent, not a colour: what shows outside the sphere's silhouette
@@ -196,6 +233,19 @@ const GLOBE_STYLE: StyleSpecification = {
         */
         "raster-fade-duration": 0,
         "raster-resampling": "linear",
+      },
+    },
+    {
+      id: "graticule",
+      type: "line",
+      source: "graticule",
+      paint: {
+        // Barely there. It should register as structure, not as a grid drawn
+        // over a photograph — at higher opacity it reads as a wireframe and
+        // stops looking like a planet.
+        "line-color": "#8fd4ff",
+        "line-opacity": 0.13,
+        "line-width": 0.6,
       },
     },
   ],
