@@ -34,7 +34,7 @@ if (typeof window !== "undefined") {
   — so it is public domain. Credit is recorded here because public domain
   still deserves attribution, per the brief.
 
-  The original ships at 2400×1024; public/earth-dark.jpg is that file resized
+  The original ships at 2400×1024; public/earth-day.jpg is that file resized
   to 2048×1024 (a downstream sizing only — the source above is already a
   web-sized derivative, not the multi-thousand-pixel original release) so a
   sphere occupying at most half the viewport never waits on a multi-megabyte
@@ -51,7 +51,7 @@ if (typeof window !== "undefined") {
   linear interpolation lands true; regenerate it if the source is ever
   replaced.
 */
-const EARTH_TEXTURE_URL = "/earth-dark-mercator.jpg";
+const EARTH_TEXTURE_URL = "/earth-day-mercator.jpg";
 
 const EARTH_SOURCE_ID = "earth";
 const EARTH_LAYER_ID = "earth-surface";
