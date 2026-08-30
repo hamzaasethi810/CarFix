@@ -79,10 +79,10 @@ export default async function HomePage() {
       camera: { x: -22, scale: 1.5 },
       panel: (
         <div>
-          <h2 className="text-title1">Exhausts, tuning and builds</h2>
+          <h2 className="text-title1">Tunes, kits and exhausts</h2>
           <p className="text-body text-secondary mt-4 max-w-xl mx-auto text-balance">
-            Titanium systems, remaps, forced induction. The enthusiast end of
-            the shop, costed the same way as an oil change.
+            See what other owners paid to fit an exhaust, run a tune or install
+            a kit on your exact generation.
           </p>
         </div>
       ),
