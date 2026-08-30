@@ -8,6 +8,7 @@ import Link from "next/link";
 import { buttonStyles } from "@/components/ui";
 import { AreaPicker, type Area } from "@/components/area-picker";
 import { CITY_ZOOM, descentPlan, type DescentStep } from "@/lib/map/descent";
+import { fitZoom } from "@/lib/map/globe-fit";
 import { FALLBACK_ATTRIBUTION, fallbackStyleUrl, isQuotaFailure } from "@/lib/map/style";
 
 /*
@@ -201,6 +202,38 @@ const GLOBE_STYLE: StyleSpecification = {
   projection: { type: "globe" },
 };
 
+/*
+  Above this, the map is no longer the decorative globe.
+
+  fitZoom searches up to 5, and the descent lands near 11, so anything between
+  the two separates "a globe that should track its container" from "a street
+  map that should be left alone".
+*/
+const GLOBE_ZOOM_CEILING = 6;
+
+/**
+ * The zoom at which the sphere fills a container of `diameter` CSS pixels.
+ *
+ * `map.project` is synchronous and reads the transform directly, so this can
+ * bisect by setting zoom repeatedly without rendering a frame in between. The
+ * final setZoom inside the search leaves the map at the answer, which is what
+ * we want anyway.
+ *
+ * The point 90 degrees of longitude from centre lies on the sphere's limb
+ * under an orthographic view. Under MapLibre's perspective it sits slightly
+ * inside the true limb — fitZoom corrects for that with measured samples.
+ */
+function fitGlobeToContainer(map: MapLibreMap, diameter: number): number {
+  const projectedDiameterAt = (zoom: number): number => {
+    map.setZoom(zoom);
+    const centre = map.getCenter();
+    const origin = map.project(centre);
+    const limb = map.project([centre.lng + 90, centre.lat]);
+    return 2 * Math.hypot(limb.x - origin.x, limb.y - origin.y);
+  };
+  return fitZoom(projectedDiameterAt, diameter);
+}
+
 export function Globe({
   mapStyle,
   onNearby,
@@ -254,27 +287,32 @@ export function Globe({
     const map = new MapLibreGlMap({
       container: containerRef.current,
       style: GLOBE_STYLE,
-      center: [-20, 15],
+      // Framed like the reference art, which shows North America rather than
+      // the Atlantic. An ocean-centred globe reads as a flat blue disc.
+      center: [-95, 20],
       /*
-        Load-bearing, not an arbitrary starting position. At this zoom the
-        rendered sphere exactly fills .globe-stage's circle, which is what the
-        contact shadow and the rim light in globals.css are positioned against.
-        It was arrived at by measuring rendered pixels, not derived from the
-        projection, so a MapLibre change to how zoom maps to globe radius would
-        silently reopen a gap or leave a ring between sphere and stage. If the
-        globe ever looks detached from its shadow again, check this first.
+        A starting value only. The real zoom is solved from the container's
+        measured size in the effect below, on mount and on every resize.
+
+        It was a constant here, with a comment claiming it made the sphere
+        "exactly fill .globe-stage's circle". That was true at one window
+        width: the stage is sized in vmin and scales, a constant zoom does
+        not. Measured, a 2560x1440 window left the sphere 7.4% short of its
+        stage — a dead ring all the way round.
       */
       zoom: 2.05,
       /*
-        Just under the resting zoom, not near zero.
+        The floor of fitZoom's search range, not a UI limit.
 
-        Nothing on this view can zoom by hand — every handler is off — but the
-        descent drives the camera, and a stray move toward the old 0.3 floor
-        left a degenerate sphere a few pixels across with the shading and
-        shadow still sized for a full one. Fencing the bottom in means the
-        globe cannot reach a state it does not have artwork for.
+        This was 1.9, just under a resting zoom of 2.05 that no longer exists:
+        the resting zoom is now solved per container, and a small container
+        legitimately needs a zoom below 1.9. Leaving the floor above the answer
+        would clamp the sphere and reopen the dead ring on small windows — the
+        same shape of bug as the old maxZoom: 2.5 silently clamping the
+        descent. Nothing on this view can zoom by hand, so a low floor costs
+        nothing.
       */
-      minZoom: 1.9,
+      minZoom: 0.5,
       /*
         High enough for the descent to actually arrive.
 
@@ -381,6 +419,54 @@ export function Globe({
     MapTiler's free tier pauses service for the rest of the month when it is
     spent. Everything before the last leg is drawn from the local texture.
   */
+  /*
+    Keep the sphere the size of its stage.
+
+    A ResizeObserver rather than a window resize listener: the stage is sized
+    in vmin with a max-height override, so it can change size without the
+    window firing anything this component would hear.
+
+    Debounced because each fit runs an 18-step bisection, and a drag-resize
+    fires continuously. 100ms is below the threshold where a resize feels
+    laggy and far above the rate that would make the bisection cost anything.
+  */
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const fit = () => {
+      const map = mapRef.current;
+      if (!map || descendingRef.current) return;
+      /*
+        Not just "while descending" — "while still a globe".
+
+        descendingRef goes false the moment the flight LANDS, and the map is
+        then a street map at zoom ~11. A resize after that (rotating a phone,
+        dragging a window) would call this and haul the camera back out to
+        orbit, throwing away the descent the visitor just watched. Anything
+        above the globe's own range is no longer this effect's business.
+      */
+      if (map.getZoom() > GLOBE_ZOOM_CEILING) return;
+      const { width } = container.getBoundingClientRect();
+      if (width <= 0) return;
+      fitGlobeToContainer(map, width);
+    };
+
+    const observer = new ResizeObserver(() => {
+      clearTimeout(timer);
+      timer = setTimeout(fit, 100);
+    });
+    observer.observe(container);
+    fit();
+
+    return () => {
+      clearTimeout(timer);
+      observer.disconnect();
+    };
+  }, []);
+
   const descend = useCallback(
     async (to: { lat: number; lng: number }) => {
       const map = mapRef.current;
