@@ -103,8 +103,19 @@ for (const [route, slug] of ROUTES) {
       continue;
     }
 
-    // Let the map settle and any entrance animation finish.
-    await new Promise((r) => setTimeout(r, 1_400));
+    /*
+      Let the map settle, entrance animations finish, and — the reason this is
+      not 1.4s — React finish hydrating.
+
+      Some layout decisions here are made in an effect after mount: the filter
+      panel measures itself and collapses when it would swallow a short window.
+      Under the dev server hydration can take longer than 1.4s, so shots taken
+      at that mark caught the panel in its pre-collapse state and showed a
+      landscape phone buried under filters with no globe visible. The page was
+      fine; the photograph was early. Waiting past hydration means these shots
+      show what a person actually ends up looking at.
+    */
+    await new Promise((r) => setTimeout(r, 3_000));
 
     /*
       Two checks worth making while the page is open, because both are easy to
