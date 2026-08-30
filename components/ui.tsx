@@ -183,20 +183,7 @@ export const distance = (n: number | null | undefined) =>
   regardless of variant.
 */
 const BUTTON_BASE =
-  "inline-flex items-center justify-center min-h-11 px-4 rounded-control text-headline font-semibold transition-[background-color,opacity] duration-150 disabled:opacity-40 disabled:cursor-not-allowed";
-
-/*
-  Machined aluminium: a directional brush, top/bottom edges that catch light
-  differently, and a specular band that travels on hover (see .machined in
-  globals.css). Filled variants only — `plain` is a text button and stays
-  flat, or it would read as a metal slab behind a link.
-
-  BUTTON_BASE already transitions background-color/opacity on its own
-  timeline; .machined's transition is scoped to its own ::after (the
-  specular band) under `prefers-reduced-motion: no-preference`, so the two
-  never fight over the same property.
-*/
-const MACHINED = "machined";
+  "inline-flex items-center justify-center min-h-11 px-4 rounded-control text-headline transition-[background-color,opacity] duration-150 disabled:opacity-40 disabled:cursor-not-allowed";
 
 /*
   The surface a floating menu sits on.
@@ -214,22 +201,46 @@ const MACHINED = "machined";
 export const popoverSurface =
   "bg-elevated shadow-raised border border-separator";
 
+/*
+  Pressed things go IN.
+
+  The one piece of physics every person already knows, so it never has to be
+  learned. Paired with the 1px translate it reads as the control taking the
+  press rather than the page acknowledging it. 140ms because feedback under
+  ~160ms reads as instant, and anything slower reads as lag.
+*/
+const PRESS =
+  "transition-[transform,box-shadow] duration-[140ms] ease-[cubic-bezier(0.23,1,0.32,1)] " +
+  "active:translate-y-px active:scale-[0.985] " +
+  "motion-reduce:transition-none motion-reduce:active:translate-y-0 motion-reduce:active:scale-100";
+
 export const buttonStyles = {
   /*
-    The plate supplies its own alloy face and dark lettering, so these no
-    longer set a fill or a text colour — a green fill painted over the metal
-    was what made the old buttons read as coloured rectangles with a texture
-    rather than as machined parts.
+    Every variant used to be MACHINED, distinguished only by a coloured rim.
 
-    Variant now shows in the edge rather than the face, the way a real control
-    panel distinguishes one switch from another: destructive gets a red rim,
-    primary a green one, secondary none.
+    A hero material used on every control is not a material, it is wallpaper:
+    nothing reads as more important than anything else, and on the warm paper
+    ground metal-on-near-metal loses its edges entirely. Metal now appears
+    once per component and only where a metal thing belongs — the plate
+    wordmark, and nothing else here.
+
+    Variant reads from VALUE instead, which survives any ground: a filled
+    green primary, a bordered card-stock secondary, a filled red destructive.
   */
-  primary: `${BUTTON_BASE} ${MACHINED} ring-1 ring-inset ring-accent-fill/70`,
-  secondary: `${BUTTON_BASE} ${MACHINED}`,
-  destructive: `${BUTTON_BASE} ${MACHINED} ring-1 ring-inset ring-destructive-fill/80`,
-  // Text button: no material — a metal slab behind a link would misread as a control.
-  plain: `${BUTTON_BASE} text-accent hover:bg-fill`,
+  primary:
+    `${BUTTON_BASE} ${PRESS} bg-accent-fill text-on-accent font-semibold ` +
+    "shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_1px_1px_rgba(30,33,29,0.18),0_4px_10px_-3px_rgba(27,107,60,0.5)] " +
+    "hover:bg-accent-hover",
+  secondary:
+    `${BUTTON_BASE} ${PRESS} bg-elevated text-label border border-separator ` +
+    "shadow-[inset_0_0.5px_0_rgba(255,255,255,0.9),0_1px_1px_rgba(30,33,29,0.08)] " +
+    "hover:bg-grouped",
+  destructive:
+    `${BUTTON_BASE} ${PRESS} bg-destructive-fill text-on-destructive font-semibold ` +
+    "shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_1px_1px_rgba(30,33,29,0.18)] " +
+    "hover:brightness-110",
+  // Text button: no material — a slab behind a link would misread as a control.
+  plain: `${BUTTON_BASE} ${PRESS} text-accent hover:bg-fill`,
 } as const;
 
 export function Skeleton({ className = "" }: { className?: string }) {

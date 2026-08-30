@@ -17,92 +17,98 @@
 */
 
 :root {
-  color-scheme: dark;
-
-  /* Ground — deep forest green. Texture is applied on body, not here. */
-  --bg: #050A14;
-  --bg-elevated: #0D1524;   /* raised work surface */
-  --bg-grouped: #081020;
-  --bg-tertiary: #101C2E;
-  --fill-quaternary: rgba(220, 236, 226, 0.10);
-
-  /* Label hierarchy — white and near-white, per the spec. */
-  --label: #F2F7F3;
-  --label-secondary: rgba(228, 240, 231, 0.82);
-  --label-tertiary: rgba(228, 240, 231, 0.62);
-  --separator: rgba(180, 208, 190, 0.22);
+  color-scheme: light;
 
   /*
-    A brighter green than the old light theme's, so it reads as text against
-    the dark ground: #6FCF8E on #0E1F16 clears 4.5:1 (see contrast.test.ts).
+    Warm paper, not white.
+
+    Clinical white (#FFF with grey text) is what makes a light interface read
+    as a settings screen. The warmth is what lets it read as a surface — a
+    workbench, a card, a docket — which is the whole governing metaphor. Every
+    value below was checked with lib/design/contrast before being written
+    here; tests/contrast.test.ts holds them to it.
   */
-  --accent: #6FCF8E;
-  --accent-fill: #2E7D4F;
-  --accent-hover: #37945D;
+  --bg: #EFEAE0;
+  --bg-elevated: #FCFAF6;   /* card stock */
+  --bg-grouped: #E6E0D4;
+  --bg-tertiary: #DCD5C7;
+  --fill-quaternary: rgba(30, 33, 29, 0.06);
+
+  /* Warm near-black, never pure black: pure black on warm paper reads cold. */
+  --label: #1E211D;
+  --label-secondary: rgba(30, 33, 29, 0.74);
+  --label-tertiary: rgba(30, 33, 29, 0.58);
+  --separator: rgba(30, 33, 29, 0.14);
+
+  /*
+    A deep green, because this one has to work as TEXT on paper as well as a
+    button fill. The old #6FCF8E was picked to glow against near-black and
+    manages 1.6:1 here — invisible. 6.17:1 on the ground, 7.09:1 on a card.
+  */
+  --accent: #186237;
+  --accent-fill: #1B6B3C;
+  --accent-hover: #14522E;
   --on-accent: #FFFFFF;
 
-  --destructive: #FF6B6B;
-  --destructive-fill: #A81E1E;
+  --destructive: #9E2A1B;
+  --destructive-fill: #9E2A1B;
   --on-destructive: #FFFFFF;
 
-  --success: #7BD69A;
-  --warning: #E8A33D;
+  --success: #186237;
+  --warning: #8A5A00;
   /* Gold — the subscription mark only (GoldCar and its "Subscribed" chip). */
-  --gold: #E8B84D;
+  --gold: #8A6A12;
 
   /* Brand — the wordmark and map pins only, never a generic control. */
-  --brand: #6FCF8E;
+  --brand: #186237;
+
+  /* The stamp. Ink on paper: attests, never acts. Not a button colour. */
+  --stamp: #B4432F;
 
   /*
-    Liquid Glass, retuned dark. On a light page, frosted glass lightens and
-    saturates what's under it; on this deep-green, textured ground the same
-    light-tinted glass reads as a smear painted over the material rather than
-    a pane of something. A dark, smoked pane — low-alpha near-black, the same
-    blur — instead darkens and desaturates the map or content behind it,
-    which is what glass over a dark scene actually looks like. `regular`
-    stays denser for text legibility; `clear` stays lighter for floating over
-    media (the map).
+    Glass, retuned light.
+
+    The dark theme used a smoked near-black pane, which over paper reads as a
+    grey slab — that was the single ugliest thing in the light spike. Over a
+    light ground glass lightens and saturates what is behind it, so the pane
+    is a high-alpha near-white instead.
   */
-  --glass-regular-bg: rgba(6, 14, 10, 0.55);
-  --glass-regular-blur: 32px;
-  --glass-clear-bg: rgba(6, 14, 10, 0.32);
-  --glass-clear-blur: 20px;
-  --glass-saturate: 1.3;
-  --glass-border: rgba(255, 255, 255, 0.12);
-  /*
-    Two shadows: a wide soft one for lift off the map, and a hairline inner
-    highlight along the top edge that reads as the thickness of the glass —
-    dimmer than a light-glass highlight would be, so it doesn't read as a
-    light source of its own on a dark ground.
-  */
+  --glass-regular-bg: rgba(252, 250, 246, 0.82);
+  --glass-regular-blur: 24px;
+  --glass-clear-bg: rgba(252, 250, 246, 0.62);
+  --glass-clear-blur: 18px;
+  --glass-saturate: 1.15;
+  --glass-border: rgba(30, 33, 29, 0.1);
   --glass-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.45),
-    0 2px 8px rgba(0, 0, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    0 1px 2px rgba(30, 33, 29, 0.08),
+    0 12px 32px -8px rgba(30, 33, 29, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
   --radius-card: 10px;
   --radius-control: 6px;
   --radius-glass: 12px;
 
   /*
-    A card has to read as a surface sitting on something, not as a rectangle
-    drawn on the same colour. Shadows tuned for a white page are close to
-    invisible on a dark, textured ground — on dark grounds the separation
-    comes mainly from a 1px top highlight (the edge catching light) plus a
-    wider, darker drop shadow than a light theme would ever need, since the
-    ground itself is already dark and a faint shadow just disappears into it.
+    Lit from above and slightly left, like everything else on the page.
+
+    On a dark ground separation came mostly from a top highlight, because a
+    shadow disappears into darkness. On paper it inverts: the shadow does the
+    work and the highlight is a hairline along the top edge where the card
+    catches the light. One light source, consistently, is what stops
+    skeuomorphism reading as fake.
   */
   --shadow-card:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 1px 2px rgba(0, 0, 0, 0.3),
-    0 8px 20px rgba(0, 0, 0, 0.28),
-    0 0 0 0.5px rgba(0, 0, 0, 0.4);
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.9),
+    0 1px 1px rgba(30, 33, 29, 0.1),
+    0 8px 18px -6px rgba(30, 33, 29, 0.16),
+    0 0 0 0.5px rgba(30, 33, 29, 0.07);
   --shadow-raised:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 2px 6px rgba(0, 0, 0, 0.35),
-    0 16px 40px rgba(0, 0, 0, 0.35),
-    0 0 0 0.5px rgba(0, 0, 0, 0.45);
+    inset 0 0.5px 0 rgba(255, 255, 255, 0.95),
+    0 1px 2px rgba(30, 33, 29, 0.12),
+    0 20px 40px -16px rgba(30, 33, 29, 0.24),
+    0 0 0 0.5px rgba(30, 33, 29, 0.08);
 }
+
 
 /* Increase Contrast: deepen the ground, brighten type, raise separators. */
 @media (prefers-contrast: more) {
@@ -135,6 +141,22 @@
 }
 
 @theme inline {
+  /*
+    The condensed face, as a utility.
+
+    Named `condensed` rather than `display` deliberately: Next injects the
+    font under `--font-display`, and Tailwind v4 builds `font-*` utilities
+    from the `--font-*` namespace, so `--font-display: var(--font-display)`
+    would be a variable defined in terms of itself. A different name breaks
+    the cycle and says what the face actually is.
+
+    Its job is numbers — prices, mileage, year ranges. Condensed tabular
+    numerals over a data table is the strongest automotive cue available and
+    the font is already loaded, so it costs nothing.
+  */
+  --font-condensed: var(--font-display), "Barlow Condensed", system-ui, sans-serif;
+
+  --color-stamp: var(--stamp);
   --color-bg: var(--bg);
   --color-elevated: var(--bg-elevated);
   --color-grouped: var(--bg-grouped);
@@ -202,47 +224,28 @@ html {
 body {
   background-color: var(--bg);
   /*
-    The ground is a night-satellite view: lit roads running out past the
-    horizon, brighter where they meet, over a near-black blue.
+    The bench: warm paper under one overhead light.
 
-    Blue rather than green so the globe sits in the same air as the page
-    instead of being cut out of it — the sphere's own atmosphere is blue, and
-    against a green ground the two never belonged to one picture. The road
-    lights stay green, which is where the brand colour lives now.
+    The road plane that used to live here was a perspective composition built
+    to sit behind the globe, and it was on `body`, so it also sat behind every
+    login form and policy page — converging on nothing. A background should be
+    a surface the interface rests on, not a picture competing with it.
 
-    This replaced a vertical brushed grain. The grain read as slats — a
-    repeating linear gradient looks like material up close and like blinds at
-    a glance, and on a page whose subject is a map it said nothing about
-    driving. Roads do, and they give the globe something to sit over that
-    belongs to the same picture.
-
-    Drawn rather than fetched (scripts/generate-roads.mjs): the landing view's
-    whole cost argument is that it makes zero tile requests, and real road data
-    would break that on the one page every visitor sees first.
+    The fibre is deliberately below the threshold of notice. A texture you can
+    see is a texture arguing with the content in front of it.
   */
   background-image:
-    radial-gradient(
-      ellipse at 50% 42%,
-      rgba(0, 0, 0, 0) 26%,
-      rgba(0, 0, 0, 0.62) 100%
-    ),
-    url("/roads.svg"),
-    radial-gradient(ellipse at 50% 45%, rgba(16, 46, 74, 0.55) 0%, rgba(5, 10, 20, 0) 72%);
-  /*
-    `cover`, not a pixel size, and never `repeat`.
-
-    roads.svg is a single composition with a definite frame, not a swatch. It
-    used to be repeated at 1600x1000, and it does not wrap — so every window
-    larger than that showed the tile's own edges as hard rectangular seams
-    around the globe, measured at 3.3x the surrounding ground's pixel
-    variation. Scaling one copy to cover means there is no second tile to
-    disagree with the first. On very tall or very narrow windows `cover` crops
-    the composition, which is correct: it is a background, and losing its
-    edges costs nothing.
-  */
-  background-size: cover, cover, cover;
-  background-position: center, center, center;
-  background-repeat: no-repeat, no-repeat, no-repeat;
+    radial-gradient(ellipse at 50% -8%, rgba(255, 255, 255, 0.85) 0%, rgba(239, 234, 224, 0) 58%),
+    repeating-linear-gradient(
+      94deg,
+      rgba(30, 33, 29, 0.014) 0px,
+      rgba(30, 33, 29, 0.014) 2px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0) 5px
+    );
+  background-size: cover, auto;
+  background-position: center, center;
+  background-repeat: no-repeat, repeat;
   background-attachment: fixed;
   color: var(--label);
   font-family:
