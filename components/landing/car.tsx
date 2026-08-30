@@ -238,9 +238,8 @@ export function Car({
           <circle cx={cx} cy="98" r="28" fill="#14100F" />
           <circle cx={cx} cy="98" r="21" fill="#241F1D" />
           <circle cx={cx} cy="98" r="15" fill="url(#sl-hub)" />
-          {Array.from({ length: 10 }).map((_, i) => {
-            const a = (i / 10) * Math.PI * 2;
-            return (
+          {/* Ten spokes, each just rotated into place around the hub. */}
+          {Array.from({ length: 10 }).map((_, i) => (
               <rect
                 key={i}
                 x={cx - 1.4}
@@ -251,8 +250,7 @@ export function Car({
                 fill="#8C948F"
                 transform={`rotate(${(i / 10) * 360} ${cx} 98)`}
               />
-            );
-          })}
+          ))}
           <circle cx={cx} cy="98" r="4.5" fill="#5A625D" />
         </g>
       ))}
