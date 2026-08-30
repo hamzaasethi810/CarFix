@@ -273,6 +273,22 @@ const GLOBE_ZOOM_CEILING = 6;
  * under an orthographic view. Under MapLibre's perspective it sits slightly
  * inside the true limb — fitZoom corrects for that with measured samples.
  */
+/*
+  How much of the stage the sphere actually fills.
+
+  Not 1. Filling the stage exactly puts the sphere's limb precisely on
+  .globe-sphere's `clip-path: circle(50%)` boundary, and the clip shaves it at
+  the four points where the circle is tangent to it — the globe came out
+  visibly flattened at top, bottom, left and right, with the stage's 1px ring
+  reading as a hard edge around it. The limb needs to land inside the clip,
+  not on it.
+
+  0.94 leaves that margin without reopening the dead ring this whole mechanism
+  exists to close. scripts/verify-globe-fit.mjs asserts the sphere stays in a
+  band around this, so neither failure can come back unnoticed.
+*/
+const STAGE_FILL = 0.94;
+
 function fitGlobeToContainer(map: MapLibreMap, diameter: number): number {
   const projectedDiameterAt = (zoom: number): number => {
     map.setZoom(zoom);
@@ -281,7 +297,7 @@ function fitGlobeToContainer(map: MapLibreMap, diameter: number): number {
     const limb = map.project([centre.lng + 90, centre.lat]);
     return 2 * Math.hypot(limb.x - origin.x, limb.y - origin.y);
   };
-  return fitZoom(projectedDiameterAt, diameter);
+  return fitZoom(projectedDiameterAt, diameter * STAGE_FILL);
 }
 
 export function Globe({

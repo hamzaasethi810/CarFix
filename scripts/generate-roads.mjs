@@ -39,14 +39,25 @@ const H = 1440;
   from the viewer: T_NEAR lands at the bottom edge, T_FAR just under the
   horizon. Screen scale is T_NEAR/T, which is what makes distance compress.
 */
-const HORIZON = H * 0.26;
+const HORIZON = H * 0.2;
 const T_NEAR = 1.0;
 const T_FAR = 9.0;
 const SPREAD = W * 0.62;
 
+/*
+  The vanishing point sits right of centre, not on the axis.
+
+  Everything receding converges here, so where it sits IS the camera angle.
+  Centred, the plane is seen head-on and the roads leave as a symmetrical fan,
+  which reads as a road going into the distance rather than as country the
+  globe is hanging over. Pushed to 0.72 the whole plane runs away toward the
+  upper right, which is the oblique view the reference has.
+*/
+const VANISH_X = W * 0.72;
+
 function project(x, t) {
   const s = T_NEAR / t;
-  return { x: W / 2 + x * SPREAD * s, y: HORIZON + (H - HORIZON) * s, s };
+  return { x: VANISH_X + x * SPREAD * s, y: HORIZON + (H - HORIZON) * s, s };
 }
 
 /* Mulberry32 — small, seeded, and good enough for scattering points. */
@@ -63,58 +74,60 @@ function rng(seed) {
 const rand = rng(20260830);
 
 /*
-  Two families, because a plane needs both to read as a plane.
+  Two families of roads, both DIAGONAL in world space.
 
-  The ones crossing the view give the horizontal highway character. The ones
-  running away from the viewer are what actually sell the depth: they converge
-  toward the vanishing point, and nothing else in the image does that.
+  The previous version had one family running across the view and one running
+  away from it. Projected, the first came out horizontal and the second came
+  out as spokes converging on the vanishing point — so the picture was built
+  entirely from horizontals and verticals, which is exactly what the reference
+  is not. Its roads cut across the ground at an angle, and the ground itself is
+  seen obliquely.
+
+  Giving every road a heading well away from both axes fixes that: none of them
+  is horizontal on screen, none is a spoke, and because they are still parallel
+  within a family they still converge — so the depth survives while the
+  character changes completely.
 */
-const CROSSING = 38;
-const RECEDING = 14;
+const ROADS = 64;
 
-/** A road running across the view at roughly constant distance. */
-function crossingRoad() {
-  // Biased toward the near half, where the plane has room; far roads crowd
-  // into a few pixels below the horizon and add nothing but noise.
-  const t0 = T_NEAR + (T_FAR - T_NEAR) * Math.pow(rand(), 1.25);
-  let t = t0;
-  let drift = (rand() - 0.5) * 0.05;
+function road() {
+  /*
+    Two headings, roughly +32 and -36 degrees in world space, each jittered.
+
+    Two rather than uniformly random because a road network has grain: roads
+    tend to run with or across the lie of the land, and a set of headings
+    scattered evenly reads as a scribble. Kept away from 0 (which projects to
+    horizontal) and from +/-90 (which projects to a spoke through the
+    vanishing point).
+  */
+  const base = rand() < 0.5 ? 0.56 : -0.63;
+  const theta = base + (rand() - 0.5) * 0.42;
+  const x0 = (rand() - 0.5) * 26;
+  /*
+    Biased toward the near ground.
+
+    Perspective spreads the closest roads furthest apart, so a distribution
+    that is uniform in DISTANCE leaves the bottom of the frame nearly bare
+    while the far half packs together. Weighting toward small t puts roads
+    where the plane is widest, which is where the eye has most room to notice
+    they are missing.
+  */
+  const t0 = T_NEAR + (T_FAR - T_NEAR) * Math.pow(rand(), 1.9);
+  const cos = Math.cos(theta);
+  const sin = Math.sin(theta);
+
   const pts = [];
-  for (let x = -7; x <= 7; x += 0.28) {
-    /*
-      A slow wander in depth, clamped.
-
-      Unclamped, the drift is a random walk: it accumulates, and one road in
-      ten curls right off its heading and loops across the frame. Bounding the
-      rate keeps every road committed to a direction while still letting it
-      bend.
-    */
-    drift = Math.max(-0.05, Math.min(0.05, drift + (rand() - 0.5) * 0.012));
-    t = Math.max(T_NEAR * 0.9, t + drift);
-    pts.push(project(x, t));
+  for (let u = -20; u <= 20; u += 0.22) {
+    const t = t0 + u * sin;
+    // Behind the camera, or so far off it contributes nothing but a stray
+    // pixel at the horizon.
+    if (t < T_NEAR * 0.85 || t > T_FAR * 1.8) continue;
+    pts.push(project(x0 + u * cos, t));
   }
   return pts;
 }
 
-/** A road running away from the viewer, converging on the vanishing point. */
-function recedingRoad() {
-  let x = (rand() - 0.5) * 9;
-  let drift = (rand() - 0.5) * 0.06;
-  const pts = [];
-  for (let t = T_FAR; t >= T_NEAR * 0.92; t -= 0.14) {
-    // Clamped for the same reason as the crossing roads: an unbounded random
-    // walk produces one road that sweeps across everything else.
-    drift = Math.max(-0.07, Math.min(0.07, drift + (rand() - 0.5) * 0.02));
-    x += drift;
-    pts.push(project(x, t));
-  }
-  return pts;
-}
-
-const roads = [
-  ...Array.from({ length: CROSSING }, crossingRoad),
-  ...Array.from({ length: RECEDING }, recedingRoad),
-];
+const roads = Array.from({ length: ROADS }, road).filter((r) => r.length > 3);
 
 /*
   Intersections, found in screen space after projection.

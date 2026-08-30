@@ -644,7 +644,15 @@ body:has(.map-root) footer {
   */
   --globe-d: min(62vmin, 760px, calc(100dvh - 23rem));
   box-shadow:
-    0 0 0 1px rgba(126, 200, 255, 0.42),
+    /*
+      No 1px ring here any more.
+
+      It was drawn on the stage's own boundary, which is where the clip lives,
+      not where the sphere's limb is — so once the sphere was inset to stop the
+      clip shaving it flat, the ring stood off on its own as a hard edge
+      floating around the planet. The atmosphere below does the limb-brightening
+      job without asserting a boundary.
+    */
     0 0 calc(var(--globe-d) * 0.0355) rgba(90, 170, 240, 0.58),
     0 0 calc(var(--globe-d) * 0.113) rgba(60, 140, 220, 0.3),
     0 0 calc(var(--globe-d) * 0.226) rgba(40, 110, 190, 0.18),
