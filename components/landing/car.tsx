@@ -49,11 +49,41 @@ export function Car({
           white and black. The shading never changes, only what is underneath
           it, so any colour stays lit from the same direction.
         */}
-        <linearGradient id="sl-shade" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#fff" stopOpacity="0.3" />
-          <stop offset="34%" stopColor="#fff" stopOpacity="0.05" />
-          <stop offset="72%" stopColor="#000" stopOpacity="0.12" />
-          <stop offset="100%" stopColor="#000" stopOpacity="0.45" />
+        {/*
+          `userSpaceOnUse`, not the default.
+
+          SVG gradients are objectBoundingBox by default, so each element gets
+          its own copy of the ramp squeezed into its own height. The bonnet is
+          a short panel, so it received the entire sky-to-ground gradient
+          across 25 units and came out a visibly different colour from the body
+          it sits on. In user space every panel is lit by the same gradient at
+          the same height, which is what "one light source" has to mean.
+        */}
+        <linearGradient id="sl-shade" gradientUnits="userSpaceOnUse" x1="0" y1="29" x2="0" y2="104">
+          <stop offset="0%" stopColor="#fff" stopOpacity="0.5" />
+          <stop offset="10%" stopColor="#fff" stopOpacity="0.16" />
+          <stop offset="40%" stopColor="#fff" stopOpacity="0.02" />
+          <stop offset="45%" stopColor="#000" stopOpacity="0.06" />
+          <stop offset="47%" stopColor="#fff" stopOpacity="0.34" />
+          <stop offset="52%" stopColor="#fff" stopOpacity="0.06" />
+          <stop offset="72%" stopColor="#000" stopOpacity="0.14" />
+          <stop offset="90%" stopColor="#000" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="#000" stopOpacity="0.62" />
+        </linearGradient>
+        {/*
+          The horizon reflection, as a separate band.
+
+          The single most useful thing on the whole drawing. Real bodywork is a
+          mirror: the top surfaces reflect the sky and the flanks below the
+          shoulder reflect the ground, and the two meet at a hard bright line
+          running the length of the car. A smooth top-to-bottom ramp has no
+          such line, which is why it reads as plastic no matter how many stops
+          it has.
+        */}
+        <linearGradient id="sl-ground" gradientUnits="userSpaceOnUse" x1="0" y1="80" x2="0" y2="104">
+          <stop offset="0%" stopColor="#B8AE9C" stopOpacity="0" />
+          <stop offset="55%" stopColor="#B8AE9C" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="#8A806E" stopOpacity="0.34" />
         </linearGradient>
         <linearGradient id="sl-body" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor={paint} stopOpacity="1" />
@@ -67,10 +97,28 @@ export function Car({
           <stop offset="45%" stopColor={paint} />
           <stop offset="100%" stopColor="#000" stopOpacity="0.35" />
         </linearGradient>
-        <linearGradient id="sl-glass" x1="0" y1="0" x2="0.25" y2="1">
-          <stop offset="0%" stopColor="#DCE6E8" />
-          <stop offset="55%" stopColor="#8FA3AA" />
-          <stop offset="100%" stopColor="#5E7178" />
+        {/*
+          Glass reflects at a different angle from paint, so its light band is
+          diagonal rather than horizontal. Sharing the body's gradient is what
+          made the windows look like painted panels.
+        */}
+        <linearGradient id="sl-glass" x1="0.1" y1="0" x2="0.75" y2="1">
+          <stop offset="0%" stopColor="#F2F7F8" />
+          <stop offset="28%" stopColor="#C3D2D6" />
+          <stop offset="30%" stopColor="#8DA2A9" />
+          <stop offset="72%" stopColor="#6E838B" />
+          <stop offset="100%" stopColor="#48575D" />
+        </linearGradient>
+        {/* A lens, not a white slab: bright at the top, deep at the bottom. */}
+        <linearGradient id="sl-lens" x1="0" y1="0" x2="0.2" y2="1">
+          <stop offset="0%" stopColor="#FBFDFD" />
+          <stop offset="45%" stopColor="#C8D6DA" />
+          <stop offset="100%" stopColor="#7E9198" />
+        </linearGradient>
+        <linearGradient id="sl-tyre" x1="0" y1="0" x2="0.3" y2="1">
+          <stop offset="0%" stopColor="#3A3634" />
+          <stop offset="42%" stopColor="#1B1817" />
+          <stop offset="100%" stopColor="#0B0A09" />
         </linearGradient>
         <radialGradient id="sl-hub">
           <stop offset="0%" stopColor="#F2F4F3" />
@@ -128,6 +176,31 @@ export function Car({
         fill="url(#sl-shade)"
       />
 
+      {/* What the lower flank is reflecting: warm ground, not more sky. */}
+      <path
+        d="M20 88 L468 84 L470 96 C470 101 466 104 458 104 L26 104 C18 104 13 101 14 96 Z"
+        fill="url(#sl-ground)"
+      />
+
+      {/*
+        The specular: a thin hard highlight where the top surfaces turn over.
+        Paint has one; a gradient alone never produces it.
+      */}
+      <path
+        d="M44 70 L148 65"
+        fill="none"
+        stroke="rgba(255,255,255,0.55)"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+      <path
+        d="M214 39 C224 37 234 36 244 36 L276 36"
+        fill="none"
+        stroke="rgba(255,255,255,0.6)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+      />
+
       {/*
         The bay, drawn AFTER the body and BEFORE the clamshell.
 
@@ -174,7 +247,8 @@ export function Car({
         />
         {/* the shut line, and the headlight it runs into */}
         <path d="M34 78 L148 70" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.4" />
-        <path d="M22 84 L46 80 L48 88 L24 91 Z" fill="#E9EEF0" opacity="0.85" />
+        <path d="M22 84 L46 80 L48 88 L24 91 Z" fill="url(#sl-lens)" />
+        <path d="M24 85 L44 82" stroke="rgba(255,255,255,0.85)" strokeWidth="1.2" strokeLinecap="round" />
       </g>
 
       {/* roofline catching the overhead light */}
@@ -215,43 +289,52 @@ export function Car({
       </g>
 
       {/*
-        Arch shading.
+        Arch shading: a tight dark lip, not a band.
 
-        Drawn as a thin dark arc hugging the top of each wheel, not as an
-        ellipse. The first attempt used ellipses painted after the body, which
-        put a dark blob ON the paint around each wheel instead of a shadow
-        under the arch — the wheels looked stuck to the side of the car rather
-        than sitting inside it.
+        This was a 7-unit stroke at 45% black, which read as two stripes
+        painted across the flank rather than shadow inside an arch. The tyres
+        carry their own depth now, so this only has to darken the few units
+        where body meets wheel.
       */}
       {[112, 368].map((cx) => (
         <path
           key={cx}
-          d={`M${cx - 31} 100 A31 31 0 0 1 ${cx + 31} 100`}
+          d={`M${cx - 29} 99 A29 29 0 0 1 ${cx + 29} 99`}
           fill="none"
-          stroke="rgba(0,0,0,0.45)"
-          strokeWidth="7"
+          stroke="rgba(0,0,0,0.3)"
+          strokeWidth="3"
         />
       ))}
 
       {[112, 368].map((cx) => (
         <g key={cx}>
-          <circle cx={cx} cy="98" r="28" fill="#14100F" />
-          <circle cx={cx} cy="98" r="21" fill="#241F1D" />
-          <circle cx={cx} cy="98" r="15" fill="url(#sl-hub)" />
-          {/* Ten spokes, each just rotated into place around the hub. */}
+          {/* tyre, lit from above like everything else */}
+          <circle cx={cx} cy="98" r="28" fill="url(#sl-tyre)" />
+          {/* the sidewall's inner edge, which is what gives a tyre depth */}
+          <circle cx={cx} cy="98" r="21.5" fill="none" stroke="#000" strokeOpacity="0.5" strokeWidth="2" />
+          {/* brake disc, visible between the spokes */}
+          <circle cx={cx} cy="98" r="17" fill="#4A4F4C" />
+          <circle cx={cx} cy="98" r="17" fill="none" stroke="#2B2F2D" strokeWidth="1.4" />
+          {/* caliper */}
+          <path
+            d={`M${cx - 4} ${98 - 16} a16 16 0 0 0 -11 9 l4 3 a12 12 0 0 1 8 -7 Z`}
+            fill="#8A3B2E"
+          />
+          <circle cx={cx} cy="98" r="13" fill="url(#sl-hub)" />
           {Array.from({ length: 10 }).map((_, i) => (
-              <rect
-                key={i}
-                x={cx - 1.4}
-                y={98 - 15}
-                width="2.8"
-                height="11"
-                rx="1.4"
-                fill="#8C948F"
-                transform={`rotate(${(i / 10) * 360} ${cx} 98)`}
-              />
+            <rect
+              key={i}
+              x={cx - 1.3}
+              y={98 - 13}
+              width="2.6"
+              height="9.5"
+              rx="1.3"
+              fill="#9AA29D"
+              transform={`rotate(${(i / 10) * 360} ${cx} 98)`}
+            />
           ))}
-          <circle cx={cx} cy="98" r="4.5" fill="#5A625D" />
+          <circle cx={cx} cy="98" r="4" fill="#6B736E" />
+          <circle cx={cx} cy="98" r="4" fill="none" stroke="rgba(255,255,255,0.5)" strokeWidth="0.8" />
         </g>
       ))}
 
