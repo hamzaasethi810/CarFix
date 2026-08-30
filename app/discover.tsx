@@ -690,7 +690,11 @@ export function Discover({
           won, with it present the panel won, and ordering the wrappers fixed
           it while keeping the glass.
         */}
-        <div className="pointer-events-auto p-3 sm:p-4 relative z-20">
+        <div
+          className={`pointer-events-auto p-3 sm:p-4 relative z-20 ${
+            onGlobe ? "" : "map-enter-bar"
+          }`}
+        >
           {/*
             Bounded to the window and scrollable inside.
 
@@ -923,8 +927,14 @@ export function Discover({
           just a shape in the way of the thing the page is for.
         */}
         <div
+          /*
+            The entrance lives on this wrapper, not on the draggable panel
+            inside it. That one already owns its transform — the stow
+            translate and the swipe offset both write to it — and an animation
+            here would be fighting them for the same property.
+          */
           className={`flex-1 min-h-0 flex flex-col sm:flex-row sm:items-stretch relative z-10 ${
-            onGlobe ? "hidden" : ""
+            onGlobe ? "hidden" : "map-enter-panel"
           }`}
         >
           <div
