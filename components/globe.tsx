@@ -319,6 +319,17 @@ export function Globe({
   // arriving, so a second tap on Nearby (or the area picker) can't start a
   // second descent on top of the first one.
   const [descending, setDescending] = useState(false);
+  /*
+    Set at the start of the FINAL leg, not at the start of the flight.
+
+    The globe used to fly the camera down inside its circular stage and then
+    be swapped for a separate full-screen map component, so arriving looked
+    like a map appearing inside a porthole and then cutting to full screen.
+    This drives the stage's own expansion, so the disc opens out into the
+    window as the camera lands and the component swap underneath it has
+    nothing left to reveal.
+  */
+  const [arriving, setArriving] = useState(false);
 
   const fallbackAppliedRef = useRef(false);
   const attributionAddedRef = useRef(false);
@@ -559,6 +570,12 @@ export function Globe({
         setDescending(false);
       };
 
+      /* Leaves the stage its normal size if the flight never gets to land. */
+      const abort = () => {
+        descendingRef.current = false;
+        setArriving(false);
+      };
+
       const plan = descentPlan({ ...to, zoom: CITY_ZOOM });
       const streetStyle = startedOnFallback() ? fallbackStyleUrl() : mapStyle;
 
@@ -575,8 +592,9 @@ export function Globe({
 
       if (still) {
         await swapStyle(map, streetStyle);
-        if (!aliveRef.current) return void (descendingRef.current = false);
+        if (!aliveRef.current) return void abort();
         map.jumpTo({ center: [last.lng, last.lat], zoom: last.zoom });
+        setArriving(true);
         finish();
         onNearby(to);
         return;
@@ -588,12 +606,20 @@ export function Globe({
         // because a camera move started while a style is loading is dropped.
         if (i === plan.length - 1) {
           await swapStyle(map, streetStyle);
-          if (!aliveRef.current) return void (descendingRef.current = false);
+          if (!aliveRef.current) return void abort();
+          /*
+            The disc opens out into the window over this leg.
+
+            Started here rather than at the top of the flight so the globe is
+            still a globe while it crosses the world, and only stops being one
+            once it is arriving somewhere.
+          */
+          setArriving(true);
         }
         await flyLeg(map, step);
         // Checked after every await: the map may have been torn down while
         // this leg was in the air.
-        if (!aliveRef.current) return void (descendingRef.current = false);
+        if (!aliveRef.current) return void abort();
       }
 
       finish();
@@ -661,8 +687,12 @@ export function Globe({
         override for why it has to live in a plain media query rather than
         another vmin term next to .globe-stage's own.
       */}
-      <div className="absolute inset-0 flex items-center justify-center p-4 pb-32 globe-chrome">
-        <div className="globe-stage">
+      <div
+        className={`absolute inset-0 flex items-center justify-center p-4 pb-32 globe-chrome ${
+          arriving ? "globe-chrome--arriving" : ""
+        }`}
+      >
+        <div className={`globe-stage ${arriving ? "globe-stage--arriving" : ""}`}>
           {/* Belongs to the page, not the map canvas — see .globe-ground in globals.css. */}
           <div className="globe-ground" aria-hidden="true" />
           <div className="globe-sphere">
@@ -702,7 +732,7 @@ export function Globe({
         space either side sits over the globe's drag-to-spin area and should
         let a drag through rather than swallowing it.
       */}
-      <div className="absolute top-0 inset-x-0 pt-6 sm:pt-10 flex justify-center gap-6 sm:gap-10 pointer-events-none">
+      <div className="absolute top-0 inset-x-0 pt-6 sm:pt-10 flex justify-center gap-6 sm:gap-10 pointer-events-none globe-actions">
         <button
           type="button"
           onClick={handleNearby}

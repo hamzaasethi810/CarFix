@@ -26,7 +26,16 @@ export function SiteHeader({
     <header className="sticky top-0 z-50 bg-transparent">
       <nav
         aria-label="Primary"
-        className="w-full max-w-none px-3 sm:px-6 h-16 flex items-center gap-2 sm:gap-4"
+        /*
+          h-12 on a short window.
+
+          4rem of header is fine when there is height to spend and expensive
+          when there is not: on a 956x440 landscape phone it was a sixth of the
+          screen, and the globe below it was starved down to a 114px marble.
+          Keyed on height rather than width because that is what is actually
+          scarce — a wide landscape phone is not a desktop.
+        */
+        className="w-full max-w-none px-3 sm:px-6 h-12 [@media(min-height:481px)]:h-16 flex items-center gap-2 sm:gap-4"
       >
         <Link
           href="/"

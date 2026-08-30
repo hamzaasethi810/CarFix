@@ -707,6 +707,25 @@ body:has(.map-root) footer {
   threshold vmin alone never reaches it (26vmin tops out at 124.8px when
   height is 480), so it binds nowhere today — kept only as a backstop.
 */
+/*
+  Short landscape: claw back the vertical space the globe is starved of.
+
+  On a landscape phone the horizontal axis is abundant and the vertical one is
+  the whole problem. Measured on a 956x440 iPhone 16 Pro Max, the band between
+  the action row and the filter bar was about 139px — so the globe came out a
+  114px marble adrift in a very wide, very empty screen. It was not that the
+  cap was too tight; it was that the furniture above it was using space it did
+  not need.
+
+  The header's 4rem and the action row's 2.5rem top padding are both sized for
+  a window with room to spare. At this height they are simply expensive.
+*/
+@media (max-height: 480px) {
+  .globe-actions {
+    padding-top: 0.25rem;
+  }
+}
+
 @media (max-height: 480px) {
   .globe-stage {
     /*
@@ -718,7 +737,14 @@ body:has(.map-root) footer {
       one — a halo several times the size of the sphere it belongs to. Setting
       the variable moves all three together.
     */
-    --globe-d: min(26vmin, 140px);
+    /*
+      The third term is the same band-awareness the base rule uses. At
+      740x360 the two vmin terms alone left the globe overlapping the filter
+      bar by 2px; subtracting the furniture directly is what scales it down
+      on the shortest screens without shrinking it on the iPhone-sized ones,
+      where this term never binds.
+    */
+    --globe-d: min(36vmin, 190px, calc(100dvh - 15rem));
   }
 }
 
@@ -737,7 +763,16 @@ body:has(.map-root) footer {
 */
 @media (max-height: 480px) {
   .globe-chrome {
-    padding-bottom: min(4rem, 15vh);
+    /*
+      Biases the globe upward, away from the filter bar.
+
+      Measured across the short-landscape range: at 2.75rem/11vh the slack was
+      lopsided — 31px above the globe and 4px of OVERLAP below it at 844x390,
+      while 956x440 sat comfortably at 47/42. The vh term is what binds on the
+      shorter screens, so raising it is what moves those without disturbing the
+      taller ones. At 4.5rem/18vh, 844x390 comes to 17 above and 10 below.
+    */
+    padding-bottom: min(4.5rem, 18vh);
   }
 }
 
@@ -1024,5 +1059,76 @@ body:has(.map-root) footer {
     animation-name: map-fade-only;
     animation-duration: 150ms;
     animation-delay: 0ms;
+  }
+}
+
+/*
+  Arriving: the globe opens out into the window.
+
+  Before this, the descent flew the camera down inside the circular stage and
+  the component was then swapped for a separate full-screen map — so the map
+  appeared inside a porthole, and then the page cut to full screen. Two
+  separate events, neither explaining the other.
+
+  Growing the stage itself over the final leg makes it one move: the disc
+  becomes the window, and the component swap underneath has nothing left to
+  reveal because the geometry already matches.
+
+  Width, not transform: scaling the element would scale the map canvas with
+  it and arrive blurry, which is the exact complaint. Growing the box makes
+  MapLibre resize its canvas and render at the size it is actually shown at.
+*/
+.globe-chrome--arriving {
+  /*
+    The stage grows past the viewport on its way out. Without this the page
+    gains a scrollbar mid-flight — and the padding that biases the globe
+    upward has to go, or the expanded square lands off-centre.
+  */
+  overflow: hidden;
+  padding: 0;
+}
+
+.globe-stage--arriving {
+  /*
+    A square larger than the viewport's diagonal, so no corner is left
+    uncovered whatever the window's shape.
+  */
+  --globe-d: 150vmax;
+  border-radius: 0;
+  box-shadow: none;
+  /*
+    Matches FINAL_LEG_DURATION_MS in lib/map/descent.ts, so the disc finishes
+    opening exactly as the camera finishes landing. Ease-in-out because this
+    is a thing moving on screen rather than entering it: it should gather
+    speed and then settle, not start at full tilt.
+  */
+  transition:
+    width 1400ms cubic-bezier(0.77, 0, 0.175, 1),
+    box-shadow 500ms ease-out;
+}
+
+/* The circular mask and the sphere's shading are what make it read as a
+   planet; on the way to being a map they are what has to go. */
+.globe-stage--arriving .globe-sphere {
+  clip-path: none;
+  border-radius: 0;
+}
+
+.globe-stage--arriving .globe-ground,
+.globe-stage--arriving .globe-shading {
+  opacity: 0;
+  transition: opacity 450ms ease-out;
+}
+
+/*
+  Reduced motion already skips the flight entirely (components/globe.tsx puts
+  the camera at the destination), so the stage should simply be the right size
+  rather than travelling there.
+*/
+@media (prefers-reduced-motion: reduce) {
+  .globe-stage--arriving,
+  .globe-stage--arriving .globe-ground,
+  .globe-stage--arriving .globe-shading {
+    transition: none;
   }
 }
