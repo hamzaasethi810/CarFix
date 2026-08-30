@@ -624,7 +624,25 @@ body:has(.map-root) footer {
     the halo looks the same at 620px and now scales with the globe instead of
     detaching from it.
   */
-  --globe-d: min(62vmin, 760px);
+  /*
+    Three caps, and the third is the one that matters on a laptop.
+
+    vmin scales with the smaller axis, which on a wide short window is the
+    height — but it knows nothing about what else is competing for that
+    height. Measured at 1440x780: the button row ends at y=148 and the filter
+    bar starts at y=590, leaving a 442px band, while 62vmin asked for 484px.
+    The globe overlapped the buttons by 40px at the top and the bar by 2px at
+    the bottom.
+
+    The 23rem subtracted here is that competition, measured rather than
+    guessed: 148px above plus 190px below is 338px of furniture, and the
+    remaining 30px is margin. At 22rem the laptop cleared the button row by
+    only 4px, which is inside the range a different font stack or a browser
+    zoom step would swallow; 23rem buys 12px above and 18px below, which
+    survives that. Above roughly 1150px of viewport height the vmin term
+    binds again and this one stops mattering.
+  */
+  --globe-d: min(62vmin, 760px, calc(100dvh - 23rem));
   box-shadow:
     0 0 0 1px rgba(126, 200, 255, 0.42),
     0 0 calc(var(--globe-d) * 0.0355) rgba(90, 170, 240, 0.58),

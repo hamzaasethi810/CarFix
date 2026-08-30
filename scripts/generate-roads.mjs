@@ -41,7 +41,7 @@ const H = 1440;
 */
 const SITES = 420;
 const LLOYD_PASSES = 2;
-const ARTERIALS = 13;
+const ARTERIALS = 14;
 
 /* Mulberry32 — small, seeded, and good enough for scattering points. */
 function rng(seed) {
@@ -167,33 +167,32 @@ for (let e = 0; e < halfedges.length; e++) {
   highway does.
 */
 function drawArterial() {
-  // Start outside the frame so the road enters and leaves rather than
-  // beginning in mid-air. A visible endpoint reads as a broken line.
-  const edge = Math.floor(rand() * 4);
-  const span = rand();
-  let x;
-  let y;
-  let heading;
-  if (edge === 0) {
-    x = -80;
-    y = span * H;
-    heading = 0;
-  } else if (edge === 1) {
-    x = W + 80;
-    y = span * H;
-    heading = Math.PI;
-  } else if (edge === 2) {
-    x = span * W;
-    y = -80;
-    heading = Math.PI / 2;
-  } else {
-    x = span * W;
-    y = H + 80;
-    heading = -Math.PI / 2;
-  }
-  // Fan the entry angle so roads cross at shallow angles instead of all
-  // running parallel to an axis.
-  heading += (rand() - 0.5) * 1.5;
+  /*
+    Every road enters from the left or the right, never the top or bottom.
+
+    The reference is a highway network seen from altitude: the bright roads
+    run broadly across the frame, at shallow and varied angles, crossing each
+    other as they go. Entering from all four edges gave a quarter of them a
+    near-vertical course, which reads as a web thrown over the page rather
+    than as country crossed by roads.
+
+    Start outside the frame so the road enters and leaves rather than
+    beginning in mid-air — a visible endpoint reads as a broken line.
+  */
+  const fromLeft = rand() < 0.5;
+  const x0 = fromLeft ? -80 : W + 80;
+  let x = x0;
+  let y = rand() * H;
+  let heading = fromLeft ? 0 : Math.PI;
+
+  /*
+    Fan of about +/-28 degrees off horizontal.
+
+    Wide enough that no two roads run parallel and they genuinely cross,
+    narrow enough that all of them still read as heading across the frame
+    rather than down it.
+  */
+  heading += (rand() - 0.5) * 1.0;
 
   const STEP = 46;
   const MAX_STEPS = 78;

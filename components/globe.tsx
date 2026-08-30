@@ -645,7 +645,7 @@ export function Globe({
         override for why it has to live in a plain media query rather than
         another vmin term next to .globe-stage's own.
       */}
-      <div className="absolute inset-0 flex items-center justify-center p-4 pb-32 sm:pb-40 globe-chrome">
+      <div className="absolute inset-0 flex items-center justify-center p-4 pb-32 globe-chrome">
         <div className="globe-stage">
           {/* Belongs to the page, not the map canvas — see .globe-ground in globals.css. */}
           <div className="globe-ground" aria-hidden="true" />
