@@ -15,9 +15,6 @@ import { getProofNumbers } from "@/lib/services/stats";
 */
 export const revalidate = 300;
 
-const GREEN = "#27703F";
-const BLUE = "#1F4E8C";
-
 export default async function HomePage() {
   const stats = await getProofNumbers();
 
@@ -35,7 +32,6 @@ export default async function HomePage() {
 
   const beats: Beat[] = [
     {
-      paint: GREEN,
       panel: (
         <div>
           <h1 className="text-large-title sm:text-[3.25rem] sm:leading-[1.05] text-balance">
@@ -49,8 +45,6 @@ export default async function HomePage() {
       ),
     },
     {
-      paint: GREEN,
-      hood: 1,
       panel: (
         <div>
           <h2 className="text-title1">Real mechanics, real bills</h2>
@@ -62,7 +56,6 @@ export default async function HomePage() {
       ),
     },
     {
-      paint: BLUE,
       panel: (
         <div>
           <h2 className="text-title1">Wraps, paint and bodywork</h2>
@@ -74,9 +67,6 @@ export default async function HomePage() {
       ),
     },
     {
-      paint: BLUE,
-      exhaust: 1,
-      camera: { x: -22, scale: 1.5 },
       panel: (
         <div>
           <h2 className="text-title1">Tunes, kits and exhausts</h2>
@@ -88,7 +78,6 @@ export default async function HomePage() {
       ),
     },
     {
-      paint: BLUE,
       panel: (
         <div>
           <h2 className="text-title1 text-balance">

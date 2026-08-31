@@ -1130,9 +1130,19 @@ body:has(.map-root) footer {
   `min-height` rather than a fixed height: the panels differ in length, and a
   fixed box either clips the longest or leaves the shortest floating in space.
 */
+/*
+  Tall enough for the LONGEST panel, plus the header's own height.
+
+  The panels are absolutely positioned so this box cannot size itself to
+  them, and it was set to the height of a typical one. The final panel
+  carries a heading, the counts and two buttons; it overflowed upward and
+  the sticky frame's `overflow: hidden` cut the heading off. Sized to the
+  tallest, with clearance for the fixed header above it.
+*/
 .story-panels {
   position: relative;
-  min-height: 15rem;
+  min-height: 20rem;
+  padding-top: 4rem;
 }
 
 /*
@@ -1198,5 +1208,135 @@ body:has(.map-root) footer {
     transform: none;
     pointer-events: auto;
     margin-bottom: 3.5rem;
+  }
+}
+
+/*
+  The car's dark band.
+
+  The footage is lit in a dark studio, and dark-background frames dropped onto
+  warm paper read as a mistake rather than a decision. Giving the sequence the
+  setting it was shot for keeps the light interior everywhere else, and reads
+  as a product showcase rather than a stray photograph.
+
+  Full-bleed regardless of any container: the band has to reach both edges or
+  it becomes a grey box on a cream page, which is worse than either.
+*/
+/*
+  Reserve the header's strip.
+
+  The sticky frame is a full-height flex box that centres its content, so it
+  centres against the whole viewport including the 4rem the header sits over.
+  On a tall window there is slack and nothing shows; at 1440x780 the heading
+  landed at 46px, under the header. Padding here works where padding on
+  .story-panels did not, because this element is the flex container rather
+  than the positioned child's containing block.
+*/
+.story-sticky {
+  background: #14161A;
+  color: #F2F4F3;
+  padding-top: 4rem;
+}
+
+.story-sticky .text-secondary,
+.story-sticky .text-body,
+.story-sticky dd {
+  color: rgba(238, 242, 240, 0.74);
+}
+
+.story-sticky .text-accent {
+  color: #7FD8A0;
+}
+
+/*
+  Full bleed, out of the layout shell.
+
+  app/layout.tsx wraps every page in `max-w-6xl mx-auto px-6 py-10`, so the
+  band stopped short of both edges and read as a grey box floating on cream.
+
+  Negative margins rather than the usual `left: 50%; transform: translateX(-50%)`
+  trick: a transformed ancestor becomes the containing block for its
+  descendants, and this section's whole mechanism is a `position: sticky`
+  child. Margins move the box without creating one.
+*/
+.story-track {
+  background: #14161A;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  /* Cancels the shell's own vertical padding so the band starts at the top. */
+  margin-top: -2rem;
+  margin-bottom: -2rem;
+}
+
+@media (min-width: 640px) {
+  .story-track {
+    margin-top: -2.5rem;
+    margin-bottom: -2.5rem;
+  }
+}
+
+/*
+  The header goes light over the story's dark band.
+
+  The header is a transparent strip floating over whatever the page puts
+  behind it, and its label colours are the light theme's near-black. Over the
+  car's dark band they vanished: "Sign in" was invisible.
+
+  Keyed off the page containing a story track rather than off the route,
+  because the header is rendered by the layout and never learns which page it
+  is sitting on. The band is 500vh and starts at the very top, so the header
+  is over dark for the whole of that page.
+*/
+body:has(.story-track) header a,
+body:has(.story-track) header button {
+  color: #F2F4F3;
+}
+
+body:has(.story-track) header a:hover,
+body:has(.story-track) header button:hover {
+  color: #fff;
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
+/* The Join button supplies its own fill and must keep its own label colour. */
+body:has(.story-track) header a[href="/register"] {
+  color: var(--on-accent);
+}
+
+/*
+  Short landscape: the story has to fit 390px of height.
+
+  A 20rem panel box is 82% of that viewport on its own, so the heading was
+  pushed above the frame. Everything shrinks together here — the reserved
+  header strip (the header is 3rem below this breakpoint), the panel box, and
+  the frame the car is drawn in. The same four beats, smaller.
+*/
+@media (max-height: 480px) {
+  .story-sticky {
+    padding-top: 3rem;
+  }
+
+  .story-panels {
+    min-height: 9rem;
+  }
+
+  .story-panel h1,
+  .story-panel h2 {
+    font-size: var(--text-title3);
+    line-height: var(--text-title3--line-height);
+  }
+
+  .story-panel p {
+    font-size: var(--text-subhead);
+    line-height: var(--text-subhead--line-height);
+  }
+
+  .story-stage {
+    margin-top: 0.75rem;
+  }
+
+  .story-stage canvas {
+    max-height: 34vh;
   }
 }
