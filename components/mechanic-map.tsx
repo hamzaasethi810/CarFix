@@ -77,13 +77,6 @@ const MILES_PER_DEGREE_LAT = 69;
   is server-side (mechanicSearchSchema's limit cap — see
   tests/map-limit.test.ts), same as any other API in this app.
 */
-/*
-  Zoom at or below which the map hands back to the globe. Chosen a little under
-  continental scale: high enough that an ordinary pinch-out inside a city never
-  trips it, low enough that it fires before the reader is looking at an empty
-  grey landmass and wondering where the shops went.
-*/
-const ZOOM_OUT_TO_GLOBE = 4;
 
 const REST_SLACK = 1.15;
 
@@ -141,7 +134,6 @@ export function MechanicMap({
   onSelect,
   center = null,
   radiusMiles = 0,
-  onZoomedOut,
   className = "",
 }: {
   /**
@@ -159,10 +151,8 @@ export function MechanicMap({
   radiusMiles?: number;
   /**
    * Called when the reader zooms out past the point where a street map is
-   * telling them anything. The page answers by going back to the globe — see
-   * ZOOM_OUT_TO_GLOBE below for why that is the right response.
+   * telling them anything, so the zoom-out floor keeps the map usable.
    */
-  onZoomedOut?: () => void;
   className?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -178,10 +168,6 @@ export function MechanicMap({
   */
   const selectedFromMapRef = useRef(false);
 
-  const onZoomedOutRef = useRef(onZoomedOut);
-  useEffect(() => {
-    onZoomedOutRef.current = onZoomedOut;
-  }, [onZoomedOut]);
 
   const fallbackAppliedRef = useRef(false);
 
@@ -504,18 +490,7 @@ export function MechanicMap({
 
     const bounds = boundsForRadius(center, radiusMiles * REST_SLACK);
 
-    /*
-      Zooming out far enough hands back to the globe.
-
-      Below about this zoom a street basemap is showing nothing anybody came
-      for — no shops, no roads worth reading, just a grey continent. Pulling
-      back is the natural gesture for "show me somewhere else", and the globe
-      is the answer to that, so the map stops pretending and gets out of the
-      way. It also keeps a curious visitor from dragging a lit street map
-      across a country and spending the month's tiles doing it.
-    */
-    const onZoom = () => {
-      if (map.getZoom() <= ZOOM_OUT_TO_GLOBE) onZoomedOutRef.current?.();
+        const onZoom = () => {
     };
     map.on("zoomend", onZoom);
 

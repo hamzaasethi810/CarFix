@@ -8,7 +8,6 @@ import { buttonStyles, distance, money, num } from "@/components/ui";
 import { AreaPicker, type Area } from "@/components/area-picker";
 import { GoldCar } from "@/app/shops/[id]/subscription-panel";
 import { ServicePicker } from "@/components/service-picker";
-import { Globe } from "@/components/globe";
 
 // MapLibre needs `window`, so the map never renders on the server.
 const MechanicMap = dynamic(
@@ -258,17 +257,16 @@ export function Discover({
   const listRef = useRef<HTMLUListElement>(null);
 
   /*
-    Whether this render shows the globe, the map, or neither yet.
+    Whether this render has resolved where to put the map yet.
 
-    "pending" is the only value either the server or the client's first
-    render can honestly produce — the decision needs `navigator.connection`,
-    `matchMedia` and localStorage, none of which exist during SSR — so it is
-    also the only value that can be the initial state without a hydration
-    mismatch. The effect below resolves it to "globe" or "map" immediately
-    on mount, before the browser paints, so in practice "pending" is never
-    seen; it exists so the resolved value has something safe to start from.
+    "pending" is the only value either the server or the client's first render
+    can honestly produce — the decision needs localStorage and geolocation,
+    neither of which exists during SSR — so it is also the only value that can
+    be the initial state without a hydration mismatch. The effect below
+    resolves it on mount, before the browser paints, so in practice "pending"
+    is never seen.
   */
-  const [mode, setMode] = useState<"pending" | "globe" | "map">("pending");
+  const [mode, setMode] = useState<"pending" | "map">("pending");
 
   // Anchor point for the radius. Null until the reader shares a location or
   // the map settles, in which case results are simply unbounded by distance.
@@ -456,7 +454,7 @@ export function Discover({
   }, [sort, runSearch]);
 
   /*
-    Decide, once, whether this visit opens on the globe or straight into the
+    Where the map opens. Runs once, on arrival.
     map — and if it's the map, whether there is a remembered area to jump to
     directly rather than asking geolocation again.
 
@@ -471,15 +469,10 @@ export function Discover({
     const stored = readLastArea();
 
     /*
-      Arrival always goes to the map.
+      Arrival goes to the map, at the visitor's location.
 
-      A first-time visitor used to land on the globe and have to fly down from
-      it before seeing a single shop. Asking for nearby garages and being shown
-      a planet is a detour, however nice the planet is: the answer is a map of
-      where you are, so that is what arrival gives you.
-
-      The globe is still there — zooming the map all the way out returns to it
-      (see returnToGlobe below). It is no longer on the path in.
+      Asking for nearby garages and being shown anything other than a map of
+      where you are is a detour.
     */
     // Deferred so the effect body itself does not synchronously set state —
     // same convention as the geolocation callback below.
@@ -528,46 +521,6 @@ export function Discover({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  /*
-    The globe's handoff: the camera has arrived somewhere, so switch to the
-    map-and-filters view centred there. Same remembering as the geolocation
-    path above, so the next visit skips the globe entirely.
-  */
-  const handleGlobeArrival = useCallback(
-    (area: { lat: number; lng: number }) => {
-      setCenter(area);
-      setRadiusMiles(20);
-      setAreaLabel("Near you");
-      setLocationNote(null);
-      rememberArea(area, 20, "Near you");
-      setMode("map");
-      void runSearch({ ...area, radiusMiles: 20 });
-    },
-    [runSearch],
-  );
-
-  /*
-    Back to the globe.
-
-    The remembered area has to be cleared, not just the mode flipped: that
-    record is what tells a returning visitor's next visit to skip the globe,
-    and leaving it in place would mean the globe reappears and is immediately
-    dismissed again. Asking for the globe is also saying "not here", so
-    forgetting where "here" was is the honest reading.
-  */
-  const returnToGlobe = useCallback(() => {
-    try {
-      localStorage.removeItem(LAST_AREA_KEY);
-    } catch {
-      // Private browsing can refuse storage; the mode change below still works.
-    }
-    setResults([]);
-    setSelectedId(null);
-    setCenter(null);
-    setAreaLabel(null);
-    setMode("globe");
-  }, []);
-
   function chooseArea(area: Area) {
     const next = { lat: area.lat, lng: area.lng };
     setCenter(next);
@@ -614,32 +567,17 @@ export function Discover({
     return <div className="map-root fixed inset-0 top-16 bg-grouped" aria-hidden="true" />;
   }
 
-  /*
-    The globe is a backdrop, not a separate screen.
-
-    It used to own the whole viewport and return early, which meant the filter
-    bar — make, model, service, area, distance — simply did not exist until
-    after you had already committed to somewhere. Swapping only the layer
-    behind the chrome means the same panel serves both, so somebody can search
-    from the globe without being sent to a map first, and there is one filter
-    bar in this file rather than two that drift apart.
-  */
-  const onGlobe = mode === "globe";
-
   return (
     <div className="map-root fixed inset-0 top-16">
-      {onGlobe ? (
-        <Globe mapStyle={mapStyle} onNearby={handleGlobeArrival} />
-      ) : (
-        <MechanicMap mapStyle={mapStyle} onZoomedOut={returnToGlobe}
-          mechanics={results}
-          selectedId={selectedId}
-          onSelect={setSelectedId}
-          center={center}
-          radiusMiles={radiusMiles}
-          className="absolute inset-0"
-        />
-      )}
+      <MechanicMap
+        mapStyle={mapStyle}
+        mechanics={results}
+        selectedId={selectedId}
+        onSelect={setSelectedId}
+        center={center}
+        radiusMiles={radiusMiles}
+        className="absolute inset-0"
+      />
 
       {/*
         Functional layer. Everything below floats above the map on Liquid Glass;
@@ -654,16 +592,7 @@ export function Discover({
         the first letter of "Make" were all underneath it.
       */}
       <div
-        /*
-          On the globe the chrome runs bottom-up, matching the reference: the
-          two actions sit above the sphere and the filter bar sits under it,
-          so neither covers the thing you came to look at. On the map the
-          filter bar belongs at the top, where it has always been, because the
-          results list owns the bottom-left.
-        */
-        className={`pointer-events-none absolute inset-0 flex ${
-          onGlobe ? "flex-col-reverse" : "flex-col"
-        }`}
+        className="pointer-events-none absolute inset-0 flex flex-col"
         style={{
           paddingLeft: "env(safe-area-inset-left)",
           paddingRight: "env(safe-area-inset-right)",
@@ -684,9 +613,7 @@ export function Discover({
           it while keeping the glass.
         */}
         <div
-          className={`pointer-events-auto p-3 sm:p-4 relative z-20 ${
-            onGlobe ? "" : "map-enter-bar"
-          }`}
+          className="pointer-events-auto p-3 sm:p-4 relative z-20 map-enter-bar"
         >
           {/*
             Bounded to the window and scrollable inside.
@@ -813,23 +740,6 @@ export function Discover({
               <div className="col-span-2 lg:col-span-5 flex flex-wrap items-center gap-2 sm:gap-3 pt-1">
                 <AreaPicker current={areaLabel} onChoose={chooseArea} onOpenChange={noteMenu} />
 
-                {/*
-                  A named way back to the globe.
-
-                  Zooming out far enough also returns there, but a gesture
-                  nobody discovers is no route at all — and it is unreachable
-                  entirely for anyone navigating by keyboard. This is the
-                  discoverable one.
-                */}
-                <button
-                  type="button"
-                  onClick={returnToGlobe}
-                  className={`${buttonStyles.secondary} text-subhead`}
-                >
-                  <span aria-hidden="true" className="mr-1.5">&#127758;</span>
-                  Globe
-                </button>
-
                 {/* Verified reads as a toggle chip rather than a bare checkbox. */}
                 <button
                   type="button"
@@ -915,9 +825,12 @@ export function Discover({
 
         {/* Results share the flex column with the bar, so they never overlap it. */}
         {/*
-          The results list, hidden while the globe is up: there is nothing to
-          list before a search has run, and an empty panel over the globe is
-          just a shape in the way of the thing the page is for.
+          The results list.
+
+          It used to be hidden while the globe was up, because an empty panel
+          over a globe is a shape in the way of the thing the page is for.
+          There is no globe now and the panel carries its own empty states, so
+          it is simply always here.
         */}
         <div
           /*
@@ -926,9 +839,7 @@ export function Discover({
             translate and the swipe offset both write to it — and an animation
             here would be fighting them for the same property.
           */
-          className={`flex-1 min-h-0 flex flex-col sm:flex-row sm:items-stretch relative z-10 ${
-            onGlobe ? "hidden" : "map-enter-panel"
-          }`}
+          className="flex-1 min-h-0 flex flex-col sm:flex-row sm:items-stretch relative z-10 map-enter-panel"
         >
           <div
             className={`pointer-events-auto px-3 pb-3 sm:px-4 sm:pb-4 w-full sm:w-96 mt-auto sm:mt-0 flex flex-col min-h-0 motion-safe:transition-transform motion-safe:duration-300 ${
