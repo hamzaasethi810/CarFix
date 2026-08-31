@@ -1164,7 +1164,7 @@ body:has(.map-root) footer {
 
 .story-panel {
   position: absolute;
-  inset: 0 1.5rem auto;
+  inset: 5.5rem 1.5rem auto;
   text-align: center;
   opacity: 0;
   transform: translateY(12px);
@@ -1235,7 +1235,24 @@ body:has(.map-root) footer {
 .story-sticky {
   background: #14161A;
   color: #F2F4F3;
-  padding-top: 4rem;
+}
+
+/*
+  A scrim over the footage.
+
+  The car is shot on a mid-grey studio floor, and light type on mid grey is
+  the one pairing that fails — the copy was legible over the car and vanished
+  over the floor. Darkest at the top where the copy lives, clearing by the
+  middle so the car is never muddied.
+*/
+.story-scrim {
+  background: linear-gradient(
+    to bottom,
+    rgba(10, 12, 14, 0.82) 0%,
+    rgba(10, 12, 14, 0.55) 28%,
+    rgba(10, 12, 14, 0.12) 52%,
+    rgba(10, 12, 14, 0) 70%
+  );
 }
 
 .story-sticky .text-secondary,
@@ -1313,12 +1330,12 @@ body:has(.story-track) header a[href="/register"] {
   the frame the car is drawn in. The same four beats, smaller.
 */
 @media (max-height: 480px) {
-  .story-sticky {
-    padding-top: 3rem;
+  .story-panels {
+    padding-top: 3.5rem;
   }
 
-  .story-panels {
-    min-height: 9rem;
+  .story-panel {
+    inset: 3.5rem 1rem auto;
   }
 
   .story-panel h1,
@@ -1332,11 +1349,4 @@ body:has(.story-track) header a[href="/register"] {
     line-height: var(--text-subhead--line-height);
   }
 
-  .story-stage {
-    margin-top: 0.75rem;
-  }
-
-  .story-stage canvas {
-    max-height: 34vh;
-  }
 }

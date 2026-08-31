@@ -40,14 +40,44 @@ export function CarSequence({ progress }: { progress: React.RefObject<number> })
     let alive = true;
     let raf = 0;
 
+    /*
+      Fit the backing store to the element, at device resolution.
+
+      A canvas has two sizes: the CSS box and the pixel buffer. Leaving the
+      buffer at the frame's own 1152px and stretching it across a 2560px
+      window is what makes a full-bleed canvas look soft. Re-measured whenever
+      the window changes.
+    */
+    const resize = () => {
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const w = Math.round(canvas.clientWidth * dpr);
+      const h = Math.round(canvas.clientHeight * dpr);
+      if (w === 0 || h === 0) return false;
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+        drawnRef.current = -1; // the buffer was cleared; force a redraw
+      }
+      return true;
+    };
+
     const draw = (i: number) => {
       const img = framesRef.current[i - 1];
       if (!img?.complete || img.naturalWidth === 0) return;
-      if (canvas.width !== img.naturalWidth) {
-        canvas.width = img.naturalWidth;
-        canvas.height = img.naturalHeight;
-      }
-      ctx.drawImage(img, 0, 0);
+      if (!resize()) return;
+
+      /*
+        Cover, not stretch.
+
+        The frames are 16:9 and the window is whatever it is, so the image is
+        scaled to fill the larger axis and centred, cropping the other. Fitting
+        instead would letterbox the car inside its own black band, which is
+        the boxed-in look this replaced.
+      */
+      const scale = Math.max(canvas.width / img.naturalWidth, canvas.height / img.naturalHeight);
+      const w = img.naturalWidth * scale;
+      const h = img.naturalHeight * scale;
+      ctx.drawImage(img, (canvas.width - w) / 2, (canvas.height - h) / 2, w, h);
       drawnRef.current = i;
     };
 
@@ -72,6 +102,11 @@ export function CarSequence({ progress }: { progress: React.RefObject<number> })
       }
     };
 
+    const onResize = () => {
+      drawnRef.current = -1;
+    };
+    window.addEventListener("resize", onResize, { passive: true });
+
     const tick = () => {
       if (!alive) return;
       raf = requestAnimationFrame(tick);
@@ -86,6 +121,7 @@ export function CarSequence({ progress }: { progress: React.RefObject<number> })
     return () => {
       alive = false;
       cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onResize);
     };
   }, [progress]);
 
@@ -98,15 +134,10 @@ export function CarSequence({ progress }: { progress: React.RefObject<number> })
       */
       aria-hidden="true"
       /*
-        Bounded by HEIGHT, not width.
-
-        A 16:9 canvas at full width is 648px tall on a 1152px page, which
-        together with the copy above it overflowed a 900px viewport and pushed
-        the heading off the top of the sticky frame. Capping the height and
-        letting width follow keeps the whole beat on screen at any window
-        shape.
+        Fills its container. The sticky frame it sits in is the viewport, so
+        this is the whole screen; the copy is laid over it.
       */
-      className="block mx-auto w-auto h-auto max-w-full max-h-[44vh] rounded-[10px]"
+      className="absolute inset-0 block h-full w-full"
     />
   );
 }

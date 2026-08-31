@@ -117,8 +117,17 @@ export function ScrollStory({ beats }: { beats: Beat[] }) {
       className="story-track relative"
       aria-label="What Gaari is"
     >
-      <div className="story-sticky sticky top-0 h-screen overflow-hidden flex flex-col justify-center">
-        <div className="story-panels relative mx-auto w-full max-w-2xl px-6">
+      <div className="story-sticky sticky top-0 h-screen overflow-hidden">
+        {/*
+          The car fills the frame and the copy sits over it. A scrim keeps the
+          text readable wherever the footage happens to be bright — the studio
+          floor behind the car is a mid grey, and light type on mid grey is
+          the one combination that fails.
+        */}
+        <CarSequence progress={progressRef} />
+        <div className="story-scrim absolute inset-0 pointer-events-none" />
+
+        <div className="story-panels absolute inset-x-0 top-0 mx-auto w-full max-w-2xl px-6">
           {beats.map((b, i) => (
             <div
               key={i}
@@ -131,18 +140,6 @@ export function ScrollStory({ beats }: { beats: Beat[] }) {
               {b.panel}
             </div>
           ))}
-        </div>
-
-        {/*
-          The car sits in its own dark band.
-
-          The footage is lit in a dark studio, and dropping dark-background
-          frames onto warm paper looks like a mistake rather than a decision.
-          Giving the sequence the setting it was actually shot for keeps the
-          light interior everywhere else and reads as a product showcase.
-        */}
-        <div className="story-stage relative mt-6 px-4">
-          <CarSequence progress={progressRef} />
         </div>
       </div>
     </section>
