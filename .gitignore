@@ -58,3 +58,6 @@ tmp/
 # frames are the artefact, but deleting the source once already cost a
 # re-export.
 Supercar_transforms_*.mp4
+
+# Render sources for public/car. Kept on disk, never committed.
+0831*.mov

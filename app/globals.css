@@ -915,3 +915,40 @@ body:has(.story-track) header a[href="/register"] {
   }
 
 }
+
+/*
+  On the landing page the chrome disappears into the film.
+
+  The header and footer are built for the light interior: a cream footer with
+  a hairline rule, and header labels in near-black. Over a full-bleed dark
+  sequence they read as two pale bands clamped around a photograph, which is
+  exactly the "banner" look the page is meant to avoid.
+
+  Keyed off the page containing a story track rather than off the route,
+  because the layout renders both and never learns which page it is on. The
+  header already goes light this way (see above); this does the same for the
+  footer and removes the rules that draw the bands.
+*/
+body:has(.story-track) footer {
+  background: #14161A;
+  border-top-color: rgba(255, 255, 255, 0.1);
+  margin-top: 0;
+}
+
+body:has(.story-track) footer,
+body:has(.story-track) footer .text-secondary {
+  color: rgba(238, 242, 240, 0.62);
+}
+
+body:has(.story-track) footer a {
+  color: #7FD8A0;
+}
+
+/*
+  The shell's own ground shows for the height of its padding above and below
+  the band. On this page that is a cream strip against black, so the page
+  takes the film's ground instead.
+*/
+body:has(.story-track) {
+  background: #14161A;
+}

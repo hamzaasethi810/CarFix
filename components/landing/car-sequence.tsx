@@ -17,20 +17,28 @@ import { useEffect, useRef } from "react";
     offline. Frames are smaller, work everywhere, and look as good as the
     render rather than as good as the phone.
 
-  Every frame the source has: 152, at the video's own 1280px (never upscaled,
-  never downscaled), sharpened, WebP q78. 5.15MB for the set, 35KB a frame.
+  125 frames at 1280px, WebP q68, 2.97MB — DENOISED, then Lanczos-downscaled
+  from a 2560x1440 master.
 
-  It was 68 frames at 1.96MB and read as choppy — 152 is 2.2x the temporal
-  resolution and is simply what the source contains. The size is handled by
-  loading in two passes (below) rather than by throwing frames away.
+  The denoise is the part that matters. Two rounds of tuning encoder settings
+  failed to fix a grainy picture, so the master frame was pulled out raw — no
+  scaling, no compression — and the noise was plainly already in it: mottled
+  blocking across the flat studio wall and artefacts around the car's edges.
+  17MB for ten seconds at 2560x1440 is about 14 Mbit/s, which is a thin
+  bitrate for that resolution.
 
-  The remaining softness is NOT a compression setting. The source is 1280x720;
-  shown full screen it is a 1.13x upscale on a 1440-wide window and 2x on a
-  2560 one, and no quality value adds detail that was never recorded. A
-  2560-wide re-export is the only thing that fixes it.
+  No encoder setting removes noise that was recorded. nlmeans does, and the
+  difference on the flat background is the whole complaint. It costs about
+  200s to run over the sequence, offline, once.
+
+  Denoised frames do NOT compress cheaper, which was the hope: nlmeans
+  preserves detail rather than flattening it, so per-frame cost stayed around
+  24KB and the 3MB budget still caps this at ~125 frames. Measured, not
+  extrapolated — a 15-frame sample had suggested 124 frames at 1280 would fit
+  and the real set came out at 3.28MB.
 */
 
-const FRAME_COUNT = 152;
+const FRAME_COUNT = 125;
 const frameSrc = (i: number) =>
   `/car/f${String(Math.min(FRAME_COUNT, Math.max(1, i))).padStart(3, "0")}.webp`;
 
