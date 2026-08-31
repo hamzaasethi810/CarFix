@@ -53,3 +53,8 @@ data/
 
 # local scratch (screenshots etc.)
 tmp/
+
+# The render source for public/car. Kept on disk, never committed: the
+# frames are the artefact, but deleting the source once already cost a
+# re-export.
+Supercar_transforms_*.mp4

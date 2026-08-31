@@ -17,12 +17,19 @@ import { useEffect, useRef } from "react";
     offline. Frames are smaller, work everywhere, and look as good as the
     render rather than as good as the phone.
 
-  The sequence itself came from a 97MB PNG export: 152 frames at 24fps, cut to
-  every third frame, held at the source's own 1152px rather than upscaled, and
-  encoded as WebP q76. 1.23MB for the set, 25KB a frame.
+  The sequence came from a 97MB PNG export: 152 frames at 24fps, sampled down
+  to 68 evenly spaced, kept at the source's own 1280px (never upscaled, never
+  downscaled), sharpened to counter the softness of showing a 1280 frame full
+  screen, and encoded as WebP q72. 1.96MB for the set, 30KB a frame.
+
+  68 and q72 are a measured compromise rather than a preference. The budget is
+  2MB. 76 frames needed q64 to fit and started showing block artefacts on the
+  studio floor; 64 frames at q78 came to 2.10MB and was over. Sharpening costs
+  bytes precisely because it adds the high-frequency detail that compresses
+  worst, so it trades directly against frame count.
 */
 
-const FRAME_COUNT = 51;
+const FRAME_COUNT = 68;
 const frameSrc = (i: number) =>
   `/car/f${String(Math.min(FRAME_COUNT, Math.max(1, i))).padStart(3, "0")}.webp`;
 
