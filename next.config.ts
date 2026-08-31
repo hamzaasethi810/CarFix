@@ -1,3 +1,4 @@
+import { withBotId } from "botid/next/config";
 import type { NextConfig } from "next";
 
 const isProd = process.env.NODE_ENV === "production";
@@ -41,4 +42,12 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+/*
+  BotID is wrapped around the config rather than configured inside it.
+
+  The wrapper adds the rewrites that let the bot-detection script and its
+  challenge endpoint be served from THIS origin instead of a third party.
+  That is what keeps the strict CSP above intact: everything stays
+  `script-src 'self'`, and no vendor domain has to be allowlisted.
+*/
+export default withBotId(nextConfig);

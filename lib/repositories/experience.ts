@@ -296,3 +296,21 @@ export const approveVerificationAutomatically = (experienceId: string) =>
 
     return { id: experienceId };
   });
+
+/**
+ * The distinct shops this user has written about since `since`.
+ *
+ * Distinct on purpose: the cap is on how many DIFFERENT places somebody
+ * reviews in a window, not on how many reviews they write. Two visits to the
+ * same garage are a normal thing to report; twenty different garages in an
+ * afternoon is not something a person does.
+ *
+ * Served by @@index([userId, createdAt]) — without it this is a scan of every
+ * experience the user has ever posted.
+ */
+export const distinctShopsSince = (userId: string, since: Date) =>
+  prisma.mechanicExperience.findMany({
+    where: { userId, createdAt: { gte: since } },
+    select: { mechanicId: true },
+    distinct: ["mechanicId"],
+  });

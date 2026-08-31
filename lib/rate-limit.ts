@@ -140,9 +140,13 @@ export async function enforceRateLimit(name: LimitName, identifier: string) {
   if (!success) throw rateLimited();
 }
 
+/** The caller's IP, or null when no proxy header carries one. */
+export function clientIp(req: Request): string | null {
+  const forwarded = req.headers.get("x-forwarded-for");
+  return forwarded?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || null;
+}
+
 export function clientIdentifier(req: Request, userId?: string) {
   if (userId) return `u:${userId}`;
-  const forwarded = req.headers.get("x-forwarded-for");
-  const ip = forwarded?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || "unknown";
-  return `ip:${ip}`;
+  return `ip:${clientIp(req) ?? "unknown"}`;
 }

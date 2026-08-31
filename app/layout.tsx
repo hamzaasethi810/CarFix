@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
+import { BotIdClient } from "botid/client";
 import { SiteHeader } from "@/components/site-header";
 import { currentUser, isPrivileged } from "@/lib/auth/guards";
 
@@ -57,6 +58,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         to look like plain text on a page. The map route paints its own
         full-bleed background over this.
       */}
+      <head>
+        {/*
+          Instruments only the routes named here. The server side of the check
+          lives in each route (see app/api/register), and it can only verify a
+          session this component started — without it, checkBotId has nothing
+          to look at and would let everything through.
+        */}
+        <BotIdClient protect={[{ path: "/api/register", method: "POST" }]} />
+      </head>
       <body className="min-h-full flex flex-col bg-grouped">
         <a
           href="#main"

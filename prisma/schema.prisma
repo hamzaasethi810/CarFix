@@ -14,18 +14,16 @@ datasource db {
 
 enum Role {
   USER
-  /*
-    Can work the verification and claim queues — which means minting the
-    short-lived links that reveal receipts and business documents — and
-    nothing else. No role management, no moderation.
-
-    It exists so document review can be delegated without handing out the
-    ability to grant administrator rights.
-  */
+  /**
+   * Can work the verification and claim queues — which means minting the
+   * short-lived links that reveal receipts and business documents — and
+   * nothing else. No role management, no moderation.
+   * It exists so document review can be delegated without handing out the
+   * ability to grant administrator rights.
+   */
   REVIEWER
   ADMIN
 }
-
 
 enum VerificationStatus {
   UNVERIFIED
@@ -66,16 +64,15 @@ enum SubscriptionStatus {
   CANCELED
 }
 
-/*
-  How much confidence there is that a listing is a real business.
-
-  A listing added by a member of the public starts PROVISIONAL: visible, but
-  labelled, and barred from the gold badge. It becomes CONFIRMED when enough
-  independent people report work there, or a reviewer approves it, or its
-  owner claims it with a trading document. Anything imported from
-  OpenStreetMap starts CONFIRMED, because it has already been through that
-  project's own editing and review.
-*/
+/**
+ * How much confidence there is that a listing is a real business.
+ * A listing added by a member of the public starts PROVISIONAL: visible, but
+ * labelled, and barred from the gold badge. It becomes CONFIRMED when enough
+ * independent people report work there, or a reviewer approves it, or its
+ * owner claims it with a trading document. Anything imported from
+ * OpenStreetMap starts CONFIRMED, because it has already been through that
+ * project's own editing and review.
+ */
 enum ListingStatus {
   PROVISIONAL
   CONFIRMED
@@ -105,42 +102,42 @@ model User {
   updatedAt     DateTime  @updatedAt
   deletedAt     DateTime?
 
-  /*
-    Second factor. The secret is encrypted at rest with AES-256-GCM, so a
-    database dump alone cannot be used to generate valid codes.
-  */
+  /**
+   * Second factor. The secret is encrypted at rest with AES-256-GCM, so a
+   * database dump alone cannot be used to generate valid codes.
+   */
   totpSecret     String?
   totpEnabledAt  DateTime?
   /// Rejects a code that has already been used, closing the replay window.
   totpLastUsedAt DateTime?
 
-  /*
-    Any session issued before this moment is refused.
-
-    Granting a role bumps it, which signs the account out everywhere. That is
-    what makes the promotion take effect as a fresh login rather than silently
-    upgrading a tab someone already had open — and it is the point at which we
-    can insist on a second factor.
-  */
+  /**
+   * Any session issued before this moment is refused.
+   * Granting a role bumps it, which signs the account out everywhere. That is
+   * what makes the promotion take effect as a fresh login rather than silently
+   * upgrading a tab someone already had open — and it is the point at which we
+   * can insist on a second factor.
+   */
   sessionsValidFrom DateTime?
 
   backupCodes         BackupCode[]
   passwordResets      PasswordResetToken[]
+  emailVerifications  EmailVerificationToken[]
   profile             Profile?
   vehicles            Vehicle[]
   experiences         MechanicExperience[]
-  verifiedExperiences MechanicExperience[] @relation("VerifiedBy")
+  verifiedExperiences MechanicExperience[]     @relation("VerifiedBy")
   reports             Report[]
   auditLogs           AuditLog[]
   accounts            Account[]
   sessions            Session[]
-  claimedShops        Mechanic[]  @relation("ClaimedShops")
+  claimedShops        Mechanic[]               @relation("ClaimedShops")
   helpfulVotes        HelpfulVote[]
   shopReplies         ShopReply[]
   savedSearches       SavedSearch[]
-  submittedClaims     ShopClaim[] @relation("SubmittedClaims")
-  submittedShops      Mechanic[]  @relation("SubmittedShops")
-  decidedClaims       ShopClaim[] @relation("DecidedClaims")
+  submittedClaims     ShopClaim[]              @relation("SubmittedClaims")
+  submittedShops      Mechanic[]               @relation("SubmittedShops")
+  decidedClaims       ShopClaim[]              @relation("DecidedClaims")
 
   @@index([deletedAt])
 }
@@ -175,17 +172,36 @@ model Session {
   @@index([userId])
 }
 
-/*
-  Single-use recovery codes for someone who loses their authenticator. Stored
-  as hashes: a database dump reveals nothing usable, exactly like a password.
-*/
-/*
-  A single-use password reset token.
+/**
+ * Single-use recovery codes for someone who loses their authenticator. Stored
+ * as hashes: a database dump reveals nothing usable, exactly like a password.
+ */
+/**
+ * A single-use password reset token.
+ * Stored hashed, exactly like a password: whoever holds the raw token can take
+ * over the account, so a database dump must not hand that over. The row is kept
+ * after use so a replayed link fails loudly rather than looking untouched.
+ */
+/// Proves someone can read the address they signed up with.
+///
+/// Same shape as PasswordResetToken deliberately: random value, stored only
+/// as a hash, single use, expires. The raw token exists only in the email.
+model EmailVerificationToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+  /// Recorded to make abuse investigable, not to identify anyone.
+  requestIp String?
 
-  Stored hashed, exactly like a password: whoever holds the raw token can take
-  over the account, so a database dump must not hand that over. The row is kept
-  after use so a replayed link fails loudly rather than looking untouched.
-*/
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt])
+  @@index([expiresAt])
+}
+
 model PasswordResetToken {
   id        String    @id @default(cuid())
   userId    String
@@ -340,62 +356,63 @@ model Vehicle {
   @@index([generationId])
 }
 
-
 // ---------- Mechanics & services ----------
 
 model Mechanic {
-  id          String         @id @default(cuid())
-  name        String
-  description String?
-  address     String
-  city        String
-  /** Empty outside the United States, where the concept does not apply. */
-  state       String
-  /*
-    ISO 3166-1 alpha-2. Defaults to US because every listing that existed
-    before this column was added came from a US-only ingest, so backfilling
-    them to anything else would be inventing data.
-  */
-  country     String  @default("US")
-  zip         String
-  lat         Float
-  lng         Float
-  phone       String?
-  website     String?
-  hours       Json?
+  id            String         @id @default(cuid())
+  name          String
+  description   String?
+  address       String
+  city          String
+  /**
+   * Empty outside the United States, where the concept does not apply.
+   */
+  state         String
+  /**
+   * ISO 3166-1 alpha-2. Defaults to US because every listing that existed
+   * before this column was added came from a US-only ingest, so backfilling
+   * them to anything else would be inventing data.
+   */
+  country       String         @default("US")
+  zip           String
+  lat           Float
+  lng           Float
+  phone         String?
+  website       String?
+  hours         Json?
   source        MechanicSource @default(SEED)
   listingStatus ListingStatus  @default(CONFIRMED)
   /// Who added it, when a member of the public did.
   submittedById String?
   submittedAt   DateTime?
   /// Upstream identifier, e.g. "node/123456" for OpenStreetMap.
-  sourceRef   String?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  deletedAt   DateTime?
+  sourceRef     String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  deletedAt     DateTime?
 
   /// Set once a claim is approved. Only this user may manage the shop.
   claimedById String?
   claimedAt   DateTime?
 
-  subscriptionStatus SubscriptionStatus @default(NONE)
+  subscriptionStatus   SubscriptionStatus @default(NONE)
   /// Stripe identifiers. No card data is ever stored here or anywhere else.
-  stripeCustomerId     String?   @unique
-  stripeSubscriptionId String?   @unique
+  stripeCustomerId     String?            @unique
+  stripeSubscriptionId String?            @unique
   subscriptionEndsAt   DateTime?
 
-  claimedBy   User?                @relation("ClaimedShops", fields: [claimedById], references: [id], onDelete: SetNull)
-  submittedBy User?                @relation("SubmittedShops", fields: [submittedById], references: [id], onDelete: SetNull)
-  claims      ShopClaim[]
-  replies     ShopReply[]
+  claimedBy     User?                @relation("ClaimedShops", fields: [claimedById], references: [id], onDelete: SetNull)
+  submittedBy   User?                @relation("SubmittedShops", fields: [submittedById], references: [id], onDelete: SetNull)
+  claims        ShopClaim[]
+  replies       ShopReply[]
   servicePrices ShopServicePrice[]
-  specialties MechanicSpecialty[]
-  experiences MechanicExperience[]
+  specialties   MechanicSpecialty[]
+  experiences   MechanicExperience[]
 
-  @@index([subscriptionStatus])
-  @@index([listingStatus])
   // Re-ingesting the same OSM element updates the row instead of duplicating it.
   @@unique([source, sourceRef])
+  @@index([subscriptionStatus])
+  @@index([listingStatus])
   @@index([city, state])
   // Supports the bounding-box prefilter that runs before distance is computed.
   @@index([lat, lng])
@@ -411,7 +428,7 @@ model Service {
   shopPrices  ShopServicePrice[]
 
   /// Groups services in the picker: "Maintenance", "Modification", and so on.
-  category    String @default("Other")
+  category String @default("Other")
 
   @@index([category])
 }
@@ -460,11 +477,11 @@ model MechanicExperience {
   updatedAt DateTime  @updatedAt
   deletedAt DateTime?
 
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  vehicle    Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-  mechanic   Mechanic @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
-  service    Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
-  verifiedBy User?    @relation("VerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vehicle      Vehicle       @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  mechanic     Mechanic      @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
+  service      Service       @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  verifiedBy   User?         @relation("VerifiedBy", fields: [verifiedById], references: [id], onDelete: SetNull)
   receipt      Receipt?
   reports      Report[]
   helpfulVotes HelpfulVote[]
@@ -474,6 +491,10 @@ model MechanicExperience {
   @@index([mechanicId, serviceId])
   @@index([vehicleId])
   @@index([verificationStatus])
+  /// Serves the posting cap: how many DISTINCT shops this user has written
+  /// about inside a rolling window. Without it that query is a scan of every
+  /// experience the user has ever posted.
+  @@index([userId, createdAt])
 }
 
 // Receipt rows are metadata only. The uploaded file lives in a private bucket
@@ -506,12 +527,12 @@ model Report {
   @@index([status])
 }
 
-/*
-  Records which areas have already been pulled from OpenStreetMap, so a popular
-  search does not hit the shared Overpass API on every request. The centre is
-  rounded to a coarse grid, and a stored entry satisfies any request with an
-  equal or smaller radius.
-*/
+/**
+ * Records which areas have already been pulled from OpenStreetMap, so a popular
+ * search does not hit the shared Overpass API on every request. The centre is
+ * rounded to a coarse grid, and a stored entry satisfies any request with an
+ * equal or smaller radius.
+ */
 model GeoCoverage {
   id          String   @id @default(cuid())
   cellLat     Float
@@ -523,24 +544,24 @@ model GeoCoverage {
   @@unique([cellLat, cellLng])
 }
 
-/*
-  A request to manage a shop listing, backed by a document proving the person
-  runs the business. The document lives in private storage under a random key
-  and is destroyed the moment a decision is made — exactly like a receipt.
-*/
+/**
+ * A request to manage a shop listing, backed by a document proving the person
+ * runs the business. The document lives in private storage under a random key
+ * and is destroyed the moment a decision is made — exactly like a receipt.
+ */
 model ShopClaim {
-  id         String          @id @default(cuid())
-  userId     String
-  mechanicId String
-  status     ShopClaimStatus @default(PENDING)
+  id           String          @id @default(cuid())
+  userId       String
+  mechanicId   String
+  status       ShopClaimStatus @default(PENDING)
   /// Null once the decision has been made and the file deleted.
-  documentKey String?
+  documentKey  String?
   businessName String
   contactPhone String?
-  note        String?
-  submittedAt DateTime        @default(now())
-  decidedAt   DateTime?
-  decidedById String?
+  note         String?
+  submittedAt  DateTime        @default(now())
+  decidedAt    DateTime?
+  decidedById  String?
 
   user      User     @relation("SubmittedClaims", fields: [userId], references: [id], onDelete: Cascade)
   mechanic  Mechanic @relation(fields: [mechanicId], references: [id], onDelete: Cascade)
@@ -551,11 +572,11 @@ model ShopClaim {
   @@index([status])
 }
 
-/*
-  A shop's own published price for a service. `maxPrice` is optional: a fixed
-  price leaves it null, a range fills it in. These are the shop's asking
-  prices and are always presented separately from what owners report paying.
-*/
+/**
+ * A shop's own published price for a service. `maxPrice` is optional: a fixed
+ * price leaves it null, a range fills it in. These are the shop's asking
+ * prices and are always presented separately from what owners report paying.
+ */
 model ShopServicePrice {
   id         String   @id @default(cuid())
   mechanicId String
@@ -572,21 +593,21 @@ model ShopServicePrice {
   @@index([serviceId])
 }
 
-/*
-  Every Stripe webhook we have already handled. Stripe retries on any non-2xx
-  and can deliver the same event more than once, so processing is keyed on the
-  event id to make replays harmless.
-*/
+/**
+ * Every Stripe webhook we have already handled. Stripe retries on any non-2xx
+ * and can deliver the same event more than once, so processing is keyed on the
+ * event id to make replays harmless.
+ */
 model StripeEvent {
   id          String   @id
   type        String
   processedAt DateTime @default(now())
 }
 
-/*
-  "Was this helpful?" on a report. One vote per person per report, which the
-  unique constraint enforces rather than trusting the client not to resubmit.
-*/
+/**
+ * "Was this helpful?" on a report. One vote per person per report, which the
+ * unique constraint enforces rather than trusting the client not to resubmit.
+ */
 model HelpfulVote {
   id           String   @id @default(cuid())
   userId       String
@@ -600,11 +621,11 @@ model HelpfulVote {
   @@index([experienceId])
 }
 
-/*
-  A shop's public reply to a report about them. Only the owner of a subscribing
-  shop may post one, and only one per report, so a thread cannot be buried
-  under repeated responses.
-*/
+/**
+ * A shop's public reply to a report about them. Only the owner of a subscribing
+ * shop may post one, and only one per report, so a thread cannot be buried
+ * under repeated responses.
+ */
 model ShopReply {
   id           String    @id @default(cuid())
   experienceId String    @unique
@@ -622,33 +643,33 @@ model ShopReply {
   @@index([mechanicId])
 }
 
-/*
-  A saved search someone wants to hear about. Alerts are generated by comparing
-  new reports against these, so the query lives here rather than in a job.
-*/
+/**
+ * A saved search someone wants to hear about. Alerts are generated by comparing
+ * new reports against these, so the query lives here rather than in a job.
+ */
 model SavedSearch {
-  id           String    @id @default(cuid())
-  userId       String
-  label        String
-  serviceId    String?
-  generationId String?
-  platformId   String?
-  lat          Float?
-  lng          Float?
-  radiusMiles  Int?
+  id             String    @id @default(cuid())
+  userId         String
+  label          String
+  serviceId      String?
+  generationId   String?
+  platformId     String?
+  lat            Float?
+  lng            Float?
+  radiusMiles    Int?
   /// Last time this was checked, so an alert is never sent twice.
   lastNotifiedAt DateTime?
-  createdAt    DateTime  @default(now())
+  createdAt      DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
-/*
-  A photo of the work itself — a wrap, a brake kit, an exhaust. Deliberately
-  not photos of the car: those cost storage without evidencing anything.
-*/
+/**
+ * A photo of the work itself — a wrap, a brake kit, an exhaust. Deliberately
+ * not photos of the car: those cost storage without evidencing anything.
+ */
 model WorkPhoto {
   id           String   @id @default(cuid())
   experienceId String

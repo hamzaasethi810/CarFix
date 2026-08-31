@@ -1,5 +1,5 @@
 import { ok, parseJson, route } from "@/lib/api/handler";
-import { requireUser } from "@/lib/auth/guards";
+import { requireUser, requireVerifiedUser } from "@/lib/auth/guards";
 import { clientIdentifier, enforceRateLimit } from "@/lib/rate-limit";
 import { removeReply, replyToExperience } from "@/lib/services/engagement";
 import { shopReplySchema } from "@/lib/validation/schemas";
@@ -8,7 +8,8 @@ type Params = { params: Promise<{ id: string }> };
 
 export async function PUT(req: Request, { params }: Params) {
   return route(async () => {
-    const user = await requireUser();
+    // A shop reply is published text, so it needs a confirmed address too.
+    const user = await requireVerifiedUser();
     await enforceRateLimit("mutation", clientIdentifier(req, user.id));
     const { id } = await params;
     const { body } = await parseJson(req, shopReplySchema);

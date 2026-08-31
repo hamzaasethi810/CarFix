@@ -19,7 +19,8 @@
     "create-user": "tsx scripts/create-user.ts",
     "stripe:setup": "tsx scripts/stripe-setup.ts",
     "set-password": "tsx scripts/set-password.ts",
-    "overture:import": "NODE_OPTIONS=--conditions=react-server tsx scripts/overture-import.ts"
+    "overture:import": "NODE_OPTIONS=--conditions=react-server tsx scripts/overture-import.ts",
+    "security:check": "node scripts/security-check.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
@@ -30,6 +31,7 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.38.2",
     "bcryptjs": "^3.0.3",
+    "botid": "^1.5.11",
     "dotenv": "^17.4.2",
     "maplibre-gl": "^6.6.0",
     "next": "16.3.2",

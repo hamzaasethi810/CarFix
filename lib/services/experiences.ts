@@ -1,10 +1,11 @@
 import "server-only";
-import { conflict, forbidden, notFound, validation } from "../errors";
+import { AppError, conflict, forbidden, notFound, validation } from "../errors";
 import {
   attachReceipt,
   countExperiences,
   countPendingVerificationsForUser,
   createExperience,
+  distinctShopsSince,
   decideVerification,
   approveVerificationAutomatically,
   experienceBelongsTo,
@@ -32,6 +33,14 @@ const MAX_PENDING_PER_USER = 5;
 
 /** Window in which an identical repeat submission is treated as the same one. */
 const DUPLICATE_WINDOW_MS = 60_000;
+
+/*
+  The posting cap: how many DIFFERENT shops one account can write about in a
+  rolling window. Reviews of shops already written about in that window are
+  never blocked.
+*/
+const SHOP_SPREAD_MAX = 10;
+const SHOP_SPREAD_WINDOW_MS = 12 * 60 * 60_000;
 
 /*
   How long an author may edit their own report. Reports are the evidence other
@@ -95,6 +104,31 @@ export async function submitExperience(
     withinMs: DUPLICATE_WINDOW_MS,
   });
   if (duplicate) return toExperienceView(duplicate, userId);
+
+  /*
+    How many different shops this account can write about in a window.
+
+    A plain submission rate limit does not stop the thing that actually harms
+    the data: an account walking down a list of shops leaving one review each.
+    Each post looks reasonable on its own and every one passes moderation,
+    because none of them is individually abusive.
+
+    Capping BREADTH instead leaves normal behaviour alone — a second job at a
+    garage you have already reviewed never counts against you, however many
+    times you go back — while making a spray across the map expensive. Twelve
+    hours rather than a day so a genuine enthusiast posting a weekend's work
+    is not locked out until tomorrow.
+  */
+  const since = new Date(Date.now() - SHOP_SPREAD_WINDOW_MS);
+  const recentShops = await distinctShopsSince(userId, since);
+  const alreadyReviewed = recentShops.some((r) => r.mechanicId === input.mechanicId);
+  if (!alreadyReviewed && recentShops.length >= SHOP_SPREAD_MAX) {
+    throw new AppError(
+      "RATE_LIMITED",
+      `You can post about ${SHOP_SPREAD_MAX} different shops every 12 hours. ` +
+        `You can still add more about shops you have already written about.`,
+    );
+  }
 
   const created = await createExperience({ ...input, userId });
 

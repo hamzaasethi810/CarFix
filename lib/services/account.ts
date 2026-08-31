@@ -1,6 +1,7 @@
 import "server-only";
 import { hashPassword } from "../auth/password";
 import { conflict, notFound } from "../errors";
+import { sendVerification, verificationOrigin } from "./email-verification";
 import {
   createUserWithProfile,
   emailOrUsernameTaken,
@@ -17,6 +18,8 @@ export async function register(input: {
   password: string;
   username: string;
   displayName: string;
+  /** Recorded against the verification token, to make abuse investigable. */
+  ip?: string | null;
 }) {
   const taken = await emailOrUsernameTaken(input.email, input.username);
   if (taken.email) throw conflict("An account with that email already exists.");
@@ -29,6 +32,22 @@ export async function register(input: {
     username: input.username,
     displayName: input.displayName,
   });
+
+  /*
+    The verification link goes out here rather than from the route, so every
+    caller that creates an account gets it — a second sign-up path added later
+    cannot forget to send one.
+
+    Deliberately not awaited into the response's success: a mail provider
+    having a bad minute must not fail a registration that already wrote a user
+    row. The account exists; the link can be re-requested.
+  */
+  void sendVerification({
+    userId: user.id,
+    email: input.email,
+    origin: verificationOrigin(),
+    ip: input.ip ?? null,
+  }).catch(() => {});
 
   return { id: user.id };
 }
