@@ -73,7 +73,18 @@ export function ScrollStory({ beats }: { beats: Beat[] }) {
       const r = track.getBoundingClientRect();
       const span = r.height - window.innerHeight;
       if (span <= 0) return;
-      const p = Math.min(1, Math.max(0, -r.top / span));
+      const raw = Math.min(1, Math.max(0, -r.top / span));
+
+      /*
+        The story finishes before the scroll does.
+
+        Mapping progress straight onto the track meant the last beat arrived
+        at the very bottom and the page immediately handed you to the footer:
+        you never got to read it. Compressing the story into the first 84% of
+        the track leaves the remaining 16% as a hold, with the final beat and
+        the final frame both settled while you are still inside the section.
+      */
+      const p = Math.min(1, raw / 0.84);
       progressRef.current = p;
 
 

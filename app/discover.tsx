@@ -9,7 +9,6 @@ import { AreaPicker, type Area } from "@/components/area-picker";
 import { GoldCar } from "@/app/shops/[id]/subscription-panel";
 import { ServicePicker } from "@/components/service-picker";
 import { Globe } from "@/components/globe";
-import { shouldShowGlobe } from "@/lib/map/should-show-globe";
 
 // MapLibre needs `window`, so the map never renders on the server.
 const MechanicMap = dynamic(
@@ -44,7 +43,7 @@ type RememberedArea = { lat: number; lng: number; radiusMiles: number; label: st
 
 /*
   Whether this browser has ever landed here before, and where — used both to
-  gate the globe (shouldShowGlobe's `firstVisit`) and, for a returning
+  gate arrival (a first visit has none) and, for a returning
   visitor, to skip re-asking for location entirely and go straight to the
   area they last searched. localStorage rather than sessionStorage on
   purpose: "returning visitor" means a later day, not just a later tab.
@@ -462,7 +461,7 @@ export function Discover({
     directly rather than asking geolocation again.
 
     This is the one place `navigator.connection`, `matchMedia` and
-    localStorage get read; the decision itself is `shouldShowGlobe`, a pure
+    localStorage get read; arrival goes to the map either way.
     function tested without a browser. Permission may be denied or
     unavailable either way, so geolocation only ever improves the default
     view — it never blocks it.
@@ -471,27 +470,21 @@ export function Discover({
     let live = true;
     const stored = readLastArea();
 
-    const nav = navigator as Navigator & {
-      connection?: { effectiveType?: string; saveData?: boolean };
-    };
-    const decision = shouldShowGlobe({
-      firstVisit: !stored,
-      saveData: Boolean(nav.connection?.saveData),
-      effectiveType: nav.connection?.effectiveType,
-      reducedMotion:
-        typeof window !== "undefined" &&
-        (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false),
-    });
+    /*
+      Arrival always goes to the map.
 
+      A first-time visitor used to land on the globe and have to fly down from
+      it before seeing a single shop. Asking for nearby garages and being shown
+      a planet is a detour, however nice the planet is: the answer is a map of
+      where you are, so that is what arrival gives you.
+
+      The globe is still there — zooming the map all the way out returns to it
+      (see returnToGlobe below). It is no longer on the path in.
+    */
     // Deferred so the effect body itself does not synchronously set state —
     // same convention as the geolocation callback below.
     queueMicrotask(() => {
       if (!live) return;
-
-      if (decision.globe) {
-        setMode("globe");
-        return;
-      }
 
       setMode("map");
 
