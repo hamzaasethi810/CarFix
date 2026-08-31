@@ -17,19 +17,20 @@ import { useEffect, useRef } from "react";
     offline. Frames are smaller, work everywhere, and look as good as the
     render rather than as good as the phone.
 
-  The sequence came from a 97MB PNG export: 152 frames at 24fps, sampled down
-  to 68 evenly spaced, kept at the source's own 1280px (never upscaled, never
-  downscaled), sharpened to counter the softness of showing a 1280 frame full
-  screen, and encoded as WebP q72. 1.96MB for the set, 30KB a frame.
+  Every frame the source has: 152, at the video's own 1280px (never upscaled,
+  never downscaled), sharpened, WebP q78. 5.15MB for the set, 35KB a frame.
 
-  68 and q72 are a measured compromise rather than a preference. The budget is
-  2MB. 76 frames needed q64 to fit and started showing block artefacts on the
-  studio floor; 64 frames at q78 came to 2.10MB and was over. Sharpening costs
-  bytes precisely because it adds the high-frequency detail that compresses
-  worst, so it trades directly against frame count.
+  It was 68 frames at 1.96MB and read as choppy — 152 is 2.2x the temporal
+  resolution and is simply what the source contains. The size is handled by
+  loading in two passes (below) rather than by throwing frames away.
+
+  The remaining softness is NOT a compression setting. The source is 1280x720;
+  shown full screen it is a 1.13x upscale on a 1440-wide window and 2x on a
+  2560 one, and no quality value adds detail that was never recorded. A
+  2560-wide re-export is the only thing that fixes it.
 */
 
-const FRAME_COUNT = 68;
+const FRAME_COUNT = 152;
 const frameSrc = (i: number) =>
   `/car/f${String(Math.min(FRAME_COUNT, Math.max(1, i))).padStart(3, "0")}.webp`;
 
@@ -89,25 +90,56 @@ export function CarSequence({ progress }: { progress: React.RefObject<number> })
     };
 
     /*
-      The first frame is loaded and painted on its own, before the rest are
-      even requested. A visitor sees a car immediately instead of an empty
-      box while 1.2MB arrives, and the remaining frames then load in the
-      background without blocking anything.
+      Loaded in two passes.
+
+      152 frames is 5MB, and waiting for all of it before the sequence responds
+      to scroll would be worse than being choppy. So: every 4th frame first —
+      38 images, about 1.3MB — which alone is denser than the 68-frame version
+      this replaces and makes the scroll usable almost immediately. The
+      remaining 114 fill in behind it, and the sequence sharpens up in place
+      without ever having blocked.
+
+      `draw` already falls back to doing nothing for a frame that has not
+      arrived, and the rAF loop retries every frame, so a gap simply holds the
+      previous image for a moment rather than flashing.
     */
-    const first = new Image();
-    first.decoding = "async";
-    first.src = frameSrc(1);
-    framesRef.current[0] = first;
-    first.onload = () => {
+    const load = (i: number) => {
+      if (framesRef.current[i - 1]) return;
+      const img = new Image();
+      img.decoding = "async";
+      img.src = frameSrc(i);
+      framesRef.current[i - 1] = img;
+      return img;
+    };
+
+    const startRest = () => {
       if (!alive) return;
       draw(1);
-      for (let i = 2; i <= FRAME_COUNT; i++) {
-        const img = new Image();
-        img.decoding = "async";
-        img.src = frameSrc(i);
-        framesRef.current[i - 1] = img;
-      }
+      for (let i = 5; i <= FRAME_COUNT; i += 4) load(i);
+      // The gaps, once the coarse pass is requested.
+      setTimeout(() => {
+        if (!alive) return;
+        for (let i = 2; i <= FRAME_COUNT; i++) load(i);
+      }, 600);
     };
+
+    /*
+      Two ways this start path fails, and both did.
+
+      `load` returns nothing when the frame is already held, and framesRef
+      survives a remount — so under StrictMode's double-invoke the second run
+      got `undefined` here, attached no handler, and the page sat on frame 1
+      with the other 151 never requested. Reuse the held image instead of
+      relying on a fresh one.
+
+      And `complete` has to be checked BEFORE attaching onload rather than
+      instead of it: a cached image finishes decoding before this line runs,
+      so its load event has already fired and a handler attached afterwards
+      never sees it. That is every visit after the first.
+    */
+    const first = framesRef.current[0] ?? load(1);
+    if (first?.complete && first.naturalWidth > 0) startRest();
+    else if (first) first.onload = startRest;
 
     const onResize = () => {
       drawnRef.current = -1;
