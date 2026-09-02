@@ -962,3 +962,20 @@ body:has(.story-track) footer a {
 body:has(.story-track) {
   background: #14161A;
 }
+
+/*
+  Dialog entry. From 0.97 rather than 0, because nothing in the real world
+  appears out of nothing, and a modal scales from its own centre because it
+  is not anchored to a trigger.
+*/
+@keyframes sheet-in {
+  from { opacity: 0; transform: scale(0.97) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  @keyframes sheet-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}

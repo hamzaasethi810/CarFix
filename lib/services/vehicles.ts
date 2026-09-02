@@ -1,6 +1,7 @@
 import "server-only";
 import { forbidden, notFound, validation } from "../errors";
 import { findGenerationForYear, listModels } from "../repositories/taxonomy";
+import { garageTotals } from "../repositories/stats";
 import {
   createVehicle,
   findVehicleById,
@@ -97,3 +98,18 @@ export async function removeVehicle(id: string, ownerId: string) {
 }
 
 
+
+/*
+  What the garage knows about each car beyond its spec.
+
+  Returns an empty map rather than throwing when the query fails: the garage
+  is still usable without its numbers, and a summary strip is not worth a 500.
+*/
+export async function getGarageTotals(ownerId: string) {
+  try {
+    const rows = await garageTotals(ownerId);
+    return new Map(rows.map((r) => [r.vehicleId, { services: r.services, spent: r.spent }]));
+  } catch {
+    return new Map<string, { services: number; spent: number }>();
+  }
+}
