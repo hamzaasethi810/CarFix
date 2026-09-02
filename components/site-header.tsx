@@ -64,6 +64,9 @@ export function SiteHeader({
 
         {isAuthed && (
           <>
+            <Link href="/search" className={navLink}>
+              Find shops
+            </Link>
             <Link href="/garage" className={navLink}>
               Garage
             </Link>

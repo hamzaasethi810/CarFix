@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CountUp } from "@/components/landing/count-up";
 import { buttonStyles } from "@/components/ui";
 import { getProofNumbers } from "@/lib/services/stats";
 
@@ -59,8 +60,8 @@ export default async function HomePage() {
           <dl className="grid gap-10 sm:grid-cols-3">
             {counts.map(([n, label]) => (
               <div key={label}>
-                <dd className="font-condensed font-bold text-large-title leading-none tabular-nums">
-                  {n.toLocaleString("en-US")}
+                <dd className="font-condensed font-bold text-large-title leading-none">
+                  <CountUp value={n} />
                 </dd>
                 <dt className="text-subhead text-secondary mt-2">{label}</dt>
               </div>
