@@ -54,10 +54,9 @@ data/
 # local scratch (screenshots etc.)
 tmp/
 
-# The render source for public/car. Kept on disk, never committed: the
-# frames are the artefact, but deleting the source once already cost a
-# re-export.
+# Reference renders. The car is generated in lib/landing/car-geometry.ts and
+# ships no assets at all; these were only ever used to judge proportion and
+# colour. Kept on disk, never committed.
 Supercar_transforms_*.mp4
 
-# Render sources for public/car. Kept on disk, never committed.
 0831*.mov
