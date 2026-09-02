@@ -20,25 +20,35 @@
   color-scheme: light;
 
   /*
-    Warm paper, not white.
+    Neutral bone, not warm paper.
 
-    Clinical white (#FFF with grey text) is what makes a light interface read
-    as a settings screen. The warmth is what lets it read as a surface — a
-    workbench, a card, a docket — which is the whole governing metaphor. Every
-    value below was checked with lib/design/contrast before being written
+    This ground used to be #EFEAE0, a warm cream with a warm near-black ink
+    over it. It was chosen so the interface would read as a surface rather
+    than a settings screen, and that reasoning still holds — but the specific
+    palette does not. Warm cream plus brass plus espresso ink is the single
+    most over-used combination in generated design work, to the point that
+    #EFEAE0 is named by hex in the taste guidance as a default to avoid. The
+    site inherited the look of every other AI-built page rather than its own.
+
+    The fix keeps the intent and drops the tell: the ground is still off-white
+    rather than clinical #FFF, but neutral instead of yellow, and the ink is
+    cool near-black. The forest accent is untouched, so the brand survives the
+    change; only the thing that read as generated goes.
+
+    Every value was checked with lib/design/contrast before being written
     here; tests/contrast.test.ts holds them to it.
   */
-  --bg: #EFEAE0;
-  --bg-elevated: #FCFAF6;   /* card stock */
-  --bg-grouped: #E6E0D4;
-  --bg-tertiary: #DCD5C7;
-  --fill-quaternary: rgba(30, 33, 29, 0.06);
+  --bg: #F5F5F3;
+  --bg-elevated: #FFFFFF;   /* card stock */
+  --bg-grouped: #EBEBE8;
+  --bg-tertiary: #E0E0DC;
+  --fill-quaternary: rgba(22, 24, 26, 0.06);
 
-  /* Warm near-black, never pure black: pure black on warm paper reads cold. */
-  --label: #1E211D;
-  --label-secondary: rgba(30, 33, 29, 0.74);
-  --label-tertiary: rgba(30, 33, 29, 0.58);
-  --separator: rgba(30, 33, 29, 0.14);
+  /* Near-black, never pure black: #000 flattens and kills the sense of depth. */
+  --label: #16181A;
+  --label-secondary: rgba(22, 24, 26, 0.66);
+  --label-tertiary: rgba(22, 24, 26, 0.52);
+  --separator: rgba(22, 24, 26, 0.12);
 
   /*
     A deep green, because this one has to work as TEXT on paper as well as a
@@ -73,15 +83,15 @@
     light ground glass lightens and saturates what is behind it, so the pane
     is a high-alpha near-white instead.
   */
-  --glass-regular-bg: rgba(252, 250, 246, 0.82);
+  --glass-regular-bg: rgba(255, 255, 255, 0.82);
   --glass-regular-blur: 24px;
-  --glass-clear-bg: rgba(252, 250, 246, 0.62);
+  --glass-clear-bg: rgba(255, 255, 255, 0.62);
   --glass-clear-blur: 18px;
   --glass-saturate: 1.15;
-  --glass-border: rgba(30, 33, 29, 0.1);
+  --glass-border: rgba(22, 24, 26, 0.1);
   --glass-shadow:
-    0 1px 2px rgba(30, 33, 29, 0.08),
-    0 12px 32px -8px rgba(30, 33, 29, 0.18),
+    0 1px 2px rgba(22, 24, 26, 0.08),
+    0 12px 32px -8px rgba(22, 24, 26, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
   --radius-card: 10px;
@@ -99,14 +109,14 @@
   */
   --shadow-card:
     inset 0 0.5px 0 rgba(255, 255, 255, 0.9),
-    0 1px 1px rgba(30, 33, 29, 0.1),
-    0 8px 18px -6px rgba(30, 33, 29, 0.16),
-    0 0 0 0.5px rgba(30, 33, 29, 0.07);
+    0 1px 1px rgba(22, 24, 26, 0.1),
+    0 8px 18px -6px rgba(22, 24, 26, 0.16),
+    0 0 0 0.5px rgba(22, 24, 26, 0.07);
   --shadow-raised:
     inset 0 0.5px 0 rgba(255, 255, 255, 0.95),
-    0 1px 2px rgba(30, 33, 29, 0.12),
-    0 20px 40px -16px rgba(30, 33, 29, 0.24),
-    0 0 0 0.5px rgba(30, 33, 29, 0.08);
+    0 1px 2px rgba(22, 24, 26, 0.12),
+    0 20px 40px -16px rgba(22, 24, 26, 0.24),
+    0 0 0 0.5px rgba(22, 24, 26, 0.08);
 }
 
 

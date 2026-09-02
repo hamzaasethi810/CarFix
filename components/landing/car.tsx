@@ -132,7 +132,7 @@ export function Car({
         </radialGradient>
       </defs>
 
-      <ellipse cx="238" cy="106" rx="196" ry="8" fill="rgba(30,33,29,0.22)" />
+      <ellipse cx="238" cy="106" rx="196" ry="8" fill="rgba(22,24,26,0.22)" />
 
       {/*
         The body.

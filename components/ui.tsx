@@ -229,15 +229,15 @@ export const buttonStyles = {
   */
   primary:
     `${BUTTON_BASE} ${PRESS} bg-accent-fill text-on-accent font-semibold ` +
-    "shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_1px_1px_rgba(30,33,29,0.18),0_4px_10px_-3px_rgba(27,107,60,0.5)] " +
+    "shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_1px_1px_rgba(22,24,26,0.18),0_4px_10px_-3px_rgba(27,107,60,0.5)] " +
     "hover:bg-accent-hover",
   secondary:
     `${BUTTON_BASE} ${PRESS} bg-elevated text-label border border-separator ` +
-    "shadow-[inset_0_0.5px_0_rgba(255,255,255,0.9),0_1px_1px_rgba(30,33,29,0.08)] " +
+    "shadow-[inset_0_0.5px_0_rgba(255,255,255,0.9),0_1px_1px_rgba(22,24,26,0.08)] " +
     "hover:bg-grouped",
   destructive:
     `${BUTTON_BASE} ${PRESS} bg-destructive-fill text-on-destructive font-semibold ` +
-    "shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_1px_1px_rgba(30,33,29,0.18)] " +
+    "shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_1px_1px_rgba(22,24,26,0.18)] " +
     "hover:brightness-110",
   // Text button: no material — a slab behind a link would misread as a control.
   plain: `${BUTTON_BASE} ${PRESS} text-accent hover:bg-fill`,

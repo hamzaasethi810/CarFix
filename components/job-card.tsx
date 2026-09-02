@@ -94,7 +94,7 @@ export function JobCard({
       */}
       <span
         aria-hidden="true"
-        className="absolute -top-3 left-1/2 -translate-x-1/2 h-6 w-24 rounded-[3px] shadow-[0_1px_2px_rgba(30,33,29,0.35),0_4px_8px_-2px_rgba(30,33,29,0.3)]"
+        className="absolute -top-3 left-1/2 -translate-x-1/2 h-6 w-24 rounded-[3px] shadow-[0_1px_2px_rgba(22,24,26,0.35),0_4px_8px_-2px_rgba(22,24,26,0.3)]"
       >
         <span className="machined block h-full w-full rounded-[3px]" />
       </span>
