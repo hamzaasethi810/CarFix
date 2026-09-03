@@ -92,7 +92,7 @@ export function Reveal({
       ref={ref}
       data-shown={shown || undefined}
       style={{ transitionDelay: `${delay}ms` }}
-      className={`opacity-0 translate-y-4 blur-[2px] transition-[opacity,transform,filter] duration-[560ms] ease-[cubic-bezier(0.23,1,0.32,1)] data-shown:opacity-100 data-shown:translate-y-0 data-shown:blur-0 motion-reduce:translate-y-0 motion-reduce:blur-0 motion-reduce:transition-none ${className}`}
+      className={`reveal ${className}`}
     >
       {children}
     </div>
