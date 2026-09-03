@@ -2,6 +2,7 @@ import "server-only";
 import {
   countGenerations,
   countReportedServices,
+  countServices,
   countShops,
 } from "../repositories/stats";
 
@@ -9,6 +10,7 @@ export type ProofNumbers = {
   experiences: number;
   shops: number;
   generations: number;
+  services: number;
 };
 
 /**
@@ -21,12 +23,13 @@ export type ProofNumbers = {
  */
 export async function getProofNumbers(): Promise<ProofNumbers | null> {
   try {
-    const [experiences, shops, generations] = await Promise.all([
+    const [experiences, shops, generations, services] = await Promise.all([
       countReportedServices(),
       countShops(),
       countGenerations(),
+      countServices(),
     ]);
-    return { experiences, shops, generations };
+    return { experiences, shops, generations, services };
   } catch {
     return null;
   }

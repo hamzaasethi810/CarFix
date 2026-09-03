@@ -2,25 +2,26 @@ import Image from "next/image";
 import Link from "next/link";
 import { CountUp } from "@/components/landing/count-up";
 import { QuickFilters } from "@/components/landing/quick-filters";
+import { Reveal } from "@/components/landing/reveal";
 import { buttonStyles } from "@/components/ui";
 import { hasImage } from "@/lib/design/assets";
 import { getProofNumbers } from "@/lib/services/stats";
 import { getMakes } from "@/lib/services/taxonomy";
 
 /*
-  The landing page.
+  The landing page, as chapters.
 
-  Built as chapters on alternating grounds rather than one column of prose.
-  An earlier version stacked five text sections down a single bone-coloured
-  page and read as a wall of words with no way in; a full-bleed dark band
-  between the light ones does more to separate two ideas than any amount of
-  margin, and it gives the eye somewhere to rest.
+  Each section holds the screen on its own: min-h-[100dvh] rather than
+  h-screen, so a chapter that outgrows a small phone pushes the page taller
+  instead of clipping its own content. Content is vertically centred, so a
+  short chapter sits in the middle of the viewport rather than at the top of
+  an empty one.
 
-  Copy is deliberately short. Every section says one thing.
+  Everything arrives on scroll, staggered inside each chapter so the eye
+  follows a sequence rather than watching one rectangle fade in six times.
 
   Photography is composed for but not required: each slot asks hasImage() and
-  composes without it, so the page is whole today and better when files land
-  in public/img.
+  composes without it.
 */
 export const revalidate = 300;
 
@@ -32,22 +33,52 @@ const TRADES = [
   { id: "performance", name: "Tuners", line: "Exhausts, tunes, kits." },
 ];
 
+/* A chapter: one idea, one screen. */
+function Chapter({
+  children,
+  dark = false,
+  className = "",
+  label,
+}: {
+  children: React.ReactNode;
+  dark?: boolean;
+  className?: string;
+  label?: string;
+}) {
+  return (
+    <section
+      aria-labelledby={label}
+      className={`flex min-h-[100dvh] items-center ${
+        dark ? "bg-[#16181A] text-white" : ""
+      } ${className}`}
+    >
+      <div className="mx-auto w-full max-w-6xl px-5 sm:px-6 py-20">{children}</div>
+    </section>
+  );
+}
+
 export default async function HomePage() {
   const [stats, makes] = await Promise.all([getProofNumbers(), getMakes()]);
   const heroImage = hasImage(HERO_IMAGE);
 
+  /*
+    Three numbers, all of them true today. "Prices reported" is not among
+    them because it is zero, and a zero presented as proof is an admission.
+    Service types is the honest third: it is the breadth of work the record
+    can file a price against, which is the claim the page actually makes.
+  */
   const counts: [number, string][] = (
     [
       [stats?.shops ?? 0, "Garages listed"],
-      [stats?.experiences ?? 0, "Prices reported"],
       [stats?.generations ?? 0, "Vehicle generations"],
+      [stats?.services ?? 0, "Kinds of work"],
     ] as [number, string][]
   ).filter(([n]) => n > 0);
 
   return (
     <main>
-      {/* Chapter one, dark. */}
-      <section className="relative isolate overflow-hidden bg-[#16181A] text-white">
+      {/* One: the claim. */}
+      <section className="relative isolate flex min-h-[100dvh] items-center overflow-hidden bg-[#16181A] text-white">
         {heroImage && (
           <>
             <Image src={HERO_IMAGE} alt="" fill priority sizes="100vw" className="object-cover" />
@@ -57,96 +88,93 @@ export default async function HomePage() {
             />
           </>
         )}
-        <div
-          className={`relative mx-auto max-w-6xl px-5 sm:px-6 ${
-            heroImage ? "py-28 sm:py-36" : "py-20 sm:py-24"
-          }`}
-        >
-          <h1 className="max-w-2xl text-large-title sm:text-[3.75rem] sm:leading-[1.02] tracking-[-0.025em] text-balance">
-            Real prices, tailored to your car.
-          </h1>
-          <p className="mt-5 max-w-md text-body text-white/70 text-balance">
-            What owners paid their mechanic, wrap shop and tuner. Filed by
-            generation, not by badge.
-          </p>
+        <div className="relative mx-auto w-full max-w-6xl px-5 sm:px-6 py-20">
+          <Reveal>
+            <h1 className="max-w-3xl text-large-title sm:text-[4rem] sm:leading-[1.02] tracking-[-0.025em] text-balance">
+              Real prices, tailored to your car.
+            </h1>
+          </Reveal>
+          <Reveal delay={120}>
+            <p className="mt-6 max-w-md text-body text-white/70 text-balance">
+              What owners paid their mechanic, wrap shop and tuner. Filed by
+              generation, not by badge.
+            </p>
+          </Reveal>
         </div>
       </section>
 
-      {/*
-        The filter gets its own light chapter and nothing else in it. It was
-        previously pulled up over the band's edge and sharing a row with a
-        paragraph and a button, which is what made the top of the page read
-        as three things fighting.
-      */}
-      <section className="mx-auto max-w-6xl px-5 sm:px-6 py-16 sm:py-20">
+      {/* Two: the way in. */}
+      <Chapter label="start">
         <div className="grid lg:grid-cols-[22rem_minmax(0,1fr)] gap-10 lg:gap-16 lg:items-center">
-          <QuickFilters makes={makes} />
-          <div>
-            <p className="text-body text-secondary max-w-sm text-balance">
+          <Reveal>
+            <QuickFilters makes={makes} />
+          </Reveal>
+          <Reveal delay={120}>
+            <h2 id="start" className="text-title1 tracking-[-0.02em] max-w-sm text-balance">
+              Start with the car you actually own.
+            </h2>
+            <p className="mt-4 text-body text-secondary max-w-sm text-balance">
               Or start from the other end. Add what you were charged, and the
               next owner with your car stops guessing.
             </p>
-            <Link href="/register" className={`${buttonStyles.secondary} mt-6 px-6`}>
+            <Link href="/register" className={`${buttonStyles.secondary} mt-7 px-6`}>
               Add what you paid
             </Link>
-          </div>
+          </Reveal>
         </div>
-      </section>
+      </Chapter>
 
-      {/* Chapter two, light: what is covered. */}
-      <section aria-labelledby="record" className="mx-auto max-w-6xl px-5 sm:px-6 pb-20 sm:pb-24">
-        <h2 id="record" className="text-title1 tracking-[-0.02em] max-w-md text-balance">
-          One record, three kinds of work.
-        </h2>
-        <div className="mt-10 border-t border-separator">
+      {/* Three: what is covered. */}
+      <Chapter label="record">
+        <Reveal>
+          <h2 id="record" className="text-title1 tracking-[-0.02em] max-w-md text-balance">
+            One record, three kinds of work.
+          </h2>
+        </Reveal>
+        <div className="mt-12 border-t border-separator">
           {TRADES.map((trade, i) => {
             const src = `/img/${trade.id}.webp`;
             return (
-              <div
-                key={trade.id}
-                className="grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3 sm:gap-10 items-center border-b border-separator py-8"
-              >
-                <div className={i % 2 === 1 ? "sm:order-2" : undefined}>
-                  <h3 className="text-title3 tracking-[-0.015em]">{trade.name}</h3>
-                  <p className="text-subhead text-secondary mt-1.5">{trade.line}</p>
+              <Reveal key={trade.id} delay={140 + i * 110}>
+                <div className="grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3 sm:gap-10 items-center border-b border-separator py-9">
+                  <div className={i % 2 === 1 ? "sm:order-2" : undefined}>
+                    <h3 className="text-title3 tracking-[-0.015em]">{trade.name}</h3>
+                    <p className="text-subhead text-secondary mt-1.5">{trade.line}</p>
+                  </div>
+                  {hasImage(src) && (
+                    <Image
+                      src={src}
+                      alt=""
+                      width={800}
+                      height={560}
+                      sizes="(max-width: 640px) 88vw, 40vw"
+                      className={`h-36 sm:h-44 w-auto object-contain ${
+                        i % 2 === 1 ? "sm:order-1" : "sm:justify-self-end"
+                      }`}
+                    />
+                  )}
                 </div>
-                {hasImage(src) && (
-                  <Image
-                    src={src}
-                    alt=""
-                    width={800}
-                    height={560}
-                    sizes="(max-width: 640px) 88vw, 40vw"
-                    className={`h-36 sm:h-44 w-auto object-contain ${
-                      i % 2 === 1 ? "sm:order-1" : "sm:justify-self-end"
-                    }`}
-                  />
-                )}
-              </div>
+              </Reveal>
             );
           })}
         </div>
-      </section>
+      </Chapter>
 
-      {/*
-        Chapter three, dark: what a report is. The record itself is the
-        illustration here, which is the one picture this page can honestly
-        draw with no data and no photography.
-      */}
-      <section aria-labelledby="proof" className="bg-[#16181A] text-white">
-        <div className="mx-auto max-w-6xl px-5 sm:px-6 py-20 sm:py-28">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 lg:items-center">
-            <div>
-              <h2 id="proof" className="text-title1 tracking-[-0.02em] text-balance">
-                Every price carries its receipt.
-              </h2>
-              <p className="mt-5 text-body text-white/70 max-w-md text-balance">
-                A number on its own is a rumour. Upload the receipt and it is
-                read, checked against the shop and total you entered, then
-                destroyed. Only the confirmation is kept.
-              </p>
-            </div>
+      {/* Four: what a report is. */}
+      <Chapter label="proof" dark>
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 lg:items-center">
+          <Reveal>
+            <h2 id="proof" className="text-title1 tracking-[-0.02em] text-balance">
+              Every price carries its receipt.
+            </h2>
+            <p className="mt-5 text-body text-white/70 max-w-md text-balance">
+              A number on its own is a rumour. Upload the receipt and it is
+              read, checked against the shop and total you entered, then
+              destroyed. Only the confirmation is kept.
+            </p>
+          </Reveal>
 
+          <Reveal delay={140}>
             <figure className="rounded-card border border-white/12 bg-white/[0.04] p-6">
               <div className="flex items-start justify-between gap-4">
                 <div>
@@ -156,11 +184,6 @@ export default async function HomePage() {
                 <p className="font-condensed font-bold text-title1 tabular-nums shrink-0">$640</p>
               </div>
 
-              {/*
-                What the range looks like once there is data. Geometry, not a
-                picture of a chart: three ticks on a rule, the middle one
-                marking where this report sits.
-              */}
               <div className="mt-7" aria-hidden="true">
                 <div className="relative h-px bg-white/20">
                   <span className="absolute left-0 -top-1 h-2 w-px bg-white/35" />
@@ -192,34 +215,48 @@ export default async function HomePage() {
                 An example, to show the shape of a report. Not a real price.
               </figcaption>
             </figure>
-          </div>
+          </Reveal>
         </div>
-      </section>
+      </Chapter>
 
-      {/* Chapter four, light: the close. */}
-      <section className="mx-auto max-w-6xl px-5 sm:px-6 py-20 sm:py-28">
-        {counts.length > 0 && (
-          <dl className="grid gap-10 sm:grid-cols-3 pb-16 border-b border-separator">
-            {counts.map(([n, label]) => (
-              <div key={label}>
-                <dd className="font-condensed font-bold text-large-title leading-none">
+      {/* Five: the scale of it. */}
+      {counts.length > 0 && (
+        <Chapter label="scale">
+          <Reveal>
+            <h2 id="scale" className="text-title1 tracking-[-0.02em] max-w-md text-balance">
+              What is in it so far.
+            </h2>
+          </Reveal>
+          <dl className="mt-14 grid gap-12 sm:grid-cols-3">
+            {counts.map(([n, label], i) => (
+              <Reveal key={label} delay={140 + i * 110}>
+                <dd className="font-condensed font-bold text-[3.25rem] sm:text-[4rem] leading-none">
                   <CountUp value={n} />
                 </dd>
-                <dt className="text-subhead text-secondary mt-2">{label}</dt>
-              </div>
+                <dt className="text-subhead text-secondary mt-3">{label}</dt>
+              </Reveal>
             ))}
           </dl>
-        )}
+        </Chapter>
+      )}
 
-        <div className="pt-16">
-          <h2 className="text-title2 tracking-[-0.015em] max-w-lg text-balance">
+      {/* Six: the ask. */}
+      <Chapter label="close">
+        <Reveal>
+          <h2 id="close" className="text-title1 tracking-[-0.02em] max-w-xl text-balance">
             Every price here came from someone who paid it.
           </h2>
-          <Link href="/register" className={`${buttonStyles.primary} mt-8 px-7`}>
+        </Reveal>
+        <Reveal delay={120}>
+          <p className="mt-5 text-body text-secondary max-w-md text-balance">
+            Add yours, upload the receipt, and it is marked confirmed. That is
+            the whole mechanism.
+          </p>
+          <Link href="/register" className={`${buttonStyles.primary} mt-9 px-8`}>
             Create an account
           </Link>
-        </div>
-      </section>
+        </Reveal>
+      </Chapter>
     </main>
   );
 }

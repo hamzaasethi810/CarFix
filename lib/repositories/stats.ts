@@ -31,3 +31,6 @@ export async function garageTotals(ownerId: string) {
     spent: r._sum.totalPrice ?? 0,
   }));
 }
+
+/** Distinct service types the record can file a price against. */
+export const countServices = () => prisma.service.count();
