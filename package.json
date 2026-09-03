@@ -33,6 +33,7 @@
     "bcryptjs": "^3.0.3",
     "botid": "^1.5.11",
     "dotenv": "^17.4.2",
+    "lucide-react": "^1.40.0",
     "maplibre-gl": "^6.6.0",
     "next": "16.3.2",
     "next-auth": "^5.0.0-beta.32",

@@ -50,8 +50,19 @@ export function Field({
   );
 }
 
-export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
-  return <input {...props} className={FIELD} />;
+/*
+  className is merged, not replaced.
+
+  It used to be overwritten outright, so any caller passing one had it
+  silently dropped — a reveal toggle needing right padding for its button
+  looked correct in the source and wrong on screen. React 19 takes ref as an
+  ordinary prop, so it forwards without a wrapper.
+*/
+export function TextInput({
+  className = "",
+  ...props
+}: InputHTMLAttributes<HTMLInputElement> & { ref?: React.Ref<HTMLInputElement> }) {
+  return <input {...props} className={`${FIELD} ${className}`} />;
 }
 
 export function TextArea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
