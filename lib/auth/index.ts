@@ -1,6 +1,11 @@
 import "server-only";
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "@/lib/db";
+import { googleOAuth } from "@/lib/env";
+import { ensureProfile, markEmailVerified } from "@/lib/repositories/user";
 import { SIGNIN_ERROR, credentialFields, credentialsSchema } from "./credentials";
 import { env, isProd } from "../env";
 import { findUserByEmail, findActiveUserById } from "../repositories/user";
@@ -91,16 +96,57 @@ export const {
       console.error(error);
     },
   },
-  session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7, updateAge: 60 * 15 },
+  /*
+    Twenty minutes of inactivity, not a week.
+
+    updateAge is short so the cookie is refreshed while someone is actually
+    working; the SessionGuard warns before the window closes so nobody loses a
+    half-filled form to a silent expiry.
+  */
+  session: { strategy: "jwt", maxAge: 60 * 20, updateAge: 60 * 5 },
   trustHost: true,
   pages: { signIn: "/login" },
+  events: {
+    /*
+      The adapter creates a User row and nothing else. Everything downstream
+      assumes a Profile with a unique username, and a Google account has
+      already proven its address, so both are settled here rather than
+      leaving the account half-built.
+    */
+    async createUser({ user }) {
+      if (!user.id || !user.email) return;
+      await ensureProfile(user.id, user.email, user.name);
+      await markEmailVerified(user.id);
+    },
+  },
   cookies: {
     sessionToken: {
       name: isProd ? "__Secure-authjs.session-token" : "authjs.session-token",
       options: { httpOnly: true, sameSite: "lax", path: "/", secure: isProd },
     },
   },
+  /*
+    The adapter persists OAuth accounts. The strategy stays JWT, so
+    sessionsValidFrom remains the thing that actually revokes a session;
+    the adapter only owns User and Account rows.
+  */
+  adapter: PrismaAdapter(prisma),
   providers: [
+    ...(googleOAuth()
+      ? [
+          Google({
+            clientId: googleOAuth()!.id,
+            clientSecret: googleOAuth()!.secret,
+            /*
+              Left off deliberately. With it on, anyone who can create a
+              Google account at an address that already has a password login
+              here would be handed that account. Linking has to be an
+              explicit action by someone already signed in.
+            */
+            allowDangerousEmailAccountLinking: false,
+          }),
+        ]
+      : []),
     Credentials({
       credentials: credentialFields,
       async authorize(raw, request) {
@@ -129,6 +175,15 @@ export const {
           return null;
         }
 
+        /*
+          A Google-only account has no password to check.
+
+          It fails exactly like a wrong password rather than saying so:
+          "that address exists but has no password" is an account-enumeration
+          oracle, and it tells an attacker which addresses to try on Google.
+        */
+        if (!user.passwordHash) return null;
+
         const ok = await verifyPassword(parsed.data.password, user.passwordHash);
         if (!ok) return null;
 
@@ -147,7 +202,32 @@ export const {
       },
     }),
   ],
+  /*
+    Roles that must clear TOTP no matter how they signed in.
+
+    The credentials provider enforces MFA itself. Google does not know MFA
+    exists, so without this check a privileged account could sidestep the
+    entire requirement by clicking Continue with Google.
+  */
   callbacks: {
+    async signIn({ account, user }) {
+      if (account?.provider !== "google") return true;
+      if (!user.email) return false;
+
+      const existing = await prisma.user.findUnique({
+        where: { email: user.email.toLowerCase() },
+        select: { id: true, role: true, totpEnabledAt: true, deletedAt: true },
+      });
+
+      // A deleted account does not come back through a side door.
+      if (existing?.deletedAt) return false;
+
+      if (existing && existing.role !== "USER" && !existing.totpEnabledAt) {
+        return "/login?error=MFA_REQUIRED";
+      }
+      return true;
+    },
+
     async jwt({ token, user }) {
       if (user) token.sub = user.id;
       if (!token.sub) return token;

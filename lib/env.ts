@@ -88,3 +88,16 @@ const withVercelAliases = (raw: NodeJS.ProcessEnv) => ({
 
 export const env = serverEnvSchema.parse(withVercelAliases(process.env));
 export const isProd = env.NODE_ENV === "production";
+
+/*
+  Google OAuth, optional.
+
+  Returns null when either half is missing so the provider is simply not
+  registered — a half-configured provider that renders a button and then
+  fails on click is worse than no button.
+*/
+export const googleOAuth = () => {
+  const id = process.env.GOOGLE_CLIENT_ID;
+  const secret = process.env.GOOGLE_CLIENT_SECRET;
+  return id && secret ? { id, secret } : null;
+};

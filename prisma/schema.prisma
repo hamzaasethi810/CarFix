@@ -96,7 +96,8 @@ model User {
   id            String    @id @default(cuid())
   email         String    @unique
   emailVerified DateTime?
-  passwordHash  String
+  /// Null for an account that only ever signs in through Google.
+  passwordHash  String?
   role          Role      @default(USER)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt

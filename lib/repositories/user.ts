@@ -109,3 +109,61 @@ export const softDeleteUser = (userId: string) =>
       select: { id: true },
     });
   });
+
+/*
+  Gives a Google-created account the profile the rest of the app assumes.
+
+  The adapter creates a User row and nothing else, but Profile.username is
+  unique and required wherever a profile exists, so a public profile page or
+  anything reading profile.username would break for an OAuth account.
+
+  The username is derived from the email's local part and suffixed until it is
+  free. The loop is bounded: after a handful of collisions it falls back to a
+  random tail rather than scanning forever.
+*/
+export async function ensureProfile(userId: string, email: string, displayName?: string | null) {
+  const existing = await prisma.profile.findUnique({ where: { userId }, select: { id: true } });
+  if (existing) return;
+
+  const base =
+    (email.split("@")[0] ?? "driver")
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, "")
+      .slice(0, 24) || "driver";
+  // The schema floor is 3 characters.
+  const seed = base.length >= 3 ? base : `${base}car`;
+
+  let username = seed;
+  for (let i = 0; i < 6; i++) {
+    const taken = await prisma.profile.findUnique({
+      where: { username },
+      select: { id: true },
+    });
+    if (!taken) break;
+    username = `${seed.slice(0, 24)}${i + 2}`;
+  }
+  const stillTaken = await prisma.profile.findUnique({
+    where: { username },
+    select: { id: true },
+  });
+  if (stillTaken) username = `${seed.slice(0, 20)}${Math.random().toString(36).slice(2, 7)}`;
+
+  await prisma.profile.create({
+    data: {
+      userId,
+      username,
+      displayName: (displayName?.trim() || seed).slice(0, 60),
+    },
+  });
+}
+
+/*
+  A Google account has proven its address, so it should not then be held
+  behind email verification. updateMany rather than update: it is a no-op if
+  the row is already verified or already gone.
+*/
+export const markEmailVerified = (userId: string) =>
+  prisma.user.updateMany({
+    where: { id: userId, emailVerified: null },
+    data: { emailVerified: new Date() },
+  });
