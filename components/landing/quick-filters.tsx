@@ -108,9 +108,15 @@ export function QuickFilters({ makes }: { makes: Option[] }) {
       }}
       className="rounded-card border border-separator bg-elevated p-5 sm:p-6"
     >
-      <p className="text-caption uppercase tracking-[0.14em] text-tertiary-label">
+      {/*
+        A heading, not a kicker. The small-caps label floating above content
+        is the eyebrow pattern, and it is the single most templated thing on
+        a generated page. This carries the same words with the weight of a
+        real heading instead.
+      */}
+      <h2 className="text-headline tracking-[-0.01em]">
         Find a deal for your generation
-      </p>
+      </h2>
 
       <div className="mt-5 space-y-3">
         <label className="block">

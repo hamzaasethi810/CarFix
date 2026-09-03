@@ -94,7 +94,7 @@
     0 12px 32px -8px rgba(22, 24, 26, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 
-  --radius-card: 10px;
+  --radius-card: 14px;
   --radius-control: 6px;
   --radius-glass: 12px;
 
@@ -222,7 +222,7 @@
   --text-caption: 0.75rem;
   --text-caption--line-height: 1rem;
 
-  --radius-card: 10px;
+  --radius-card: 14px;
   --radius-control: 6px;
   --radius-glass: 12px;
 
@@ -981,5 +981,36 @@ body:has(.story-track) {
   @keyframes sheet-in {
     from { opacity: 0; }
     to   { opacity: 1; }
+  }
+}
+
+
+/*
+  The surfaces we did not draw.
+
+  Selection, the caret, the scrollbar and underline offset all ship with
+  browser defaults that belong to no design system, and leaving them is the
+  cheapest way for a page to read as assembled rather than built. They cost
+  four rules.
+*/
+::selection {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--label);
+}
+
+:root {
+  caret-color: var(--accent);
+  accent-color: var(--accent-fill);
+}
+
+a {
+  text-underline-offset: 0.18em;
+  text-decoration-thickness: from-font;
+}
+
+@supports (scrollbar-color: auto) {
+  :root {
+    scrollbar-color: color-mix(in srgb, var(--label) 26%, transparent) transparent;
+    scrollbar-width: thin;
   }
 }
