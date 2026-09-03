@@ -3,6 +3,7 @@ import { PageTitle } from "@/components/ui";
 import { currentUser } from "@/lib/auth/guards";
 import { getMfaStatus } from "@/lib/services/mfa";
 import { MfaPanel } from "./mfa-panel";
+import { ChangePassword } from "./change-password";
 import { DeleteAccount } from "./delete-account";
 
 export default async function SecurityPage() {
@@ -15,6 +16,7 @@ export default async function SecurityPage() {
     <div className="max-w-xl mx-auto">
       <PageTitle title="Security" subtitle="Protect your account with a second factor." />
       <MfaPanel initial={status} />
+      <ChangePassword />
       <DeleteAccount />
     </div>
   );

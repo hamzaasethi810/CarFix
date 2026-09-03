@@ -12,11 +12,23 @@ export function RegisterForm() {
   const [pending, setPending] = useState(false);
 
   async function onSubmit(formData: FormData) {
-    setPending(true);
     setError(null);
 
     const email = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");
+
+    /*
+      Checked here and not on the server. The confirmation exists to catch a
+      typo in a field nobody can read back, which is a client concern; the
+      register endpoint takes one password and its schema is strict, so
+      sending a second field would be rejected outright.
+    */
+    if (password !== String(formData.get("confirmPassword") ?? "")) {
+      setError("Those two passwords do not match.");
+      return;
+    }
+
+    setPending(true);
 
     const res = await fetch("/api/register", {
       method: "POST",
@@ -92,6 +104,21 @@ export function RegisterForm() {
               id={id}
               aria-describedby={describedBy}
               name="password"
+              type="password"
+              required
+              minLength={12}
+              autoComplete="new-password"
+            />
+          )}
+        </Field>
+
+
+        <Field label="Confirm password">
+          {({ id, describedBy }) => (
+            <TextInput
+              id={id}
+              aria-describedby={describedBy}
+              name="confirmPassword"
               type="password"
               required
               minLength={12}

@@ -1,10 +1,12 @@
 import "server-only";
-import { hashPassword } from "../auth/password";
-import { conflict, notFound } from "../errors";
+import { hashPassword, verifyPassword } from "../auth/password";
+import { conflict, notFound, validation } from "../errors";
 import { sendVerification, verificationOrigin } from "./email-verification";
 import {
   createUserWithProfile,
   emailOrUsernameTaken,
+  findCredentialsById,
+  setPassword,
   findProfileByUserId,
   findProfileByUsername,
   softDeleteUser,
@@ -79,4 +81,36 @@ export async function editProfile(
 
 export async function deleteAccount(userId: string) {
   await softDeleteUser(userId);
+}
+
+/**
+ * Changes a password from inside the account, and signs out everywhere.
+ *
+ * The current password is checked even though the session already proves who
+ * this is. A session is a device someone left unlocked; re-asking is what
+ * stops a borrowed laptop turning into a permanent takeover.
+ */
+export async function changePassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string,
+) {
+  const user = await findCredentialsById(userId);
+  if (!user) throw notFound();
+
+  /*
+    A Google-only account has no password to replace. Told plainly rather
+    than failed generically: this is someone already signed in asking about
+    their own account, so there is nothing to leak by being clear.
+  */
+  if (!user.passwordHash) {
+    throw validation(
+      "This account signs in with Google, so there is no password to change.",
+    );
+  }
+
+  const ok = await verifyPassword(currentPassword, user.passwordHash);
+  if (!ok) throw validation("That is not your current password.");
+
+  await setPassword(userId, await hashPassword(newPassword));
 }

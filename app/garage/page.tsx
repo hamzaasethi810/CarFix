@@ -77,11 +77,9 @@ export default async function GaragePage() {
         <div className="mt-16 border-t border-separator pt-16 text-center">
           <h2 className="text-headline font-semibold">No cars yet</h2>
           <p className="text-subhead text-secondary mt-2 max-w-sm mx-auto">
-            Add the first one, then log what you have paid to keep it running.
+            Use Add a car above to put the first one in, then log what you have
+            paid to keep it running.
           </p>
-          <div className="mt-7 flex justify-center">
-            <AddVehicleSheet makes={makes} />
-          </div>
         </div>
       ) : (
         <ul className="mt-10 border-t border-separator divide-y divide-separator">
@@ -171,6 +169,21 @@ export default async function GaragePage() {
           })}
         </ul>
       )}
+
+      {/*
+        Account settings reachable from the page people actually live on.
+        A link rather than the delete control itself: an irreversible action
+        duplicated in two places is two places to hit it by accident, and the
+        real one already exists on the security page.
+      */}
+      <footer className="mt-20 border-t border-separator pt-6">
+        <Link
+          href="/settings/security"
+          className="text-footnote text-secondary hover:text-label transition-colors duration-150"
+        >
+          Password, two-factor and deleting your account
+        </Link>
+      </footer>
     </main>
   );
 }

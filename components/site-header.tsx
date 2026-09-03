@@ -17,13 +17,18 @@ export function SiteHeader({
 }) {
   return (
     /*
-      No banner. The reference has the wordmark and the nav floating straight
-      over the ground with nothing behind them — a solid strip cuts the page in
-      two and hides the roads the design is built on. What is left is a blur
-      just strong enough to keep white type legible when the globe drifts under
-      it, and no border, because a rule across the top is the banner again.
+      Translucent, blurred, with a hairline underneath.
+
+      It used to be fully transparent, which worked when it floated over a
+      dark globe and nothing else. On a light page with real content beneath
+      it, transparency means paragraphs scroll visibly through the wordmark
+      and the nav, which reads as a rendering fault rather than a design.
+
+      A blur plus a partial ground keeps the page feeling continuous without
+      letting text collide with the controls, and the rule only has to be a
+      hairline to stop the header dissolving into the section under it.
     */
-    <header className="sticky top-0 z-50 bg-transparent">
+    <header className="sticky top-0 z-50 border-b border-separator bg-[color-mix(in_srgb,var(--bg)_82%,transparent)] backdrop-blur-md supports-[not(backdrop-filter:blur(0))]:bg-bg">
       <nav
         aria-label="Primary"
         /*

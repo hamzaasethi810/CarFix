@@ -167,3 +167,28 @@ export const markEmailVerified = (userId: string) =>
     where: { id: userId, emailVerified: null },
     data: { emailVerified: new Date() },
   });
+
+/*
+  Reads the hash for a password change. Separate from findUserByEmail because
+  this one is keyed on the session's user id, not on an address a caller
+  supplied.
+*/
+export const findCredentialsById = (id: string) =>
+  prisma.user.findFirst({
+    where: { id, deletedAt: null },
+    select: { id: true, passwordHash: true },
+  });
+
+/*
+  Sets a new hash and signs every existing session out.
+
+  Bumping sessionsValidFrom is the point, not a side effect: with a JWT
+  strategy there is no session row to delete, so this is the only thing that
+  actually evicts a token someone else is holding. Changing a password
+  because you think it was seen is worthless if the other device stays in.
+*/
+export const setPassword = (id: string, passwordHash: string) =>
+  prisma.user.update({
+    where: { id },
+    data: { passwordHash, sessionsValidFrom: new Date() },
+  });

@@ -93,6 +93,24 @@ export const registerSchema = z
   })
   .strict();
 
+/*
+  Changing a password from inside the account.
+
+  The current password is required even though the session already proves who
+  this is: a session is a device left unlocked, and re-asking is what stops a
+  borrowed laptop becoming a permanent account takeover.
+*/
+export const changePasswordSchema = z
+  .object({
+    currentPassword: z.string().min(1).max(200),
+    newPassword: z.string().min(12).max(200),
+  })
+  .strict()
+  .refine((v) => v.currentPassword !== v.newPassword, {
+    path: ["newPassword"],
+    message: "Choose a password you are not already using here.",
+  });
+
 export const loginSchema = z
   .object({ email: z.string().email().max(254), password: z.string().min(1).max(200) })
   .strict();
