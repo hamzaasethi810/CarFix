@@ -133,6 +133,39 @@ export default function TermsPage() {
         </p>
       </Card>
 
+      {/*
+        Written from what the code actually does, not from a template. The
+        distinction that matters on a site like this one is the last
+        paragraph: automation reads and screens, it never writes a price.
+      */}
+      <SectionTitle>How this site is built, and what is automated</SectionTitle>
+      <Card className="space-y-3">
+        <p className="text-subhead text-pretty">
+          The software behind Gaari was written with substantial help from AI
+          coding tools. We are saying so plainly because you are trusting the
+          site with money questions, and you should know how it was made.
+        </p>
+        <p className="text-subhead text-secondary text-pretty">
+          Most shop listings were bulk-imported from open map data rather than
+          entered by hand, so a listing existing here is not a sign anyone has
+          checked it. Some will be closed, misfiled or duplicated. Tell us and
+          we will fix it.
+        </p>
+        <p className="text-subhead text-secondary text-pretty">
+          Two things happen automatically rather than by a person. Receipts
+          uploaded as proof are read by text recognition and compared against
+          the shop name and total you entered, and posted text is screened for
+          abuse before it appears. Both can get it wrong in either direction,
+          and you can ask a person to look again.
+        </p>
+        <p className="text-subhead text-pretty">
+          What is never automated is the substance. Every price, rating and
+          written report on this site came from a person who says they paid
+          it. Nothing here is generated, inferred, estimated or filled in to
+          make the site look busier than it is.
+        </p>
+      </Card>
+
       <Card className="mt-8">
         <p className="text-footnote text-secondary text-pretty">
           These rules may change as the site grows. Nothing here is legal

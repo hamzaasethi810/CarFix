@@ -107,15 +107,19 @@
     catches the light. One light source, consistently, is what stops
     skeuomorphism reading as fake.
   */
-  --shadow-card:
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.9),
-    0 1px 1px rgba(22, 24, 26, 0.1),
-    0 8px 18px -6px rgba(22, 24, 26, 0.16),
-    0 0 0 0.5px rgba(22, 24, 26, 0.07);
+  /*
+    Elevation is now rare, so it is allowed to be real.
+
+    shadow-card is deliberately almost nothing: a hairline, for the few places
+    that still ask for the token. Surfaces separate by border and tone
+    instead. shadow-raised is for things genuinely above the page — a dialog,
+    a popover — and drops the inset white highlight, which was simulating a
+    lit edge that no longer fits a flat ground.
+  */
+  --shadow-card: 0 0 0 0.5px rgba(22, 24, 26, 0.08);
   --shadow-raised:
-    inset 0 0.5px 0 rgba(255, 255, 255, 0.95),
-    0 1px 2px rgba(22, 24, 26, 0.12),
-    0 20px 40px -16px rgba(22, 24, 26, 0.24),
+    0 1px 2px rgba(22, 24, 26, 0.08),
+    0 24px 48px -20px rgba(22, 24, 26, 0.22),
     0 0 0 0.5px rgba(22, 24, 26, 0.08);
 }
 

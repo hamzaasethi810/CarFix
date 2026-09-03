@@ -1,16 +1,37 @@
 import type { ReactNode } from "react";
 
 /*
-  Raised off the textured ground: bg-elevated is the lighter panel tone, and
-  shadow-card (see --shadow-card in globals.css) carries both a 1px top
-  highlight — the edge catching light — and a drop shadow wide enough to
-  separate the card from the grain and vignette behind it. On a dark ground
-  the highlight, not the shadow, is what reads as "raised".
+  A surface, not a floating tile.
+
+  Every panel used to carry a four-layer shadow with an inset white highlight
+  along its top edge, simulating a card catching light above a textured
+  ground. Used on thirty-odd screens it stopped meaning anything: when
+  everything is raised, nothing is, and a page of soft drop-shadowed
+  rectangles is the single clearest signal of an interface that was styled
+  rather than designed.
+
+  The surface is now defined by a hairline and a tone change. Elevation is
+  reserved for things that genuinely float above the page — a dialog, a
+  popover — which is what `raised` is for, and it is rare on purpose.
+
+  Padding is up a step. Space is the cheapest thing that reads as expensive,
+  and the old 16px was set when every panel needed to stay small enough to
+  look like a card.
 */
-export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
+export function Card({
+  children,
+  className = "",
+  raised = false,
+}: {
+  children: ReactNode;
+  className?: string;
+  raised?: boolean;
+}) {
   return (
     <div
-      className={`rounded-card bg-elevated shadow-card p-4 sm:p-5 ${className}`}
+      className={`rounded-card bg-elevated p-5 sm:p-6 ${
+        raised ? "shadow-raised" : "border border-separator"
+      } ${className}`}
     >
       {children}
     </div>

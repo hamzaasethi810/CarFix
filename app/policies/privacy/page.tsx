@@ -126,6 +126,32 @@ export default function PrivacyPage() {
         </p>
       </Card>
 
+      {/*
+        Automated processing is a disclosure people have a right to, not a
+        footnote: two things here make a decision about your submission
+        without a person involved, and one of them looks at a photograph of
+        your receipt.
+      */}
+      <SectionTitle>What a machine decides</SectionTitle>
+      <Card className="space-y-3">
+        <p className="text-subhead text-pretty">
+          Two steps run without a person. A receipt you upload as proof is read
+          by text recognition and compared against the shop name and total you
+          entered, which decides whether your report is marked confirmed. Text
+          you post is screened for abuse before it appears.
+        </p>
+        <p className="text-subhead text-secondary text-pretty">
+          The receipt image is destroyed once it has been read; only the
+          outcome is kept. Neither check is perfect, and you can ask a person
+          to review either decision.
+        </p>
+        <p className="text-subhead text-secondary text-pretty">
+          The software itself was written with substantial help from AI coding
+          tools. That has no bearing on what we collect, but you should know
+          how the thing holding your data was made.
+        </p>
+      </Card>
+
       <Card className="mt-8">
         <p className="text-footnote text-secondary text-pretty">
           This describes what the site actually does today and will change as it
