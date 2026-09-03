@@ -28,6 +28,12 @@ export function Reveal({
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [shown, setShown] = useState(false);
+  /*
+    Arming is what hides the element, and it only ever happens from here. The
+    server renders it visible, so a visitor without JavaScript reads the page
+    rather than a blank ground.
+  */
+  const [armed, setArmed] = useState(false);
 
   useEffect(() => {
     const el = ref.current;
@@ -37,6 +43,9 @@ export function Reveal({
       const id = requestAnimationFrame(() => setShown(true));
       return () => cancelAnimationFrame(id);
     }
+
+    // Hide first, then let the observer bring it back.
+    const arm = requestAnimationFrame(() => setArmed(true));
 
     let done = false;
     const show = () => {
@@ -82,6 +91,7 @@ export function Reveal({
     onScroll();
 
     return () => {
+      cancelAnimationFrame(arm);
       io.disconnect();
       window.removeEventListener("scroll", onScroll);
     };
@@ -90,6 +100,7 @@ export function Reveal({
   return (
     <div
       ref={ref}
+      data-armed={armed || undefined}
       data-shown={shown || undefined}
       style={{ transitionDelay: `${delay}ms` }}
       className={`reveal ${className}`}

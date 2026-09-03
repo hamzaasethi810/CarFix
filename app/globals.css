@@ -1,18 +1,17 @@
 @import "tailwindcss";
 
 /*
-  Design system: a deep forest green, skeuomorphic material ground.
+  Design system: a neutral bone ground with a forest accent.
 
-  Two layers, per the Liquid Glass guidance:
-    - Content layer  — opaque, raised dark-green surfaces, standard materials.
-    - Functional layer — Liquid Glass (blur + translucency) for navigation,
-      toolbars, and floating controls that sit ABOVE content.
+  This file used to open by describing a deep forest green, dark-only page
+  with skeuomorphic raised surfaces. None of that is true any more: the
+  ground is #F5F5F3, the ink is a cool near-black, and elevation was retired
+  from content surfaces in favour of a hairline and a tone change. The
+  description is corrected rather than deleted because a stylesheet that
+  documents a design nobody can see is worse than one that documents none.
 
-  Glass never appears on content cards. Putting it there "creates unnecessary
-  complexity and confusing visual hierarchy".
-
-  Dark appearance only, by request: the page is a deep forest green throughout.
-  Every text token below is checked against its surface by
+  Light appearance. The forest green survives as the accent, and only as the
+  accent. Every text token below is checked against its surface by
   tests/contrast.test.ts — see lib/design/contrast.ts.
 */
 
@@ -47,7 +46,8 @@
   /* Near-black, never pure black: #000 flattens and kills the sense of depth. */
   --label: #16181A;
   --label-secondary: rgba(22, 24, 26, 0.66);
-  --label-tertiary: rgba(22, 24, 26, 0.52);
+  /* 0.52 measured 3.61:1 on a card and 3.53:1 on the ground, both under AA. */
+  --label-tertiary: rgba(22, 24, 26, 0.62);
   --separator: rgba(22, 24, 26, 0.12);
 
   /*
@@ -1026,25 +1026,41 @@ a {
 
   Three properties, one curve, and an explicit `filter: none` at the end.
 */
+/*
+  Visible by default. The hidden state is opt-in, and only JavaScript opts in.
+
+  This used to rest at opacity 0 and wait for JavaScript to reveal it, which
+  meant the whole page rendered blank without JS: seventeen elements at zero
+  opacity over 1,675 characters of perfectly good server-rendered copy. An
+  animation is allowed to depend on JavaScript. The content it animates is
+  not.
+
+  So `.reveal` alone does nothing. The component adds data-armed on mount,
+  which is the only thing that hides anything, and data-shown then brings it
+  back. No script, no arming, no disappearance.
+*/
 .reveal {
-  opacity: 0;
-  transform: translateY(1rem);
-  filter: blur(2px);
   transition:
     opacity 560ms cubic-bezier(0.23, 1, 0.32, 1),
     transform 560ms cubic-bezier(0.23, 1, 0.32, 1),
     filter 560ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-.reveal[data-shown] {
+.reveal[data-armed] {
+  opacity: 0;
+  transform: translateY(1rem);
+  filter: blur(2px);
+}
+
+.reveal[data-armed][data-shown] {
   opacity: 1;
   transform: none;
   filter: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .reveal,
-  .reveal[data-shown] {
+  .reveal[data-armed],
+  .reveal[data-armed][data-shown] {
     opacity: 1;
     transform: none;
     filter: none;
@@ -1092,7 +1108,7 @@ body:has(.home-root) > main {
   .home-root .chapter {
     scroll-snap-align: start;
     scroll-snap-stop: always;
-    scroll-margin-top: 4rem;
+    scroll-margin-top: 4.5rem;
   }
 }
 

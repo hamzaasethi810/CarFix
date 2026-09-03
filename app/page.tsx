@@ -24,7 +24,7 @@ const COPY = {
   start: {
     heading: "Start with the car you actually own.",
     body: "Or start from the other end. Add what you were charged, and the next owner with your car stops guessing.",
-    button: "Add what you paid",
+    button: "File a price",
   },
   record: {
     heading: "One record, three kinds of work.",
@@ -63,8 +63,7 @@ const COPY = {
   },
   scale: {
     heading: "What is in it so far.",
-    body: "Every price here came from someone who paid it. Add yours, upload the receipt, and it is marked confirmed.",
-    button: "Get started",
+    button: "File your first price",
     labels: {
       shops: "Garages listed",
       generations: "Vehicle generations",
@@ -106,6 +105,17 @@ function Chapter({
 export default async function HomePage() {
   const [stats, makes] = await Promise.all([getProofNumbers(), getMakes()]);
 
+  /*
+    Parsed from the same strings the card prints, so the mark and the labels
+    can never disagree.
+  */
+  const money = (v: string) => Number(v.replace(/[^0-9.]/g, ""));
+  const { low, high, total } = COPY.proof.example;
+  const markerPercent = Math.min(
+    100,
+    Math.max(0, ((money(total) - money(low)) / (money(high) - money(low))) * 100),
+  );
+
   const counts: [number, string][] = (
     [
       [stats?.shops ?? 0, COPY.scale.labels.shops],
@@ -145,7 +155,7 @@ export default async function HomePage() {
                 width={2400}
                 height={1600}
                 priority
-                sizes="(max-width: 1024px) 92vw, 52vw"
+                sizes="(max-width: 1024px) 92vw, 38vw"
                 className="w-full rounded-card object-cover shadow-raised"
               />
             </Reveal>
@@ -155,15 +165,21 @@ export default async function HomePage() {
 
       {/* Two: the way in. */}
       <Chapter label="start">
-        <div className="grid gap-10 lg:grid-cols-[22rem_minmax(0,1fr)] lg:gap-16 lg:items-center">
+        {/*
+          Two ways in, weighted equally either side of the centre line. They
+          previously sat in a 22rem column beside a 1fr one, which read as a
+          control with a caption rather than a genuine choice, and left the
+          right column stranding 316px of its width.
+        */}
+        <div className="mx-auto grid max-w-4xl gap-12 md:grid-cols-2 md:gap-16 lg:gap-24 md:items-center">
           <Reveal>
             <QuickFilters makes={makes} />
           </Reveal>
           <Reveal delay={160}>
-            <h2 id="start" className="text-title1 tracking-[-0.02em] text-accent max-w-sm text-balance">
+            <h2 id="start" className="text-title1 tracking-[-0.02em] text-accent text-balance">
               {COPY.start.heading}
             </h2>
-            <p className="mt-4 text-body text-secondary max-w-sm text-balance">
+            <p className="mt-4 text-body text-secondary text-balance">
               {COPY.start.body}
             </p>
             <Link href="/register" className={`${buttonStyles.secondaryAccent} mt-7 px-6`}>
@@ -186,15 +202,35 @@ export default async function HomePage() {
             {COPY.record.heading}
           </h2>
         </Reveal>
-        <div className="mt-12 border-t border-separator">
-          {COPY.record.trades.map((trade, i) => (
-            <Reveal key={trade.id} delay={160 + i * 120}>
-              <div className="flex flex-col gap-3 border-b border-separator py-8 sm:py-10">
-                <h3 className="text-title2 tracking-[-0.015em]">{trade.name}</h3>
-                <p className="text-body text-secondary max-w-2xl">{trade.line}</p>
-              </div>
-            </Reveal>
-          ))}
+        {/*
+          The rules are capped to the same measure as the text. They used to
+          run 1,088px wide over paragraphs that stopped at 672px, leaving
+          416px of hairline past the last word, three times over.
+        */}
+        <div className="mt-12 max-w-4xl border-t border-separator">
+          {COPY.record.trades.map((trade, i) => {
+            const src = `/img/${trade.id}.webp`;
+            return (
+              <Reveal key={trade.id} delay={160 + i * 120}>
+                <div className="grid gap-5 border-b border-separator py-8 sm:py-10 sm:grid-cols-[minmax(0,1fr)_11rem] sm:items-center sm:gap-10">
+                  <div>
+                    <h3 className="text-title2 tracking-[-0.015em]">{trade.name}</h3>
+                    <p className="mt-2 text-body text-secondary">{trade.line}</p>
+                  </div>
+                  {hasImage(src) && (
+                    <Image
+                      src={src}
+                      alt=""
+                      width={800}
+                      height={600}
+                      sizes="(max-width: 640px) 88vw, 11rem"
+                      className="h-28 w-full rounded-control object-cover sm:h-32"
+                    />
+                  )}
+                </div>
+              </Reveal>
+            );
+          })}
         </div>
       </Chapter>
 
@@ -225,16 +261,32 @@ export default async function HomePage() {
                   </p>
                 </div>
 
-                <div className="mt-7" aria-hidden="true">
-                  <div className="relative h-px bg-separator">
+                {/*
+                  The marker is derived, not placed. It was hard-coded at 38%
+                  while the value it represents sits at 23.9% of the range: a
+                  14-point error on the only chart on a page whose argument is
+                  that a number on its own is a rumour.
+
+                  Only the rule itself is aria-hidden. The two amounts are the
+                  most decision-relevant numbers in the card and were being
+                  hidden from screen readers along with the decoration.
+                */}
+                <div className="mt-7">
+                  <div className="relative h-px bg-separator" aria-hidden="true">
                     <span className="absolute left-0 -top-1 h-2 w-px bg-label/30" />
-                    <span className="absolute left-[38%] -top-1.5 h-3 w-0.5 bg-accent" />
+                    <span
+                      className="absolute -top-1.5 h-3 w-0.5 bg-accent"
+                      style={{ left: `${markerPercent.toFixed(1)}%` }}
+                    />
                     <span className="absolute right-0 -top-1 h-2 w-px bg-label/30" />
                   </div>
-                  <div className="mt-2 flex justify-between text-caption text-tertiary-label tabular-nums">
+                  <p className="mt-2 flex justify-between text-caption text-tertiary-label tabular-nums">
                     <span>{COPY.proof.example.low}</span>
                     <span>{COPY.proof.example.high}</span>
-                  </div>
+                  </p>
+                  <p className="mt-1 text-caption text-tertiary-label">
+                    What this job typically runs.
+                  </p>
                 </div>
 
                 <dl className="mt-6 grid grid-cols-3 gap-4 border-t border-separator pt-4">
@@ -266,7 +318,7 @@ export default async function HomePage() {
                 alt=""
                 width={1500}
                 height={2250}
-                sizes="42vw"
+                sizes="(max-width: 1024px) 0px, 34vw"
                 className="w-full rounded-card object-cover max-h-[62vh] shadow-raised"
               />
             </Reveal>
@@ -293,12 +345,11 @@ export default async function HomePage() {
             ))}
           </dl>
           <Reveal delay={520}>
-            <p className="mt-16 text-body text-secondary max-w-lg text-balance">
-              {COPY.scale.body}
-            </p>
-            <Link href="/register" className={`${buttonStyles.primary} mt-7 px-8`}>
-              {COPY.scale.button}
-            </Link>
+            <div className="mt-20 flex justify-center">
+              <Link href="/register" className={`${buttonStyles.primary} px-10`}>
+                {COPY.scale.button}
+              </Link>
+            </div>
           </Reveal>
         </Chapter>
       )}

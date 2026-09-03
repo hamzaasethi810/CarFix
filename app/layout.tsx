@@ -41,11 +41,19 @@ export const viewport: Viewport = {
   viewportFit: "cover",
   // Dark appearance only, by request (see globals.css) — the page is the same
   // deep forest ground regardless of the visitor's system preference, so
-  // there is no separate light-mode colour to declare here. `#12271A` is
-  // `--bg-grouped`, the tone `<body>` actually paints (see the comment
-  // there), not the raw `--bg`, so mobile browser chrome matches the page.
-  themeColor: "#12271A",
+  // Matches --bg, the tone <body> actually paints, so mobile browser chrome
+  // sits flush with the page instead of capping it with a dark green bar
+  // left over from the forest palette this replaced.
+  themeColor: "#F5F5F3",
 };
+
+/*
+  Inline-block with vertical padding, so each policy link is a 44px target
+  without breaking the sentence they sit inside. They were 16px tall.
+*/
+const policyLink =
+  "text-accent inline-block py-3 -my-3 align-baseline min-h-11 " +
+  "[@media(hover:hover)_and_(pointer:fine)]:hover:underline underline-offset-4";
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const user = await currentUser();
@@ -101,15 +109,15 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
           >
             Prices are reported by owners, not quotes from shops.{" "}
-            <a href="/policies/terms" className="text-accent">
+            <a href="/policies/terms" className={policyLink}>
               Terms and ground rules
             </a>
             {" · "}
-            <a href="/policies/privacy" className="text-accent">
+            <a href="/policies/privacy" className={policyLink}>
               Privacy
             </a>
             {" · "}
-            <a href="/policies/receipts" className="text-accent">
+            <a href="/policies/receipts" className={policyLink}>
               How we handle receipts
             </a>
           </div>
