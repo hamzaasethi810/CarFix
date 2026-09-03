@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 import { BotIdClient } from "botid/client";
+import { SessionGuard } from "@/components/session-guard";
 import { SiteHeader } from "@/components/site-header";
 import { currentUser, isPrivileged } from "@/lib/auth/guards";
 
@@ -75,6 +76,8 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           Skip to content
         </a>
 
+        {/* Only for someone who has a session to lose. */}
+        {user && <SessionGuard />}
         <SiteHeader
           isAuthed={Boolean(user)}
           isAdmin={user?.role === "ADMIN"}

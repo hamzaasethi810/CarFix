@@ -119,7 +119,10 @@ describe("an operator clearing a lost authenticator", () => {
     // The password is untouched — this recovers the account, it does not open
     // it, and the operator never handles a credential.
     expect(after.passwordHash).toBe(before.passwordHash);
-    expect(await verifyPassword("correcthorsebattery", after.passwordHash)).toBe(true);
+    // passwordHash is nullable now that an account can be Google-only. A
+    // recovered password account must still have one.
+    expect(after.passwordHash).not.toBeNull();
+    expect(await verifyPassword("correcthorsebattery", after.passwordHash!)).toBe(true);
   });
 
   it("takes the old secret and every old code out of use", async () => {

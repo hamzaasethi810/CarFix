@@ -90,7 +90,10 @@ describe("completing a reset", () => {
     await expect(completeReset({ token, password: NEW_PASSWORD })).resolves.toEqual({ ok: true });
 
     const after = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
-    expect(await verifyPassword(NEW_PASSWORD, after.passwordHash)).toBe(true);
+    // passwordHash is nullable now that an account can be Google-only; a
+    // completed reset must always leave one behind.
+    expect(after.passwordHash).not.toBeNull();
+    expect(await verifyPassword(NEW_PASSWORD, after.passwordHash!)).toBe(true);
   });
 
   it("signs every existing session out", async () => {
@@ -200,7 +203,9 @@ describe("accounts with a second factor", () => {
     });
 
     const after = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
-    expect(await verifyPassword(NEW_PASSWORD, after.passwordHash)).toBe(false);
+    // The reset was refused, so the original hash must still be in place.
+    expect(after.passwordHash).not.toBeNull();
+    expect(await verifyPassword(NEW_PASSWORD, after.passwordHash!)).toBe(false);
   });
 
   it("refuses a wrong code", async () => {
@@ -227,7 +232,10 @@ describe("accounts with a second factor", () => {
 
     expect(result).toEqual({ ok: true });
     const after = await prisma.user.findUniqueOrThrow({ where: { id: user.id } });
-    expect(await verifyPassword(NEW_PASSWORD, after.passwordHash)).toBe(true);
+    // passwordHash is nullable now that an account can be Google-only; a
+    // completed reset must always leave one behind.
+    expect(after.passwordHash).not.toBeNull();
+    expect(await verifyPassword(NEW_PASSWORD, after.passwordHash!)).toBe(true);
   });
 
   it("says up front that a code will be needed", async () => {
