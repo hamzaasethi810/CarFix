@@ -60,3 +60,8 @@ tmp/
 Supercar_transforms_*.mp4
 
 0831*.mov
+
+# Source photographs for public/img. The derived WebP is committed; these
+# masters are 9504px originals and stay on disk.
+gt3rs.jpg
+gtr.jpg

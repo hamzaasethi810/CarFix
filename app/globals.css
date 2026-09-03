@@ -1051,3 +1051,23 @@ a {
     transition: none;
   }
 }
+
+/*
+  The landing page runs edge to edge.
+
+  Every other route wants the layout's centred column, so rather than
+  unpicking that container and re-adding it across the app, this route marks
+  itself and the container stands down for it. The same `:has()` shape the
+  old scroll story used.
+*/
+body:has(.home-root) > main {
+  max-width: none;
+  /*
+    Marked important on purpose. Tailwind v4 compiles px-4 to padding-inline,
+    the same property this sets, so the two collide and layer order decides
+    the winner rather than source order. max-width has no such competitor and
+    lands without help; the padding needs it.
+  */
+  padding-inline: 0 !important;
+  padding-block: 0 !important;
+}

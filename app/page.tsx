@@ -26,6 +26,7 @@ import { getMakes } from "@/lib/services/taxonomy";
 export const revalidate = 300;
 
 const HERO_IMAGE = "/img/hero.webp";
+const PROOF_IMAGE = "/img/proof.webp";
 
 const TRADES = [
   { id: "mechanics", name: "Mechanics", line: "Brakes, oil, clutches, diagnostics." },
@@ -76,31 +77,62 @@ export default async function HomePage() {
   ).filter(([n]) => n > 0);
 
   return (
-    <main>
-      {/* One: the claim. */}
-      <section className="relative isolate flex min-h-[100dvh] items-center overflow-hidden bg-[#16181A] text-white">
-        {heroImage && (
-          <>
-            <Image src={HERO_IMAGE} alt="" fill priority sizes="100vw" className="object-cover" />
+    /*
+      Not a <main>: the root layout already renders one, and nesting them is
+      invalid. The marker class is what lets globals.css drop that layout
+      container's width cap and padding for this route, so the hero and the
+      dark chapters can run edge to edge.
+    */
+    <div className="home-root">
+      {/*
+        One: the claim.
+
+        A split rather than type over a full-bleed photograph. The car sits
+        centre-left in the source frame, which is exactly where a headline
+        wants to be, and any overlay crop that clears it at one width puts
+        the words back across the bonnet at another. Two columns cannot
+        overlap at any size, and on a phone the picture simply follows the
+        words.
+      */}
+      <section className="flex min-h-[100dvh] flex-col bg-[#16181A] text-white lg:grid lg:min-h-[100dvh] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-stretch">
+        <div className="flex flex-1 items-center px-5 sm:px-8 lg:px-12 xl:pl-20 py-16 sm:py-20 lg:py-0">
+          <div className="mx-auto w-full max-w-xl lg:mx-0">
+            <Reveal>
+              <h1 className="text-large-title sm:text-[3.5rem] lg:text-[3.75rem] sm:leading-[1.03] tracking-[-0.025em] text-balance">
+                Real prices, tailored to your car.
+              </h1>
+            </Reveal>
+            <Reveal delay={120}>
+              <p className="mt-6 max-w-md text-body text-white/70 text-balance">
+                What owners paid their mechanic, wrap shop and tuner. Filed by
+                generation, not by badge.
+              </p>
+            </Reveal>
+          </div>
+        </div>
+
+        {heroImage ? (
+          <div className="relative h-[46vh] min-h-[280px] w-full lg:h-auto">
+            <Image
+              src={HERO_IMAGE}
+              alt=""
+              fill
+              priority
+              /* Half the viewport on a wide screen, all of it on a phone. */
+              sizes="(max-width: 1024px) 100vw, 55vw"
+              className="object-cover object-center"
+            />
+            {/*
+              A short feather on the inner edge only, so the photograph meets
+              the type column without a hard seam. It never reaches far enough
+              to sit over the car.
+            */}
             <div
               aria-hidden="true"
-              className="absolute inset-0 bg-gradient-to-r from-[#16181A]/92 via-[#16181A]/72 to-[#16181A]/35"
+              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#16181A]/50 via-transparent to-transparent lg:bg-gradient-to-r lg:from-[#16181A] lg:via-transparent lg:to-transparent lg:[--tw-gradient-from-position:0%] lg:[--tw-gradient-via-position:14%]"
             />
-          </>
-        )}
-        <div className="relative mx-auto w-full max-w-6xl px-5 sm:px-6 py-20">
-          <Reveal>
-            <h1 className="max-w-3xl text-large-title sm:text-[4rem] sm:leading-[1.02] tracking-[-0.025em] text-balance">
-              Real prices, tailored to your car.
-            </h1>
-          </Reveal>
-          <Reveal delay={120}>
-            <p className="mt-6 max-w-md text-body text-white/70 text-balance">
-              What owners paid their mechanic, wrap shop and tuner. Filed by
-              generation, not by badge.
-            </p>
-          </Reveal>
-        </div>
+          </div>
+        ) : null}
       </section>
 
       {/* Two: the way in. */}
@@ -160,62 +192,88 @@ export default async function HomePage() {
         </div>
       </Chapter>
 
-      {/* Four: what a report is. */}
+      {/*
+        Four: what a report is.
+
+        Three columns of content in two, on a chapter that also carries a
+        photograph: the picture takes its own column so nothing is ever set
+        over the car, and it drops out entirely below lg where there is no
+        room for a third thing.
+      */}
       <Chapter label="proof" dark>
-        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 lg:items-center">
-          <Reveal>
-            <h2 id="proof" className="text-title1 tracking-[-0.02em] text-balance">
-              Every price carries its receipt.
-            </h2>
-            <p className="mt-5 text-body text-white/70 max-w-md text-balance">
-              A number on its own is a rumour. Upload the receipt and it is
-              read, checked against the shop and total you entered, then
-              destroyed. Only the confirmation is kept.
-            </p>
-          </Reveal>
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)] lg:gap-16 lg:items-center">
+          <div>
+            <Reveal>
+              <h2 id="proof" className="text-title1 tracking-[-0.02em] text-balance">
+                Every price carries its receipt.
+              </h2>
+              <p className="mt-5 text-body text-white/70 max-w-md text-balance">
+                A number on its own is a rumour. Upload the receipt and it is
+                read, checked against the shop and total you entered, then
+                destroyed. Only the confirmation is kept.
+              </p>
+            </Reveal>
 
-          <Reveal delay={140}>
-            <figure className="rounded-card border border-white/12 bg-white/[0.04] p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="text-headline">Brake pads and rotors, front</p>
-                  <p className="text-subhead text-white/60 mt-1">E90 335i</p>
+            <Reveal delay={140}>
+              <figure className="mt-9 rounded-card border border-white/12 bg-white/[0.04] p-6">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-headline">Carbon ceramic pads, front</p>
+                    <p className="text-subhead text-white/60 mt-1">
+                      Mercedes-AMG GT R · C190
+                    </p>
+                  </div>
+                  <p className="font-condensed font-bold text-title1 tabular-nums shrink-0">
+                    $2,180
+                  </p>
                 </div>
-                <p className="font-condensed font-bold text-title1 tabular-nums shrink-0">$640</p>
-              </div>
 
-              <div className="mt-7" aria-hidden="true">
-                <div className="relative h-px bg-white/20">
-                  <span className="absolute left-0 -top-1 h-2 w-px bg-white/35" />
-                  <span className="absolute left-[46%] -top-1.5 h-3 w-0.5 bg-accent" />
-                  <span className="absolute right-0 -top-1 h-2 w-px bg-white/35" />
+                <div className="mt-7" aria-hidden="true">
+                  <div className="relative h-px bg-white/20">
+                    <span className="absolute left-0 -top-1 h-2 w-px bg-white/35" />
+                    <span className="absolute left-[38%] -top-1.5 h-3 w-0.5 bg-[#5FD08A]" />
+                    <span className="absolute right-0 -top-1 h-2 w-px bg-white/35" />
+                  </div>
+                  <div className="mt-2 flex justify-between text-caption text-white/45 tabular-nums">
+                    <span>$1,640</span>
+                    <span>$3,900</span>
+                  </div>
                 </div>
-                <div className="mt-2 flex justify-between text-caption text-white/45 tabular-nums">
-                  <span>$430</span>
-                  <span>$980</span>
-                </div>
-              </div>
 
-              <dl className="mt-6 grid grid-cols-3 gap-4 border-t border-white/12 pt-4">
-                <div>
-                  <dt className="text-caption text-white/45">Parts</dt>
-                  <dd className="text-subhead tabular-nums mt-0.5">$395</dd>
-                </div>
-                <div>
-                  <dt className="text-caption text-white/45">Labour</dt>
-                  <dd className="text-subhead tabular-nums mt-0.5">$245</dd>
-                </div>
-                <div>
-                  <dt className="text-caption text-white/45">Receipt</dt>
-                  <dd className="text-subhead mt-0.5 text-[#5FD08A]">Confirmed</dd>
-                </div>
-              </dl>
+                <dl className="mt-6 grid grid-cols-3 gap-4 border-t border-white/12 pt-4">
+                  <div>
+                    <dt className="text-caption text-white/45">Parts</dt>
+                    <dd className="text-subhead tabular-nums mt-0.5">$1,690</dd>
+                  </div>
+                  <div>
+                    <dt className="text-caption text-white/45">Labour</dt>
+                    <dd className="text-subhead tabular-nums mt-0.5">$490</dd>
+                  </div>
+                  <div>
+                    <dt className="text-caption text-white/45">Receipt</dt>
+                    <dd className="text-subhead mt-0.5 text-[#5FD08A]">Confirmed</dd>
+                  </div>
+                </dl>
 
-              <figcaption className="mt-5 text-footnote text-white/45">
-                An example, to show the shape of a report. Not a real price.
-              </figcaption>
-            </figure>
-          </Reveal>
+                <figcaption className="mt-5 text-footnote text-white/45">
+                  An example, to show the shape of a report. Not a real price.
+                </figcaption>
+              </figure>
+            </Reveal>
+          </div>
+
+          {hasImage(PROOF_IMAGE) && (
+            <Reveal delay={220} className="hidden lg:block">
+              <Image
+                src={PROOF_IMAGE}
+                alt=""
+                width={1500}
+                height={2250}
+                sizes="45vw"
+                className="w-full rounded-card object-cover max-h-[68vh]"
+              />
+            </Reveal>
+          )}
         </div>
       </Chapter>
 
@@ -257,6 +315,6 @@ export default async function HomePage() {
           </Link>
         </Reveal>
       </Chapter>
-    </main>
+    </div>
   );
 }

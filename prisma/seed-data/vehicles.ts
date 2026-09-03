@@ -517,6 +517,14 @@ const BASE_MAKES: MakeSpec[] = [
         { code: "W166", from: 2016, to: 2019 },
         { code: "W167", from: 2020, to: null },
       ]},
+      /*
+        The AMG GT. One generation, C190, covering the whole 2015-2021 run
+        including the GT R. Kept as its own model rather than a trim of
+        anything else, which is how owners and parts catalogues treat it.
+      */
+      { name: "AMG GT", generations: [
+        { code: "C190", from: 2015, to: 2021, trims: ["GT", "GT S", "GT C", "GT R"] },
+      ]},
       { name: "C63 AMG", generations: [
         { code: "W204", from: 2008, to: 2014 },
         { code: "W205", from: 2015, to: 2021, trims: ["C63", "C63 S"] },
