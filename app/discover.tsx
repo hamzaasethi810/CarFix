@@ -88,16 +88,34 @@ export function Discover({
     reaches for process.env of its own.
   */
   mapStyle,
+  /*
+    Seeded from the landing filter's query string. The hero asks for make,
+    model and generation and then hands off here; without this the visitor
+    picks their car, arrives, and finds the filters empty.
+  */
+  initialFilters,
 }: {
   makes: Option[];
   initial: Result[];
   mapStyle: string;
+  initialFilters?: {
+    makeId?: string;
+    modelId?: string;
+    generationId?: string;
+    platformId?: string;
+  };
 }) {
-  const [makeId, setMakeId] = useState("");
+  const [makeId, setMakeId] = useState(initialFilters?.makeId ?? "");
   const [models, setModels] = useState<Option[]>([]);
-  const [modelId, setModelId] = useState("");
+  const [modelId, setModelId] = useState(initialFilters?.modelId ?? "");
   const [generations, setGenerations] = useState<Generation[]>([]);
-  const [genValue, setGenValue] = useState("");
+  const [genValue, setGenValue] = useState(
+    initialFilters?.platformId
+      ? `p:${initialFilters.platformId}`
+      : initialFilters?.generationId
+        ? `g:${initialFilters.generationId}`
+        : "",
+  );
   const [serviceId, setServiceId] = useState("");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [subscribedOnly, setSubscribedOnly] = useState(false);

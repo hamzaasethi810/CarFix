@@ -1,7 +1,9 @@
 import Link from "next/link";
 import { CountUp } from "@/components/landing/count-up";
+import { QuickFilters } from "@/components/landing/quick-filters";
 import { buttonStyles } from "@/components/ui";
 import { getProofNumbers } from "@/lib/services/stats";
+import { getMakes } from "@/lib/services/taxonomy";
 
 /*
   The landing page.
@@ -33,7 +35,7 @@ const TRADES = [
 ];
 
 export default async function HomePage() {
-  const stats = await getProofNumbers();
+  const [stats, makes] = await Promise.all([getProofNumbers(), getMakes()]);
 
   /*
     A count of zero is not proof, it is an admission. Zeros are dropped and
@@ -49,34 +51,39 @@ export default async function HomePage() {
 
   return (
     <main className="mx-auto max-w-5xl px-5 sm:px-6 pb-28">
-      <section className="pt-16 sm:pt-24 max-w-2xl">
-        <h1 className="text-large-title sm:text-[3.5rem] sm:leading-[1.02] tracking-[-0.02em] text-balance">
-          Know what it should cost.
-        </h1>
-        <p className="text-body text-secondary mt-5 max-w-lg text-balance">
-          What real owners paid their mechanic, their wrap shop and their
-          tuner. For your exact car, from the people who got the bill.
-        </p>
+      {/*
+        The filter carries the right half rather than an image. It fills the
+        space, and unlike a photograph it converts: the page stops describing
+        the product and becomes it.
+      */}
+      <section className="pt-14 sm:pt-20 grid lg:grid-cols-[minmax(0,1fr)_22rem] gap-10 lg:gap-14 lg:items-start">
+        <div className="lg:pt-6">
+          <h1 className="text-large-title sm:text-[3.5rem] sm:leading-[1.02] tracking-[-0.02em] text-balance">
+            Know what your generation costs.
+          </h1>
+          <p className="text-body text-secondary mt-5 max-w-lg text-balance">
+            A 3 Series spans twenty years and four platforms. An E90 brake job
+            and an F30 brake job are not the same price, so nothing here is
+            filed by model alone.
+          </p>
+          <p className="text-body text-secondary mt-4 max-w-lg text-balance">
+            Real prices from the owners who paid them, at mechanics, wrap
+            shops and tuners.
+          </p>
 
-        {/*
-          Both ways in, side by side. Someone who wants a shop tonight and
-          someone willing to contribute a price are different visitors, and
-          making either of them scroll to find their door costs the other one.
-        */}
-        <div className="mt-9 flex flex-col sm:flex-row gap-3">
-          <Link href="/search" className={`${buttonStyles.primary} px-7 justify-center`}>
-            Find garages near me
-          </Link>
-          <Link href="/register" className={`${buttonStyles.secondary} px-7 justify-center`}>
-            Add what you paid
-          </Link>
+          <div className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <Link href="/register" className={`${buttonStyles.secondary} px-6`}>
+              Add what you paid
+            </Link>
+            {counts.length > 0 && (
+              <p className="text-footnote text-tertiary-label">
+                {counts.map(([n, l]) => `${n.toLocaleString("en-US")} ${l.toLowerCase()}`).join(" · ")}
+              </p>
+            )}
+          </div>
         </div>
 
-        {counts.length > 0 && (
-          <p className="mt-6 text-footnote text-tertiary-label">
-            {counts.map(([n, l]) => `${n.toLocaleString("en-US")} ${l.toLowerCase()}`).join(" · ")}
-          </p>
-        )}
+        <QuickFilters makes={makes} />
       </section>
 
       {/*
@@ -84,7 +91,7 @@ export default async function HomePage() {
         side by side is the default every builder ships; a list with real
         typographic hierarchy reads as edited.
       */}
-      <section aria-labelledby="covers" className="mt-24 sm:mt-32">
+      <section aria-labelledby="covers" className="mt-24 sm:mt-28">
         <h2 id="covers" className="text-caption uppercase tracking-[0.14em] text-tertiary-label">
           What is in the record
         </h2>
