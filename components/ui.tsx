@@ -256,6 +256,18 @@ export const buttonStyles = {
     `${BUTTON_BASE} ${PRESS} bg-elevated text-label border border-separator ` +
     "shadow-[inset_0_0.5px_0_rgba(255,255,255,0.9),0_1px_1px_rgba(22,24,26,0.08)] " +
     "hover:bg-grouped",
+  /*
+    A secondary button that speaks in the accent.
+
+    Its own variant rather than `secondary` plus a text-accent class: both are
+    text-colour utilities, so the winner is decided by their order in the
+    generated stylesheet, not by the order they appear in a className. The
+    override silently lost.
+  */
+  secondaryAccent:
+    `${BUTTON_BASE} ${PRESS} bg-elevated text-accent font-medium border border-separator ` +
+    "shadow-[inset_0_0.5px_0_rgba(255,255,255,0.9),0_1px_1px_rgba(22,24,26,0.08)] " +
+    "hover:bg-grouped",
   destructive:
     `${BUTTON_BASE} ${PRESS} bg-destructive-fill text-on-destructive font-semibold ` +
     "shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_1px_1px_rgba(22,24,26,0.18)] " +

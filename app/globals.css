@@ -1071,3 +1071,34 @@ body:has(.home-root) > main {
   padding-inline: 0 !important;
   padding-block: 0 !important;
 }
+
+/*
+  Scroll stops on the landing page.
+
+  Proximity rather than mandatory: mandatory drags you off a chapter that is
+  taller than a short window, which is exactly what happens on a small phone
+  in landscape. `scroll-snap-stop: always` is the part that does the work the
+  page actually needs, which is preventing one hard flick from carrying you
+  past two chapters without seeing either.
+
+  scroll-margin-top clears the sticky header, so a snapped chapter's first
+  line is not sitting underneath it.
+*/
+@media (min-height: 520px) {
+  body:has(.home-root) {
+    scroll-snap-type: y proximity;
+  }
+
+  .home-root .chapter {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    scroll-margin-top: 4rem;
+  }
+}
+
+/* Snapping and reduced motion do not belong together. */
+@media (prefers-reduced-motion: reduce) {
+  body:has(.home-root) {
+    scroll-snap-type: none;
+  }
+}

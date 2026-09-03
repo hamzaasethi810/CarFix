@@ -8,313 +8,300 @@ import { hasImage } from "@/lib/design/assets";
 import { getProofNumbers } from "@/lib/services/stats";
 import { getMakes } from "@/lib/services/taxonomy";
 
-/*
-  The landing page, as chapters.
-
-  Each section holds the screen on its own: min-h-[100dvh] rather than
-  h-screen, so a chapter that outgrows a small phone pushes the page taller
-  instead of clipping its own content. Content is vertically centred, so a
-  short chapter sits in the middle of the viewport rather than at the top of
-  an empty one.
-
-  Everything arrives on scroll, staggered inside each chapter so the eye
-  follows a sequence rather than watching one rectangle fade in six times.
-
-  Photography is composed for but not required: each slot asks hasImage() and
-  composes without it.
-*/
 export const revalidate = 300;
+
+/* ------------------------------------------------------------------------
+   ALL THE WORDS ON THIS PAGE LIVE HERE.
+
+   Edit anything in COPY and the page updates. Nothing below this block needs
+   touching to change wording; the markup reads from it.
+   --------------------------------------------------------------------- */
+const COPY = {
+  hero: {
+    heading: "Real prices, tailored to your car.",
+    body: "What owners paid their mechanic, wrap shop and tuner. Filed by generation, not by badge.",
+  },
+  start: {
+    heading: "Start with the car you actually own.",
+    body: "Or start from the other end. Add what you were charged, and the next owner with your car stops guessing.",
+    button: "Add what you paid",
+  },
+  record: {
+    heading: "One record, three kinds of work.",
+    trades: [
+      {
+        id: "mechanics",
+        name: "Mechanics",
+        line: "Brakes, oil, clutches, diagnostics. What the shop charged, not what it quoted.",
+      },
+      {
+        id: "appearance",
+        name: "Wrap shops",
+        line: "Wraps, PPF, respray. Work that never had a list price to begin with.",
+      },
+      {
+        id: "performance",
+        name: "Tuners",
+        line: "Exhausts, tunes, kits. Priced by generation, not by guesswork.",
+      },
+    ],
+  },
+  proof: {
+    heading: "Every price carries its receipt.",
+    body: "A number on its own is a rumour. Upload the receipt and it is read, checked against the shop and total you entered, then destroyed. Only the confirmation is kept.",
+    example: {
+      service: "Carbon ceramic pads, front",
+      vehicle: "Mercedes-AMG GT R · C190",
+      total: "$2,180",
+      low: "$1,640",
+      high: "$3,900",
+      parts: "$1,690",
+      labour: "$490",
+      receipt: "Confirmed",
+      caption: "An example, to show the shape of a report. Not a real price.",
+    },
+  },
+  scale: {
+    heading: "What is in it so far.",
+    body: "Every price here came from someone who paid it. Add yours, upload the receipt, and it is marked confirmed.",
+    button: "Get started",
+    labels: {
+      shops: "Garages listed",
+      generations: "Vehicle generations",
+      services: "Kinds of work",
+    },
+  },
+} as const;
 
 const HERO_IMAGE = "/img/hero.webp";
 const PROOF_IMAGE = "/img/proof.webp";
 
-const TRADES = [
-  { id: "mechanics", name: "Mechanics", line: "Brakes, oil, clutches, diagnostics." },
-  { id: "appearance", name: "Wrap shops", line: "Wraps, PPF, respray." },
-  { id: "performance", name: "Tuners", line: "Exhausts, tunes, kits." },
-];
+/*
+  A chapter: one idea, one screen.
 
-/* A chapter: one idea, one screen. */
+  scroll-snap-align plus scroll-snap-stop: always is what makes the page stop
+  at each one rather than letting a hard flick carry you through three. The
+  snap type is proximity rather than mandatory, so a chapter that outgrows a
+  short window can still be read without the browser dragging you off it.
+*/
 function Chapter({
   children,
-  dark = false,
   className = "",
   label,
 }: {
   children: React.ReactNode;
-  dark?: boolean;
   className?: string;
   label?: string;
 }) {
   return (
     <section
       aria-labelledby={label}
-      className={`flex min-h-[100dvh] items-center ${
-        dark ? "bg-[#16181A] text-white" : ""
-      } ${className}`}
+      className={`chapter flex min-h-[100dvh] items-center border-t border-separator ${className}`}
     >
-      <div className="mx-auto w-full max-w-6xl px-5 sm:px-6 py-20">{children}</div>
+      <div className="mx-auto w-full max-w-6xl px-5 sm:px-8 py-20">{children}</div>
     </section>
   );
 }
 
 export default async function HomePage() {
   const [stats, makes] = await Promise.all([getProofNumbers(), getMakes()]);
-  const heroImage = hasImage(HERO_IMAGE);
 
-  /*
-    Three numbers, all of them true today. "Prices reported" is not among
-    them because it is zero, and a zero presented as proof is an admission.
-    Service types is the honest third: it is the breadth of work the record
-    can file a price against, which is the claim the page actually makes.
-  */
   const counts: [number, string][] = (
     [
-      [stats?.shops ?? 0, "Garages listed"],
-      [stats?.generations ?? 0, "Vehicle generations"],
-      [stats?.services ?? 0, "Kinds of work"],
+      [stats?.shops ?? 0, COPY.scale.labels.shops],
+      [stats?.generations ?? 0, COPY.scale.labels.generations],
+      [stats?.services ?? 0, COPY.scale.labels.services],
     ] as [number, string][]
   ).filter(([n]) => n > 0);
 
   return (
-    /*
-      Not a <main>: the root layout already renders one, and nesting them is
-      invalid. The marker class is what lets globals.css drop that layout
-      container's width cap and padding for this route, so the hero and the
-      dark chapters can run edge to edge.
-    */
     <div className="home-root">
-      {/*
-        One: the claim.
-
-        A split rather than type over a full-bleed photograph. The car sits
-        centre-left in the source frame, which is exactly where a headline
-        wants to be, and any overlay crop that clears it at one width puts
-        the words back across the bonnet at another. Two columns cannot
-        overlap at any size, and on a phone the picture simply follows the
-        words.
-      */}
-      <section className="flex min-h-[100dvh] flex-col bg-[#16181A] text-white lg:grid lg:min-h-[100dvh] lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:items-stretch">
-        <div className="flex flex-1 items-center px-5 sm:px-8 lg:px-12 xl:pl-20 py-16 sm:py-20 lg:py-0">
-          <div className="mx-auto w-full max-w-xl lg:mx-0">
+      {/* One: the claim. */}
+      <section className="chapter flex min-h-[100dvh] items-center">
+        <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-5 sm:px-8 py-20 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16">
+          <div>
             <Reveal>
-              <h1 className="text-large-title sm:text-[3.5rem] lg:text-[3.75rem] sm:leading-[1.03] tracking-[-0.025em] text-balance">
-                Real prices, tailored to your car.
+              <h1 className="text-large-title sm:text-[3.5rem] sm:leading-[1.03] tracking-[-0.025em] text-accent text-balance">
+                {COPY.hero.heading}
               </h1>
             </Reveal>
-            <Reveal delay={120}>
-              <p className="mt-6 max-w-md text-body text-white/70 text-balance">
-                What owners paid their mechanic, wrap shop and tuner. Filed by
-                generation, not by badge.
+            <Reveal delay={140}>
+              <p className="mt-6 max-w-md text-body text-secondary text-balance">
+                {COPY.hero.body}
               </p>
             </Reveal>
           </div>
-        </div>
 
-        {heroImage ? (
-          <div className="relative h-[46vh] min-h-[280px] w-full lg:h-auto">
-            <Image
-              src={HERO_IMAGE}
-              alt=""
-              fill
-              priority
-              /* Half the viewport on a wide screen, all of it on a phone. */
-              sizes="(max-width: 1024px) 100vw, 55vw"
-              className="object-cover object-center"
-            />
-            {/*
-              A short feather on the inner edge only, so the photograph meets
-              the type column without a hard seam. It never reaches far enough
-              to sit over the car.
-            */}
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#16181A]/50 via-transparent to-transparent lg:bg-gradient-to-r lg:from-[#16181A] lg:via-transparent lg:to-transparent lg:[--tw-gradient-from-position:0%] lg:[--tw-gradient-via-position:14%]"
-            />
-          </div>
-        ) : null}
+          {hasImage(HERO_IMAGE) && (
+            <Reveal delay={220}>
+              {/*
+                Inset and rounded rather than bled to the edge. On a light
+                ground a photograph run to the viewport edge reads as pasted
+                on; given its own margin it reads as placed.
+              */}
+              <Image
+                src={HERO_IMAGE}
+                alt=""
+                width={2400}
+                height={1600}
+                priority
+                sizes="(max-width: 1024px) 92vw, 52vw"
+                className="w-full rounded-card object-cover shadow-raised"
+              />
+            </Reveal>
+          )}
+        </div>
       </section>
 
       {/* Two: the way in. */}
       <Chapter label="start">
-        <div className="grid lg:grid-cols-[22rem_minmax(0,1fr)] gap-10 lg:gap-16 lg:items-center">
+        <div className="grid gap-10 lg:grid-cols-[22rem_minmax(0,1fr)] lg:gap-16 lg:items-center">
           <Reveal>
             <QuickFilters makes={makes} />
           </Reveal>
-          <Reveal delay={120}>
-            <h2 id="start" className="text-title1 tracking-[-0.02em] max-w-sm text-balance">
-              Start with the car you actually own.
+          <Reveal delay={160}>
+            <h2 id="start" className="text-title1 tracking-[-0.02em] text-accent max-w-sm text-balance">
+              {COPY.start.heading}
             </h2>
             <p className="mt-4 text-body text-secondary max-w-sm text-balance">
-              Or start from the other end. Add what you were charged, and the
-              next owner with your car stops guessing.
+              {COPY.start.body}
             </p>
-            <Link href="/register" className={`${buttonStyles.secondary} mt-7 px-6`}>
-              Add what you paid
+            <Link href="/register" className={`${buttonStyles.secondaryAccent} mt-7 px-6`}>
+              {COPY.start.button}
             </Link>
           </Reveal>
         </div>
       </Chapter>
 
-      {/* Three: what is covered. */}
+      {/*
+        Three: what is covered.
+
+        Stacked full width rather than a name beside its description. Three
+        rows of two columns reads as a table; a vertical run gives each trade
+        the whole measure and a rule of its own.
+      */}
       <Chapter label="record">
         <Reveal>
-          <h2 id="record" className="text-title1 tracking-[-0.02em] max-w-md text-balance">
-            One record, three kinds of work.
+          <h2 id="record" className="text-title1 tracking-[-0.02em] text-accent max-w-md text-balance">
+            {COPY.record.heading}
           </h2>
         </Reveal>
         <div className="mt-12 border-t border-separator">
-          {TRADES.map((trade, i) => {
-            const src = `/img/${trade.id}.webp`;
-            return (
-              <Reveal key={trade.id} delay={140 + i * 110}>
-                <div className="grid sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] gap-3 sm:gap-10 items-center border-b border-separator py-9">
-                  <div className={i % 2 === 1 ? "sm:order-2" : undefined}>
-                    <h3 className="text-title3 tracking-[-0.015em]">{trade.name}</h3>
-                    <p className="text-subhead text-secondary mt-1.5">{trade.line}</p>
-                  </div>
-                  {hasImage(src) && (
-                    <Image
-                      src={src}
-                      alt=""
-                      width={800}
-                      height={560}
-                      sizes="(max-width: 640px) 88vw, 40vw"
-                      className={`h-36 sm:h-44 w-auto object-contain ${
-                        i % 2 === 1 ? "sm:order-1" : "sm:justify-self-end"
-                      }`}
-                    />
-                  )}
-                </div>
-              </Reveal>
-            );
-          })}
+          {COPY.record.trades.map((trade, i) => (
+            <Reveal key={trade.id} delay={160 + i * 120}>
+              <div className="flex flex-col gap-3 border-b border-separator py-8 sm:py-10">
+                <h3 className="text-title2 tracking-[-0.015em]">{trade.name}</h3>
+                <p className="text-body text-secondary max-w-2xl">{trade.line}</p>
+              </div>
+            </Reveal>
+          ))}
         </div>
       </Chapter>
 
-      {/*
-        Four: what a report is.
-
-        Three columns of content in two, on a chapter that also carries a
-        photograph: the picture takes its own column so nothing is ever set
-        over the car, and it drops out entirely below lg where there is no
-        room for a third thing.
-      */}
-      <Chapter label="proof" dark>
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)] lg:gap-16 lg:items-center">
+      {/* Four: what a report is. */}
+      <Chapter label="proof">
+        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)] lg:gap-16 lg:items-center">
           <div>
             <Reveal>
-              <h2 id="proof" className="text-title1 tracking-[-0.02em] text-balance">
-                Every price carries its receipt.
+              <h2 id="proof" className="text-title1 tracking-[-0.02em] text-accent text-balance">
+                {COPY.proof.heading}
               </h2>
-              <p className="mt-5 text-body text-white/70 max-w-md text-balance">
-                A number on its own is a rumour. Upload the receipt and it is
-                read, checked against the shop and total you entered, then
-                destroyed. Only the confirmation is kept.
+              <p className="mt-5 text-body text-secondary max-w-md text-balance">
+                {COPY.proof.body}
               </p>
             </Reveal>
 
-            <Reveal delay={140}>
-              <figure className="mt-9 rounded-card border border-white/12 bg-white/[0.04] p-6">
+            <Reveal delay={160}>
+              <figure className="mt-9 rounded-card border border-separator bg-elevated p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-headline">Carbon ceramic pads, front</p>
-                    <p className="text-subhead text-white/60 mt-1">
-                      Mercedes-AMG GT R · C190
+                    <p className="text-headline">{COPY.proof.example.service}</p>
+                    <p className="text-subhead text-secondary mt-1">
+                      {COPY.proof.example.vehicle}
                     </p>
                   </div>
                   <p className="font-condensed font-bold text-title1 tabular-nums shrink-0">
-                    $2,180
+                    {COPY.proof.example.total}
                   </p>
                 </div>
 
                 <div className="mt-7" aria-hidden="true">
-                  <div className="relative h-px bg-white/20">
-                    <span className="absolute left-0 -top-1 h-2 w-px bg-white/35" />
-                    <span className="absolute left-[38%] -top-1.5 h-3 w-0.5 bg-[#5FD08A]" />
-                    <span className="absolute right-0 -top-1 h-2 w-px bg-white/35" />
+                  <div className="relative h-px bg-separator">
+                    <span className="absolute left-0 -top-1 h-2 w-px bg-label/30" />
+                    <span className="absolute left-[38%] -top-1.5 h-3 w-0.5 bg-accent" />
+                    <span className="absolute right-0 -top-1 h-2 w-px bg-label/30" />
                   </div>
-                  <div className="mt-2 flex justify-between text-caption text-white/45 tabular-nums">
-                    <span>$1,640</span>
-                    <span>$3,900</span>
+                  <div className="mt-2 flex justify-between text-caption text-tertiary-label tabular-nums">
+                    <span>{COPY.proof.example.low}</span>
+                    <span>{COPY.proof.example.high}</span>
                   </div>
                 </div>
 
-                <dl className="mt-6 grid grid-cols-3 gap-4 border-t border-white/12 pt-4">
+                <dl className="mt-6 grid grid-cols-3 gap-4 border-t border-separator pt-4">
                   <div>
-                    <dt className="text-caption text-white/45">Parts</dt>
-                    <dd className="text-subhead tabular-nums mt-0.5">$1,690</dd>
+                    <dt className="text-caption text-tertiary-label">Parts</dt>
+                    <dd className="text-subhead tabular-nums mt-0.5">{COPY.proof.example.parts}</dd>
                   </div>
                   <div>
-                    <dt className="text-caption text-white/45">Labour</dt>
-                    <dd className="text-subhead tabular-nums mt-0.5">$490</dd>
+                    <dt className="text-caption text-tertiary-label">Labour</dt>
+                    <dd className="text-subhead tabular-nums mt-0.5">{COPY.proof.example.labour}</dd>
                   </div>
                   <div>
-                    <dt className="text-caption text-white/45">Receipt</dt>
-                    <dd className="text-subhead mt-0.5 text-[#5FD08A]">Confirmed</dd>
+                    <dt className="text-caption text-tertiary-label">Receipt</dt>
+                    <dd className="text-subhead mt-0.5 text-accent">{COPY.proof.example.receipt}</dd>
                   </div>
                 </dl>
 
-                <figcaption className="mt-5 text-footnote text-white/45">
-                  An example, to show the shape of a report. Not a real price.
+                <figcaption className="mt-5 text-footnote text-tertiary-label">
+                  {COPY.proof.example.caption}
                 </figcaption>
               </figure>
             </Reveal>
           </div>
 
           {hasImage(PROOF_IMAGE) && (
-            <Reveal delay={220} className="hidden lg:block">
+            <Reveal delay={240} className="hidden lg:block">
               <Image
                 src={PROOF_IMAGE}
                 alt=""
                 width={1500}
                 height={2250}
-                sizes="45vw"
-                className="w-full rounded-card object-cover max-h-[68vh]"
+                sizes="42vw"
+                className="w-full rounded-card object-cover max-h-[62vh] shadow-raised"
               />
             </Reveal>
           )}
         </div>
       </Chapter>
 
-      {/* Five: the scale of it. */}
+      {/* Five: the scale of it, and the ask. */}
       {counts.length > 0 && (
         <Chapter label="scale">
           <Reveal>
-            <h2 id="scale" className="text-title1 tracking-[-0.02em] max-w-md text-balance">
-              What is in it so far.
+            <h2 id="scale" className="text-title1 tracking-[-0.02em] text-accent max-w-md text-balance">
+              {COPY.scale.heading}
             </h2>
           </Reveal>
           <dl className="mt-14 grid gap-12 sm:grid-cols-3">
             {counts.map(([n, label], i) => (
-              <Reveal key={label} delay={140 + i * 110}>
-                <dd className="font-condensed font-bold text-[3.25rem] sm:text-[4rem] leading-none">
+              <Reveal key={label} delay={160 + i * 120}>
+                <dd className="font-condensed font-bold text-[3.25rem] sm:text-[4rem] leading-none text-accent">
                   <CountUp value={n} />
                 </dd>
                 <dt className="text-subhead text-secondary mt-3">{label}</dt>
               </Reveal>
             ))}
           </dl>
+          <Reveal delay={520}>
+            <p className="mt-16 text-body text-secondary max-w-lg text-balance">
+              {COPY.scale.body}
+            </p>
+            <Link href="/register" className={`${buttonStyles.primary} mt-7 px-8`}>
+              {COPY.scale.button}
+            </Link>
+          </Reveal>
         </Chapter>
       )}
-
-      {/* Six: the ask. */}
-      <Chapter label="close">
-        <Reveal>
-          <h2 id="close" className="text-title1 tracking-[-0.02em] max-w-xl text-balance">
-            Every price here came from someone who paid it.
-          </h2>
-        </Reveal>
-        <Reveal delay={120}>
-          <p className="mt-5 text-body text-secondary max-w-md text-balance">
-            Add yours, upload the receipt, and it is marked confirmed. That is
-            the whole mechanism.
-          </p>
-          <Link href="/register" className={`${buttonStyles.primary} mt-9 px-8`}>
-            Create an account
-          </Link>
-        </Reveal>
-      </Chapter>
     </div>
   );
 }
