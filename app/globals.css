@@ -1138,3 +1138,41 @@ body:has(.home-root) > main {
     filter: none;
   }
 }
+
+/*
+  The ruled columns, and how they behave when the frame narrows.
+
+  The direction contract promises that narrow widths RESTACK the columns rather
+  than shrinking the figures, and this is where that happens. Below 640px the
+  operation label takes a full-width row of its own and the figures share the
+  row beneath it, so the head row and the value row still describe the same
+  tracks and stay aligned. Above 640px it is the printed form: label on the
+  left, one fixed-width money column per head on the right.
+
+  It is expressed here rather than as an inline style because the component
+  sets the column COUNT and the stylesheet owns the breakpoint; an inline
+  grid-template cannot carry a media query, and holding a 5.5rem minimum per
+  money column on a 390px screen crushed the label to three lines.
+*/
+.op-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--figure-count, 1), minmax(0, 1fr));
+  column-gap: 1rem;
+  row-gap: 0.375rem;
+}
+
+.op-grid > .op-label {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 640px) {
+  .op-grid {
+    grid-template-columns: minmax(0, 1fr) repeat(var(--figure-count, 1), minmax(5.5rem, 7rem));
+    column-gap: 2rem;
+    row-gap: 0;
+  }
+
+  .op-grid > .op-label {
+    grid-column: auto;
+  }
+}

@@ -150,16 +150,32 @@ export default async function HomePage() {
         this page is that a price is a document rather than a mood. So the
         first thing on screen is an actual itemised record that reconciles.
       */}
-      <section className="mx-auto w-full max-w-5xl px-5 sm:px-8 pt-14 pb-20 sm:pt-20 sm:pb-28">
+      <section className="mx-auto w-full max-w-5xl px-5 sm:px-8 pt-10 pb-20 sm:pt-20 sm:pb-28">
         <Reveal>
-          <h1 className="text-large-title sm:text-[3.25rem] sm:leading-[1.05] tracking-[-0.03em] text-balance">
+          {/*
+            Smaller on a phone than the type scale's large-title.
+
+            At 3rem a five-word claim runs to three lines and pushes the record
+            itself below the fold, which breaks the one promise this page makes
+            about its first viewport. The claim still leads; it just stops
+            taking half the screen to do it.
+          */}
+          <h1 className="text-[2.4rem] leading-[1.08] sm:text-[3.25rem] sm:leading-[1.05] tracking-[-0.03em] text-balance">
             {COPY.hero.heading}
           </h1>
           <p className="mt-5 max-w-xl text-body text-secondary text-pretty">{COPY.hero.body}</p>
         </Reveal>
 
-        <Reveal delay={120} className="mt-14">
-          <SheetHeader as="h2" title={ex.service} code={ex.generation} meta={ex.vehicle} />
+        <Reveal delay={120} className="mt-10 sm:mt-14">
+          {/*
+            The header names the car, the ruled line names the work.
+
+            Both used to say "Carbon ceramic pads, front", which read as a
+            stutter: a repair order identifies the vehicle at the top and the
+            operations underneath, and repeating the operation as the record
+            title makes the document look like it has one field filled in twice.
+          */}
+          <SheetHeader as="h2" title={ex.vehicle} code={ex.generation} />
 
           <Columns
             heads={["Parts", "Labour"]}
@@ -169,11 +185,15 @@ export default async function HomePage() {
             <OperationLine label={ex.service} figures={[ex.parts, ex.labour]} />
           </Columns>
 
-          <div className="mt-10 grid gap-10 sm:grid-cols-2 sm:gap-14 sm:items-end">
+          <div className="mt-10 grid gap-10 sm:grid-cols-2 sm:gap-14 sm:items-start">
             {/*
               The range sits beside the total rather than under it, so the
               question the visitor actually arrived with (is this number
-              normal) is answered on the same line as the number.
+              normal) is answered alongside the number rather than below it.
+
+              Aligned to the top of its cell, not the bottom. Bottom-aligning it
+              against a taller reconciliation left a large hole in the middle of
+              the record, which reads as a layout fault rather than as space.
             */}
             <RangeScale
               low={amount(ex.low)}

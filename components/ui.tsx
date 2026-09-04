@@ -4,12 +4,14 @@ import Link from "next/link";
 /*
   One definition of the column frame.
 
-  Columns, OperationLine and BlankForm must derive the same track list or the
-  heads stop sitting over their figures. Three copies of this string is exactly
-  how that drifts, so there is one.
+  HeadRow, OperationLine and BlankForm must describe the same tracks or the
+  heads stop sitting over their figures. The tracks themselves live in
+  globals.css under .op-grid, because the frame restacks below 640px and an
+  inline grid-template cannot carry a media query. All this does is hand the
+  stylesheet the column count.
 */
-const gridTemplate = (n: number) =>
-  `minmax(0,1fr) repeat(${n}, minmax(5.5rem, 7rem))`;
+const figureCount = (n: number) =>
+  ({ ["--figure-count" as string]: String(n) }) as React.CSSProperties;
 
 /*
   One head row, used by both Columns and BlankForm.
@@ -22,10 +24,12 @@ function HeadRow({ heads }: { heads: string[] }) {
   return (
     <div
       role="row"
-      className="grid gap-x-4 sm:gap-x-8 border-b border-separator pb-2 text-caption text-tertiary-label"
-      style={{ gridTemplateColumns: gridTemplate(heads.length) }}
+      className="op-grid border-b border-separator pb-2 text-caption text-tertiary-label"
+      style={figureCount(heads.length)}
     >
-      <span role="columnheader">Operation</span>
+      <span role="columnheader" className="op-label">
+        Operation
+      </span>
       {heads.map((h) => (
         <span key={h} role="columnheader" className="text-right">
           {h}
@@ -159,18 +163,17 @@ export function OperationLine({
   figures: (string | null)[];
   href?: string;
 }) {
-  const template = gridTemplate(figures.length);
   return (
     <div
       role="row"
-      className={`op-line relative grid gap-x-4 sm:gap-x-8 items-baseline border-b border-separator py-3.5 min-h-11 ${
+      className={`op-line op-grid relative items-baseline border-b border-separator py-3.5 min-h-11 ${
         href
           ? "[@media(hover:hover)_and_(pointer:fine)]:hover:bg-grouped transition-colors duration-150"
           : ""
       }`}
-      style={{ gridTemplateColumns: template }}
+      style={figureCount(figures.length)}
     >
-      <div role="cell" className="min-w-0">
+      <div role="cell" className="op-label min-w-0">
         <div className="flex flex-wrap items-baseline gap-x-2.5">
           {href ? (
             /*
