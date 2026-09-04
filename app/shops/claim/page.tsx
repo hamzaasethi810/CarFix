@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { PageTitle } from "@/components/ui";
+import { SheetHeader } from "@/components/ui";
 import { currentUser } from "@/lib/auth/guards";
 import { ClaimForm } from "./claim-form";
 
@@ -9,11 +9,13 @@ export default async function ClaimShopPage() {
 
   return (
     <div className="max-w-xl mx-auto">
-      <PageTitle
+      <SheetHeader
         title="Claim your shop"
-        subtitle="Find your listing, then show us you trade under that name."
+        meta="Find your listing, then show us you trade under that name."
       />
-      <ClaimForm />
+      <div className="mt-8">
+        <ClaimForm />
+      </div>
     </div>
   );
 }

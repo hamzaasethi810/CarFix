@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { RegisterForm } from "./register-form";
-import { PageTitle } from "@/components/ui";
+import { SheetHeader } from "@/components/ui";
 
 export default function RegisterPage() {
   return (
-    <div className="max-w-sm mx-auto">
-      <PageTitle title="Create your account" subtitle="Then add your car and start logging work." />
-      <RegisterForm />
+    <div className="max-w-md mx-auto">
+      <SheetHeader title="Create your account" meta="Then add your car and start logging work." />
+      <div className="mt-8">
+        <RegisterForm />
+      </div>
 
       {/* Shops have their own route so neither audience wades through the other's copy. */}
       <p className="text-subhead text-secondary text-center mt-6">

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Card, PageTitle } from "@/components/ui";
+import { Sheet, SheetHeader } from "@/components/ui";
 import { currentUser } from "@/lib/auth/guards";
 import { AddShopForm } from "./add-shop-form";
 
@@ -8,13 +8,13 @@ export default async function AddShopPage() {
   if (!user) redirect("/login");
 
   return (
-    <div className="max-w-xl mx-auto">
-      <PageTitle
+    <div className="max-w-xl">
+      <SheetHeader
         title="Add a shop"
-        subtitle="For places the map does not know about yet."
+        meta="For places the map does not know about yet."
       />
 
-      <Card className="mb-5">
+      <Sheet className="mt-8 mb-5 p-5">
         <h2 className="text-headline font-semibold mb-2">What happens next</h2>
         <p className="text-subhead text-secondary text-pretty">
           It appears on the map immediately, marked <strong>unconfirmed</strong>.
@@ -23,7 +23,7 @@ export default async function AddShopPage() {
           subscription or carry the gold mark, so there is nothing to be gained
           by inventing one.
         </p>
-      </Card>
+      </Sheet>
 
       <AddShopForm />
     </div>

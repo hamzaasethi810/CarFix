@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Card, PageTitle, SectionTitle } from "@/components/ui";
+import { Sheet, SheetHeader, SectionTitle } from "@/components/ui";
 
 export const metadata: Metadata = {
   title: "Terms and ground rules",
@@ -18,14 +18,14 @@ export const metadata: Metadata = {
 */
 export default function TermsPage() {
   return (
-    <div className="max-w-2xl mx-auto">
-      <PageTitle
+    <div className="max-w-[68ch] mx-auto">
+      <SheetHeader
         title="Terms and ground rules"
-        subtitle="The short version: this is owners reporting their own experiences, and we do not vouch for any of it."
+        meta="The short version: this is owners reporting their own experiences, and we do not vouch for any of it."
       />
 
       <SectionTitle>What Gaari is</SectionTitle>
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <p className="text-subhead text-pretty">
           Gaari collects what car owners say they paid, at which shop, on which
           car. It exists so you can see what people with a car like yours were
@@ -35,10 +35,10 @@ export default function TermsPage() {
           Everything you read here was written by another owner. It is their
           account of their experience, not ours, and not a recommendation.
         </p>
-      </Card>
+      </Sheet>
 
       <SectionTitle>What we are not responsible for</SectionTitle>
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <p className="text-subhead text-pretty">
           We do not write the reports, we do not carry out the work, and we are
           not a party to anything you agree with a shop. In particular:
@@ -66,10 +66,10 @@ export default function TermsPage() {
             warranty from us.
           </li>
         </ul>
-      </Card>
+      </Sheet>
 
       <SectionTitle>Rules for posting</SectionTitle>
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <ul className="text-subhead text-secondary space-y-2 list-disc pl-5 text-pretty">
           <li>
             <strong className="text-label">Report only what happened to you.</strong>{" "}
@@ -102,10 +102,10 @@ export default function TermsPage() {
           You keep ownership of what you write. By posting it you give us
           permission to display it on the site.
         </p>
-      </Card>
+      </Sheet>
 
       <SectionTitle>When something is wrong</SectionTitle>
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <p className="text-subhead text-pretty">
           Every report can be flagged. Flagged content is looked at by a person,
           and we remove anything that breaks the rules above. Shops can claim
@@ -115,10 +115,10 @@ export default function TermsPage() {
           We can remove content or close an account that breaks these rules.
           Removing a report is not a judgement about the shop.
         </p>
-      </Card>
+      </Sheet>
 
       <SectionTitle>Your account and your data</SectionTitle>
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <p className="text-subhead text-pretty">
           Receipts uploaded as proof are checked and then destroyed &mdash; they
           are never kept. That is set out in full in the{" "}
@@ -131,7 +131,7 @@ export default function TermsPage() {
           You can delete your account at any time from settings. Payments are
           handled by Stripe; we never see or store card details.
         </p>
-      </Card>
+      </Sheet>
 
       {/*
         Written from what the code actually does, not from a template. The
@@ -139,7 +139,7 @@ export default function TermsPage() {
         paragraph: automation reads and screens, it never writes a price.
       */}
       <SectionTitle>How this site is built, and what is automated</SectionTitle>
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <p className="text-subhead text-pretty">
           The software behind Gaari was written with substantial help from AI
           coding tools. We are saying so plainly because you are trusting the
@@ -164,15 +164,15 @@ export default function TermsPage() {
           it. Nothing here is generated, inferred, estimated or filled in to
           make the site look busier than it is.
         </p>
-      </Card>
+      </Sheet>
 
-      <Card className="mt-8">
+      <Sheet className="p-5 mt-8">
         <p className="text-footnote text-secondary text-pretty">
           These rules may change as the site grows. Nothing here is legal
           advice, and where local consumer law gives you rights, it takes
           precedence over anything written on this page.
         </p>
-      </Card>
+      </Sheet>
     </div>
   );
 }

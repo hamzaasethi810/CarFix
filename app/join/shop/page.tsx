@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Card, PageTitle } from "@/components/ui";
+import { Sheet, SheetHeader } from "@/components/ui";
 import { currentUser } from "@/lib/auth/guards";
 import { ShopSignupForm } from "./shop-signup-form";
 
@@ -15,13 +15,13 @@ export default async function JoinShopPage() {
   if (user) redirect("/shops/claim");
 
   return (
-    <div className="max-w-md mx-auto">
-      <PageTitle
+    <div className="max-w-md">
+      <SheetHeader
         title="List your shop"
-        subtitle="Create your account, then verify you run the business."
+        meta="Create your account, then verify you run the business."
       />
 
-      <Card className="mb-5">
+      <Sheet className="mt-8 mb-5 p-5">
         <h2 className="text-headline font-semibold mb-2">How it works</h2>
         <ol className="space-y-2 text-subhead text-secondary">
           <li>1. Create your account below.</li>
@@ -29,7 +29,7 @@ export default async function JoinShopPage() {
           <li>3. Once approved, publish your prices and reply to reviews.</li>
           <li>4. Subscribe for the gold mark if you want it. Cancel any time, one click.</li>
         </ol>
-      </Card>
+      </Sheet>
 
       <ShopSignupForm />
 

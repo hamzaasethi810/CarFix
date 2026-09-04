@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
-import { Card, PageTitle, SectionTitle } from "@/components/ui";
+import { Sheet, SheetHeader, SectionTitle } from "@/components/ui";
 
 export const metadata: Metadata = {
   title: "Privacy",
@@ -20,14 +20,14 @@ export const metadata: Metadata = {
 */
 export default function PrivacyPage() {
   return (
-    <div className="max-w-2xl mx-auto">
-      <PageTitle
+    <div className="max-w-[68ch] mx-auto">
+      <SheetHeader
         title="Privacy"
-        subtitle="What we store, why we store it, and how to make us stop."
+        meta="What we store, why we store it, and how to make us stop."
       />
 
       <SectionTitle>What we store</SectionTitle>
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <ul className="text-subhead text-secondary space-y-2 list-disc pl-5 text-pretty">
           <li>
             <strong className="text-label">Your account.</strong> Email address,
@@ -59,10 +59,10 @@ export default function PrivacyPage() {
             token so abuse can be spotted. It goes when the token does.
           </li>
         </ul>
-      </Card>
+      </Sheet>
 
       <SectionTitle>What we deliberately do not store</SectionTitle>
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <ul className="text-subhead text-secondary space-y-2 list-disc pl-5 text-pretty">
           <li>
             <strong className="text-label">Receipts.</strong> A receipt is
@@ -87,10 +87,10 @@ export default function PrivacyPage() {
             The only cookie is the one that keeps you signed in.
           </li>
         </ul>
-      </Card>
+      </Sheet>
 
       <SectionTitle>Who else sees it</SectionTitle>
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <p className="text-subhead text-pretty">
           We do not sell your data and we do not share it for advertising. It
           reaches other companies only where they do a job the site needs:
@@ -105,10 +105,10 @@ export default function PrivacyPage() {
           Your reports are public by design. That is the point of the site: other
           owners can see what work cost. Your email address is never shown.
         </p>
-      </Card>
+      </Sheet>
 
       <SectionTitle>Getting rid of it</SectionTitle>
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <p className="text-subhead text-pretty">
           You can delete your account from settings at any time. That removes
           your profile, your cars, and your saved searches.
@@ -124,7 +124,7 @@ export default function PrivacyPage() {
           You can also ask for a copy of what we hold about you, or ask us to
           correct it.
         </p>
-      </Card>
+      </Sheet>
 
       {/*
         Automated processing is a disclosure people have a right to, not a
@@ -133,7 +133,7 @@ export default function PrivacyPage() {
         your receipt.
       */}
       <SectionTitle>What a machine decides</SectionTitle>
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <p className="text-subhead text-pretty">
           Two steps run without a person. A receipt you upload as proof is read
           by text recognition and compared against the shop name and total you
@@ -150,16 +150,16 @@ export default function PrivacyPage() {
           tools. That has no bearing on what we collect, but you should know
           how the thing holding your data was made.
         </p>
-      </Card>
+      </Sheet>
 
-      <Card className="mt-8">
+      <Sheet className="p-5 mt-8">
         <p className="text-footnote text-secondary text-pretty">
           This describes what the site actually does today and will change as it
           changes. Nothing here is legal advice, and where local data-protection
           law gives you rights, it takes precedence over anything written on
           this page.
         </p>
-      </Card>
+      </Sheet>
     </div>
   );
 }

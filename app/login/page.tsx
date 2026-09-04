@@ -1,5 +1,6 @@
 import { mailConfigured } from "@/lib/providers/email";
 import { googleConfigured } from "@/lib/providers/google";
+import { SheetHeader } from "@/components/ui";
 import { LoginForm } from "./login-form";
 
 /*
@@ -12,12 +13,11 @@ import { LoginForm } from "./login-form";
 */
 export default function LoginPage() {
   return (
-    <div className="mx-auto w-full max-w-sm px-4 pt-12 sm:pt-20 pb-24">
-      <h1 className="text-title1 font-semibold">Welcome back</h1>
-      <p className="text-subhead text-secondary mt-1.5 mb-8">
-        Sign in to your garage.
-      </p>
-      <LoginForm canResetPassword={mailConfigured()} googleEnabled={googleConfigured()} />
+    <div className="mx-auto w-full max-w-md px-4 pt-12 sm:pt-20 pb-24">
+      <SheetHeader title="Welcome back" meta="Sign in to your garage." />
+      <div className="mt-8">
+        <LoginForm canResetPassword={mailConfigured()} googleEnabled={googleConfigured()} />
+      </div>
     </div>
   );
 }
