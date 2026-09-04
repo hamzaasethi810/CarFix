@@ -66,7 +66,33 @@
   */
   --stamp: #C4331D;
 
+  /*
+    On death row until Task 13.
+
+    The .glass, .glass-clear and .pin rules further down this file still consume
+    these, and Task 13 is what removes those rules along with the map page's use
+    of them. Deleting the definitions while their consumers live invalidates
+    every declaration that references them, so the header, the map panels and
+    every pin would lose their material outright. Retuned to the new inks.
+  */
+  --glass-regular-bg: rgba(255, 255, 255, 0.86);
+  --glass-regular-blur: 20px;
+  --glass-clear-bg: rgba(255, 255, 255, 0.68);
+  --glass-clear-blur: 14px;
+  --glass-saturate: 1.1;
+  --glass-border: rgba(16, 27, 46, 0.14);
+  --glass-shadow:
+    0 1px 2px rgba(16, 27, 46, 0.10),
+    0 18px 40px -18px rgba(16, 27, 46, 0.26);
+
+  /*
+    Permanent, not deferred. Map pins use it, and in this world the brand ink
+    genuinely is the accent, so it is an alias rather than a fifth colour.
+  */
+  --brand: var(--accent);
+
   --radius-control: 3px;
+  --radius-glass: 12px;
 
   /*
     One shadow, for things that genuinely float.
@@ -140,6 +166,7 @@
   --color-on-destructive: var(--on-destructive);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-brand: var(--brand);
 
   /* Apple's text styles. Body is 17px — the platform default. */
   --text-large-title: 2.125rem;
@@ -170,7 +197,9 @@
   --text-caption--line-height: 1rem;
 
   --radius-control: var(--radius-control);
+  --radius-glass: var(--radius-glass);
   --shadow-raised: var(--shadow-raised);
+  --shadow-glass: var(--glass-shadow);
   --ease-out: var(--ease-out);
   --ease-in-out: var(--ease-in-out);
   --ease-drawer: var(--ease-drawer);
@@ -253,11 +282,11 @@ h1,
   backdrop-filter: blur(var(--glass-clear-blur)) saturate(var(--glass-saturate));
 }
 
-/* Where backdrop-filter is unsupported, fall back to a solid dark surface. */
+/* Where backdrop-filter is unsupported, fall back to a solid light surface. */
 @supports not (backdrop-filter: blur(1px)) {
   .glass,
   .glass-clear {
-    background: rgba(14, 31, 22, 0.97);
+    background: rgba(255, 255, 255, 0.97);
   }
 }
 
