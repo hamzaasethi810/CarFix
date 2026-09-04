@@ -289,6 +289,28 @@ body {
 }
 
 /*
+  R22: OperationLine's link is stretched over its row (its ::after covers the
+  row via `after:absolute after:inset-0`), so the anchor's own box is only as
+  wide as the label text — outlining the anchor rings just the text, not the
+  row the whole click target actually spans.
+
+  Wrapped in @supports so a browser without :has() keeps the anchor's own
+  default :focus-visible ring above (narrower, but never invisible) instead
+  of losing focus indication outright.
+*/
+@supports selector(:has(a)) {
+  .op-line:has(a:focus-visible) {
+    outline: 3px solid var(--accent);
+    outline-offset: -2px;
+    border-radius: 6px;
+  }
+
+  .op-line a:focus-visible {
+    outline: none;
+  }
+}
+
+/*
   A machined-aluminium control.
 
   Three things make metal read as metal: a directional brush, edges that catch
@@ -983,8 +1005,16 @@ a {
 /*
   Additive only: the resting state is visible, and data-pending is what the
   observer removes. See components/landing/reveal.tsx.
+
+  R23: the transition lives on the :not([data-pending]) state only, not on
+  bare .reveal. useEffect runs after first paint, so the sequence on load is
+  paint visible, then the effect adds data-pending — if `.reveal` carried an
+  unconditional transition, that attribute add would animate the element OUT
+  of view before the observer ever removed it, visibly wobbling above-the-fold
+  content. Scoping the transition here makes hiding instantaneous and leaves
+  only the entrance animated.
 */
-.reveal {
+.reveal:not([data-pending]) {
   transition:
     opacity 420ms var(--ease-out) var(--reveal-delay, 0ms),
     transform 420ms var(--ease-out) var(--reveal-delay, 0ms);

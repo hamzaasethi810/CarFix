@@ -149,15 +149,33 @@ export function OperationLine({
   href?: string;
 }) {
   const template = gridTemplate(figures.length);
-  const body = (
+  return (
     <div
       role="row"
-      className="grid gap-x-4 sm:gap-x-8 items-baseline border-b border-separator py-3.5 min-h-11"
+      className={`op-line relative grid gap-x-4 sm:gap-x-8 items-baseline border-b border-separator py-3.5 min-h-11 ${
+        href
+          ? "[@media(hover:hover)_and_(pointer:fine)]:hover:bg-grouped transition-colors duration-150"
+          : ""
+      }`}
       style={{ gridTemplateColumns: template }}
     >
       <div role="cell" className="min-w-0">
         <div className="flex flex-wrap items-baseline gap-x-2.5">
-          <span className="text-body">{label}</span>
+          {href ? (
+            /*
+              A stretched link (R22): the anchor stays a real link inside its
+              cell — table > row > cell stays intact — and its ::after covers
+              the row (which is `relative`) so the whole row is still
+              clickable. Wrapping the role="row" div in <Link> instead gave
+              the row an implicit role="link" ancestor, which is the nesting
+              an assistive-tech table walker cannot recover from.
+            */
+            <Link href={href} className="text-body after:absolute after:inset-0">
+              {label}
+            </Link>
+          ) : (
+            <span className="text-body">{label}</span>
+          )}
           {code && <Code>{code}</Code>}
         </div>
         {note && <p className="text-footnote text-secondary mt-0.5">{note}</p>}
@@ -168,16 +186,6 @@ export function OperationLine({
         </span>
       ))}
     </div>
-  );
-
-  if (!href) return body;
-  return (
-    <Link
-      href={href}
-      className="block [@media(hover:hover)_and_(pointer:fine)]:hover:bg-grouped transition-colors duration-150"
-    >
-      {body}
-    </Link>
   );
 }
 

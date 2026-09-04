@@ -124,6 +124,28 @@ describe("the ruled columns are a table", () => {
     // Two copies drift; the blank form then promises different columns.
     expect(ui().match(/role="columnheader"/g)?.length).toBe(2);
   });
+
+  it("never nests role=\"row\" inside a Link (R22)", () => {
+    /*
+      An <a> carries an implicit role="link". Wrapping a role="row" div in
+      <Link> produces table > link > row, which erases the row from the
+      table for assistive tech walking it — worse than shipping no roles at
+      all. The link belongs inside a cell instead, stretched over the row.
+
+      The original bug hid from a naive text scan because the row lived in a
+      `body` variable referenced as `{body}` inside <Link> — the markup never
+      sat textually between the tags. This resolves that one indirection
+      before scanning, so the check exercises what actually renders; once
+      fixed there is no `body` variable left and the resolve is a no-op.
+    */
+    const src = ui();
+    const bodyMatch = src.match(/const body = ([\s\S]*?);\s*\n\s*if \(!href\) return body;/);
+    const resolved = bodyMatch ? src.replace("{body}", bodyMatch[1]) : src;
+    const linkBlocks = resolved.match(/<Link\b[\s\S]*?<\/Link>/g) ?? [];
+    for (const block of linkBlocks) {
+      expect(block).not.toMatch(/role="row"/);
+    }
+  });
 });
 
 describe("photography", () => {
