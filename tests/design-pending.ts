@@ -102,7 +102,6 @@ export const PENDING: Record<string, string[]> = {
   ],
   layoutTransitions: [
     "app/discover.tsx",
-    "components/landing/car.tsx",
   ],
   stampInk: [
     "components/job-card.tsx",

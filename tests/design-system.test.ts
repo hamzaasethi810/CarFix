@@ -105,3 +105,44 @@ describe("the conversion worklist", () => {
     expect(Object.values(PENDING).flat()).toEqual([]);
   });
 });
+
+describe("the ruled columns are a table", () => {
+  const ui = () => read("components/ui.tsx");
+
+  it("exposes table, row, columnheader and cell roles", () => {
+    /*
+      A CSS grid of divs carries no relationship between a figure and the head
+      above it. This is the product's primary content, and PRODUCT.md makes the
+      accessibility guarantees binding, so the roles are not optional.
+    */
+    for (const role of ['role="table"', 'role="row"', 'role="columnheader"', 'role="cell"']) {
+      expect(ui()).toContain(role);
+    }
+  });
+
+  it("builds the head row in exactly one place", () => {
+    // Two copies drift; the blank form then promises different columns.
+    expect(ui().match(/role="columnheader"/g)?.length).toBe(2);
+  });
+});
+
+describe("photography", () => {
+  it("the illustrated car is gone", () => {
+    expect(() => read("components/landing/car.tsx")).toThrow();
+  });
+});
+
+describe("the reveal", () => {
+  it("renders its content without JavaScript", () => {
+    /*
+      The last critique's top finding: 17 reveal elements sat at opacity 0 and
+      none ever received data-shown, so the whole page was invisible with JS
+      disabled or the observer unsupported. The revealed state must therefore
+      be the CSS default, with the observer removing a class rather than
+      adding one.
+    */
+    const css = read("app/globals.css");
+    expect(css).toMatch(/\.reveal\[data-pending\]/);
+    expect(css).not.toMatch(/\.reveal\s*\{[^}]*opacity:\s*0/);
+  });
+});

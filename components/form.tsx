@@ -5,14 +5,18 @@ import type { InputHTMLAttributes, SelectHTMLAttributes, TextareaHTMLAttributes 
 import { buttonStyles } from "@/components/ui";
 
 /*
-  Controls are 44px tall to meet the platform touch-target minimum, and keep
-  their border on focus — the focus ring itself comes from :focus-visible in
-  globals.css so it is identical everywhere.
+  Fields are ruled, not boxed.
+
+  A form on a document has a rule under each entry rather than a rounded
+  container around it. The 44px minimum height and the shared :focus-visible
+  ring from globals.css are unchanged.
 */
 const FIELD =
-  "w-full min-h-11 rounded-control bg-elevated text-label text-body px-3.5 py-2.5 " +
-  "border border-separator placeholder:text-tertiary-label " +
-  "transition-colors duration-150 hover:border-[color-mix(in_srgb,var(--label)_25%,transparent)]";
+  "w-full min-h-11 bg-elevated text-label text-body px-3 py-2.5 " +
+  "border-0 border-b border-separator rounded-none placeholder:text-tertiary-label " +
+  "transition-[border-color] duration-150 " +
+  "hover:border-[color-mix(in_srgb,var(--label)_35%,transparent)] " +
+  "focus:border-accent";
 
 export function Field({
   label,
@@ -96,7 +100,7 @@ export function CheckboxRow({
         value={value}
         defaultChecked={defaultChecked}
         /* 28px is the platform minimum control size; the row around it is 44px. */
-        className="size-7 rounded accent-[var(--accent-fill)]"
+        className="size-7 rounded-none accent-[var(--accent-fill)]"
       />
       {label}
     </label>

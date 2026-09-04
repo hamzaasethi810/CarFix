@@ -1,21 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 /*
-  Reveals its children once, the first time they scroll into view.
+  Reveal on arrival, and visible without JavaScript.
 
-  Once, not every time. A section that re-animates each time it scrolls back
-  past reads as a page that cannot settle, and on a page where every chapter
-  fills the screen you cross those boundaries constantly.
+  The previous implementation started every element at opacity 0 and waited
+  for an observer to add data-shown. With scripting unavailable, an
+  unsupported observer, or a hydration failure, all seventeen elements on the
+  landing page stayed invisible — the top finding of the last critique, and a
+  page that renders nothing is a far worse failure than a page that does not
+  animate.
 
-  The element renders in its final position for anyone whose browser never
-  runs the effect, so nothing is ever permanently invisible. Under reduced
-  motion it is shown immediately with no transform at all.
-
-  `delay` staggers children inside one chapter, which is what keeps this from
-  being the same block fade on every section: the eye follows a sequence
-  rather than watching a rectangle appear.
+  The revealed state is now the CSS default. This component adds
+  data-pending on mount (which only ever runs with JS available) and removes
+  it on intersection, so the animation is purely additive.
 */
 export function Reveal({
   children,
@@ -27,83 +26,30 @@ export function Reveal({
   className?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
-  const [shown, setShown] = useState(false);
-  /*
-    Arming is what hides the element, and it only ever happens from here. The
-    server renders it visible, so a visitor without JavaScript reads the page
-    rather than a blank ground.
-  */
-  const [armed, setArmed] = useState(false);
 
   useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
+    const node = ref.current;
+    if (!node) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      const id = requestAnimationFrame(() => setShown(true));
-      return () => cancelAnimationFrame(id);
-    }
-
-    // Hide first, then let the observer bring it back.
-    const arm = requestAnimationFrame(() => setArmed(true));
-
-    let done = false;
-    const show = () => {
-      if (done) return;
-      done = true;
-      setShown(true);
-      io.disconnect();
-      window.removeEventListener("scroll", onScroll);
-    };
-
-    /*
-      The observer handles ordinary scrolling. It cannot handle a jump.
-
-      An IntersectionObserver only calls back when a threshold is crossed, so
-      an element that goes from below the fold to above it between two frames
-      never reports anything and would stay invisible for good. That is not
-      exotic: it is what a refresh restoring scroll position does, and what
-      End or an anchor link does.
-
-      So a passive scroll listener covers the gap, and removes itself the
-      moment its element is shown.
-    */
-    const onScroll = () => {
-      const box = el.getBoundingClientRect();
-      if (box.top < window.innerHeight) show();
-    };
-
+    node.setAttribute("data-pending", "");
     const io = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting || entry.boundingClientRect.top < 0) show();
+        if (!entry.isIntersecting) return;
+        node.removeAttribute("data-pending");
+        io.disconnect();
       },
-      /*
-        Fires a little before the edge so the motion is finishing as the
-        chapter arrives, rather than starting once it is already being read.
-        The threshold is low because a full-height section can never show
-        much of itself before its top passes the fold.
-      */
-      { rootMargin: "0px 0px -8% 0px", threshold: 0.05 },
+      { threshold: 0.15, rootMargin: "0px 0px -8% 0px" },
     );
-    io.observe(el);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    // Covers a load that restores scroll position partway down the page.
-    onScroll();
-
-    return () => {
-      cancelAnimationFrame(arm);
-      io.disconnect();
-      window.removeEventListener("scroll", onScroll);
-    };
+    io.observe(node);
+    return () => io.disconnect();
   }, []);
 
   return (
     <div
       ref={ref}
-      data-armed={armed || undefined}
-      data-shown={shown || undefined}
-      style={{ transitionDelay: `${delay}ms` }}
       className={`reveal ${className}`}
+      style={delay ? ({ ["--reveal-delay" as string]: `${delay}ms` } as React.CSSProperties) : undefined}
     >
       {children}
     </div>

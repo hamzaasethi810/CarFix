@@ -12,6 +12,30 @@ const gridTemplate = (n: number) =>
   `minmax(0,1fr) repeat(${n}, minmax(5.5rem, 7rem))`;
 
 /*
+  One head row, used by both Columns and BlankForm.
+
+  The shared gridTemplate already keeps their tracks aligned; this keeps their
+  LABELS aligned too. Two copies of a heading row is how a blank form ends up
+  promising different columns than the filled one.
+*/
+function HeadRow({ heads }: { heads: string[] }) {
+  return (
+    <div
+      role="row"
+      className="grid gap-x-4 sm:gap-x-8 border-b border-separator pb-2 text-caption text-tertiary-label"
+      style={{ gridTemplateColumns: gridTemplate(heads.length) }}
+    >
+      <span role="columnheader">Operation</span>
+      {heads.map((h) => (
+        <span key={h} role="columnheader" className="text-right">
+          {h}
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/*
   A ruled region, not a floating tile.
 
   Card is gone rather than restyled. A document separates its regions with a
@@ -89,25 +113,16 @@ export function Columns({
   heads,
   children,
   className = "",
+  label,
 }: {
   heads: string[];
   children: ReactNode;
   className?: string;
+  label?: string;
 }) {
-  const template = gridTemplate(heads.length);
   return (
-    <div className={className} style={{ ["--cols" as string]: template }}>
-      <div
-        className="grid gap-x-4 sm:gap-x-8 border-b border-separator pb-2 text-caption text-tertiary-label"
-        style={{ gridTemplateColumns: template }}
-      >
-        <span>Operation</span>
-        {heads.map((h) => (
-          <span key={h} className="text-right">
-            {h}
-          </span>
-        ))}
-      </div>
+    <div role="table" aria-label={label} className={className}>
+      <HeadRow heads={heads} />
       {children}
     </div>
   );
@@ -136,10 +151,11 @@ export function OperationLine({
   const template = gridTemplate(figures.length);
   const body = (
     <div
+      role="row"
       className="grid gap-x-4 sm:gap-x-8 items-baseline border-b border-separator py-3.5 min-h-11"
       style={{ gridTemplateColumns: template }}
     >
-      <div className="min-w-0">
+      <div role="cell" className="min-w-0">
         <div className="flex flex-wrap items-baseline gap-x-2.5">
           <span className="text-body">{label}</span>
           {code && <Code>{code}</Code>}
@@ -147,7 +163,7 @@ export function OperationLine({
         {note && <p className="text-footnote text-secondary mt-0.5">{note}</p>}
       </div>
       {figures.map((f, i) => (
-        <span key={i} className="tabular text-body text-right">
+        <span key={i} role="cell" className="tabular text-body text-right">
           {f ?? "—"}
         </span>
       ))}
@@ -282,20 +298,9 @@ export function BlankForm({
   hint?: string;
   action?: ReactNode;
 }) {
-  const template = gridTemplate(heads.length);
   return (
     <div>
-      <div
-        className="grid gap-x-4 sm:gap-x-8 border-b border-separator pb-2 text-caption text-tertiary-label"
-        style={{ gridTemplateColumns: template }}
-      >
-        <span>Operation</span>
-        {heads.map((h) => (
-          <span key={h} className="text-right">
-            {h}
-          </span>
-        ))}
-      </div>
+      <HeadRow heads={heads} />
       {/* Three ruled but empty lines: the shape of the thing that is missing. */}
       {[0, 1, 2].map((i) => (
         <div key={i} className="h-11 border-b border-separator" aria-hidden="true" />
