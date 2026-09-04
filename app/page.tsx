@@ -284,28 +284,36 @@ export default async function HomePage() {
         </div>
       </Section>
 
-      {/* Four: what a report is. */}
+      {/*
+        Four: what a report is.
+
+        Full width, not another two-column split. Sections two and three are
+        both a column of text beside a column of something else, and a third in
+        a row is where a page starts reading as a template rather than as a
+        composition. The plate runs the whole measure here and the argument
+        sits above it.
+      */}
       <Section labelledBy="proof">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1fr)] lg:gap-16 lg:items-center">
-          <Reveal>
+        <Reveal>
+          <div className="grid gap-6 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)] md:gap-16 md:items-end">
             <h2 id="proof" className="text-title1 tracking-[-0.022em] text-balance">
               {COPY.proof.heading}
             </h2>
-            <p className="mt-5 text-body text-secondary max-w-md text-pretty">{COPY.proof.body}</p>
-          </Reveal>
+            <p className="text-body text-secondary text-pretty">{COPY.proof.body}</p>
+          </div>
+        </Reveal>
 
-          {hasImage(PLATE_PROOF) && (
-            <Reveal delay={160}>
-              <Plate
-                src={PLATE_PROOF}
-                alt=""
-                width={2400}
-                height={1600}
-                sizes="(max-width: 1024px) 88vw, 34rem"
-              />
-            </Reveal>
-          )}
-        </div>
+        {hasImage(PLATE_PROOF) && (
+          <Reveal delay={160} className="mt-12">
+            <Plate
+              src={PLATE_PROOF}
+              alt=""
+              width={2400}
+              height={1600}
+              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 92vw, 64rem"
+            />
+          </Reveal>
+        )}
       </Section>
 
       {/*

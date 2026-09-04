@@ -94,10 +94,17 @@ export function QuickFilters({ makes }: { makes: Option[] }) {
     router.push(`/search${params.size ? `?${params}` : ""}`);
   };
 
+  /*
+    Bottom-ruled, matching components/form.tsx.
+
+    A form on a document has a rule under each entry rather than a rounded box
+    around it, and these three selects sit beside real form fields elsewhere in
+    the product, so they have to speak the same way.
+  */
   const field =
-    "w-full min-h-11 rounded-control border border-separator bg-elevated px-3 text-subhead " +
-    "outline-none transition-[border-color,box-shadow] duration-150 " +
-    "focus:border-accent focus:ring-2 focus:ring-accent/20 " +
+    "w-full min-h-11 rounded-none border-0 border-b border-separator bg-elevated px-1 text-subhead " +
+    "outline-none transition-[border-color] duration-150 " +
+    "focus:border-accent " +
     "disabled:opacity-45 disabled:cursor-not-allowed";
 
   return (
@@ -106,7 +113,15 @@ export function QuickFilters({ makes }: { makes: Option[] }) {
         e.preventDefault();
         go();
       }}
-      className="rounded-card border border-separator bg-elevated p-5 sm:p-6"
+      /*
+        A ruled region, not a card.
+
+        This was the last rounded, bordered, floating panel on the landing
+        page: a document world with one soft-cornered tile in it reads as an
+        unconverted widget, which is exactly what it was. Separation now comes
+        from a rule above and the change of stock, like every other region.
+      */
+      className="border-t-2 border-label bg-elevated px-0 pt-5"
     >
       {/*
         A heading, not a kicker. The small-caps label floating above content

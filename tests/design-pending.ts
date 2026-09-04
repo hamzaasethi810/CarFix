@@ -64,7 +64,6 @@ export const PENDING: Record<string, string[]> = {
     "components/area-picker.tsx",
     "components/document-viewer.tsx",
     "components/job-card.tsx",
-    "components/landing/quick-filters.tsx",
     "components/session-guard.tsx",
   ],
   deletedPrimitives: [
