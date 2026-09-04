@@ -19,157 +19,106 @@
   color-scheme: light;
 
   /*
-    Neutral bone, not warm paper.
+    Four inks and a stock.
 
-    This ground used to be #EFEAE0, a warm cream with a warm near-black ink
-    over it. It was chosen so the interface would read as a surface rather
-    than a settings screen, and that reasoning still holds — but the specific
-    palette does not. Warm cream plus brass plus espresso ink is the single
-    most over-used combination in generated design work, to the point that
-    #EFEAE0 is named by hex in the taste guidance as a default to avoid. The
-    site inherited the look of every other AI-built page rather than its own.
+    This is a repair order, so the palette is the palette of a multi-part
+    form: white top copy, blue-black impact ink, process blue for the ruling
+    and the structure, and one stamp red that is only ever a stamp.
 
-    The fix keeps the intent and drops the tell: the ground is still off-white
-    rather than clinical #FFF, but neutral instead of yellow, and the ink is
-    cool near-black. The forest accent is untouched, so the brand survives the
-    change; only the thing that read as generated goes.
+    Every grey here is the ink at opacity. There is deliberately no separate
+    grey ramp: a second neutral family is what turns a printed form back into
+    a generic interface, and it is the first thing to reappear if anyone adds
+    "just one" slate to a component.
 
-    Every value was checked with lib/design/contrast before being written
-    here; tests/contrast.test.ts holds them to it.
+    Every value is checked by tests/contrast.test.ts against
+    lib/design/contrast.ts. Body ink measures 16.52:1 on stock.
   */
-  --bg: #F5F5F3;
-  --bg-elevated: #FFFFFF;   /* card stock */
-  --bg-grouped: #EBEBE8;
-  --bg-tertiary: #E0E0DC;
-  --fill-quaternary: rgba(22, 24, 26, 0.06);
+  --bg: #FBFAF8;            /* form stock */
+  --bg-elevated: #FFFFFF;   /* top copy */
+  --bg-grouped: #F1EFEA;    /* second copy */
+  --bg-tertiary: #E6E3DC;   /* third copy */
+  --fill-quaternary: rgba(16, 27, 46, 0.06);
 
-  /* Near-black, never pure black: #000 flattens and kills the sense of depth. */
-  --label: #16181A;
-  --label-secondary: rgba(22, 24, 26, 0.66);
-  /* 0.52 measured 3.61:1 on a card and 3.53:1 on the ground, both under AA. */
-  --label-tertiary: rgba(22, 24, 26, 0.62);
-  --separator: rgba(22, 24, 26, 0.12);
+  --label: #101B2E;
+  --label-secondary: rgba(16, 27, 46, 0.72);
+  --label-tertiary: rgba(16, 27, 46, 0.58);
+  --separator: rgba(16, 27, 46, 0.18);
 
-  /*
-    A deep green, because this one has to work as TEXT on paper as well as a
-    button fill. The old #6FCF8E was picked to glow against near-black and
-    manages 1.6:1 here — invisible. 6.17:1 on the ground, 7.09:1 on a card.
-  */
-  --accent: #186237;
-  --accent-fill: #1B6B3C;
-  --accent-hover: #14522E;
+  --accent: #1B4FA6;
+  --accent-fill: #1B4FA6;
+  --accent-hover: #16407F;
   --on-accent: #FFFFFF;
 
-  --destructive: #9E2A1B;
-  --destructive-fill: #9E2A1B;
+  --destructive: #A32B18;
+  --destructive-fill: #A32B18;
   --on-destructive: #FFFFFF;
 
-  --success: #186237;
+  /* Confirmation is structural, so it is the same ink as the accent. */
+  --success: #1B4FA6;
   --warning: #8A5A00;
-  /* Gold — the subscription mark only (GoldCar and its "Subscribed" chip). */
-  --gold: #8A6A12;
-
-  /* Brand — the wordmark and map pins only, never a generic control. */
-  --brand: #186237;
-
-  /* The stamp. Ink on paper: attests, never acts. Not a button colour. */
-  --stamp: #B4432F;
 
   /*
-    Glass, retuned light.
+    Reserved.
 
-    The dark theme used a smoked near-black pane, which over paper reads as a
-    grey slab — that was the single ugliest thing in the light spike. Over a
-    light ground glass lightens and saturates what is behind it, so the pane
-    is a high-alpha near-white instead.
+    The stamp is the only place this red appears. It is not a button colour,
+    not a border, not an error. tests/design-system.test.ts holds it to that,
+    because a reserved accent that leaks is just a fourth brand colour.
   */
-  --glass-regular-bg: rgba(255, 255, 255, 0.82);
-  --glass-regular-blur: 24px;
-  --glass-clear-bg: rgba(255, 255, 255, 0.62);
-  --glass-clear-blur: 18px;
-  --glass-saturate: 1.15;
-  --glass-border: rgba(22, 24, 26, 0.1);
-  --glass-shadow:
-    0 1px 2px rgba(22, 24, 26, 0.08),
-    0 12px 32px -8px rgba(22, 24, 26, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --stamp: #C4331D;
 
-  --radius-card: 14px;
-  --radius-control: 6px;
-  --radius-glass: 12px;
+  --radius-control: 3px;
 
   /*
-    Lit from above and slightly left, like everything else on the page.
+    One shadow, for things that genuinely float.
 
-    On a dark ground separation came mostly from a top highlight, because a
-    shadow disappears into darkness. On paper it inverts: the shadow does the
-    work and the highlight is a hairline along the top edge where the card
-    catches the light. One light source, consistently, is what stops
-    skeuomorphism reading as fake.
+    Nothing in the document flow is raised — separation there is a hairline
+    and a change of stock. A popover over a map is a different matter: it has
+    to detach from cartography, and a rule alone will not do it.
   */
-  /*
-    Elevation is now rare, so it is allowed to be real.
-
-    shadow-card is deliberately almost nothing: a hairline, for the few places
-    that still ask for the token. Surfaces separate by border and tone
-    instead. shadow-raised is for things genuinely above the page — a dialog,
-    a popover — and drops the inset white highlight, which was simulating a
-    lit edge that no longer fits a flat ground.
-  */
-  --shadow-card: 0 0 0 0.5px rgba(22, 24, 26, 0.08);
   --shadow-raised:
-    0 1px 2px rgba(22, 24, 26, 0.08),
-    0 24px 48px -20px rgba(22, 24, 26, 0.22),
-    0 0 0 0.5px rgba(22, 24, 26, 0.08);
+    0 1px 2px rgba(16, 27, 46, 0.10),
+    0 18px 40px -18px rgba(16, 27, 46, 0.26),
+    0 0 0 0.5px rgba(16, 27, 46, 0.10);
+
+  /* Emil's curves. The CSS built-ins are too weak to read as intentional. */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 
-/* Increase Contrast: deepen the ground, brighten type, raise separators. */
+/* Increase Contrast: deepen the ink, harden the rules, remove ink opacity. */
 @media (prefers-contrast: more) {
   :root {
-    --bg: #081209;
-    --bg-elevated: #102319;
-    --label-secondary: rgba(228, 240, 231, 0.95);
-    --label-tertiary: rgba(228, 240, 231, 0.85);
-    --separator: rgba(180, 208, 190, 0.42);
-    --accent: #8FE0AA;
-    --accent-fill: #37945D;
-    --destructive: #FF9494;
-    --success: #9AE3B4;
-    /* Glass becomes near-opaque so text never fights the background. */
-    --glass-regular-bg: rgba(14, 31, 22, 0.97);
-    --glass-clear-bg: rgba(14, 31, 22, 0.92);
-    --glass-saturate: 1;
+    --label: #000914;
+    --label-secondary: rgba(0, 9, 20, 0.92);
+    --label-tertiary: rgba(0, 9, 20, 0.82);
+    --separator: rgba(0, 9, 20, 0.44);
+    --accent: #123C82;
+    --accent-fill: #123C82;
+    --destructive: #7E1C0C;
+    --destructive-fill: #7E1C0C;
+    --stamp: #9E2513;
   }
 }
 
-/* Reduce Transparency: drop translucency entirely rather than merely thinning it. */
+/*
+  Reduced Transparency.
+
+  The glass this used to thin out is gone; panels over the map are opaque
+  stock now. What remains is the ink opacity, which is a legibility surface
+  of its own, so it resolves to flat values here.
+*/
 @media (prefers-reduced-transparency: reduce) {
   :root {
-    --glass-regular-bg: rgba(14, 31, 22, 0.98);
-    --glass-clear-bg: rgba(14, 31, 22, 0.96);
-    --glass-regular-blur: 0px;
-    --glass-clear-blur: 0px;
-    --glass-saturate: 1;
+    --label-secondary: #33404F;
+    --label-tertiary: #4C5766;
+    --separator: #C3C7CC;
+    --fill-quaternary: #EFEDE8;
   }
 }
 
 @theme inline {
-  /*
-    The condensed face, as a utility.
-
-    Named `condensed` rather than `display` deliberately: Next injects the
-    font under `--font-display`, and Tailwind v4 builds `font-*` utilities
-    from the `--font-*` namespace, so `--font-display: var(--font-display)`
-    would be a variable defined in terms of itself. A different name breaks
-    the cycle and says what the face actually is.
-
-    Its job is numbers — prices, mileage, year ranges. Condensed tabular
-    numerals over a data table is the strongest automotive cue available and
-    the font is already loaded, so it costs nothing.
-  */
-  --font-condensed: var(--font-display), "Barlow Condensed", system-ui, sans-serif;
-
   --color-stamp: var(--stamp);
   --color-bg: var(--bg);
   --color-elevated: var(--bg-elevated);
@@ -191,8 +140,6 @@
   --color-on-destructive: var(--on-destructive);
   --color-success: var(--success);
   --color-warning: var(--warning);
-  --color-brand: var(--brand);
-  --color-gold: var(--gold);
 
   /* Apple's text styles. Body is 17px — the platform default. */
   --text-large-title: 2.125rem;
@@ -222,13 +169,11 @@
   --text-caption: 0.75rem;
   --text-caption--line-height: 1rem;
 
-  --radius-card: 14px;
-  --radius-control: 6px;
-  --radius-glass: 12px;
-
-  --shadow-card: var(--shadow-card);
+  --radius-control: var(--radius-control);
   --shadow-raised: var(--shadow-raised);
-  --shadow-glass: var(--glass-shadow);
+  --ease-out: var(--ease-out);
+  --ease-in-out: var(--ease-in-out);
+  --ease-drawer: var(--ease-drawer);
 }
 
 html {

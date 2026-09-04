@@ -56,4 +56,18 @@ describe("the palette is readable", () => {
     expect(contrastRatio(t["destructive"], t["bg"])).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(t["success"], t["bg"])).toBeGreaterThanOrEqual(4.5);
   });
+
+  it("the stamp clears AA on both stock tones", () => {
+    expect(contrastRatio(t["stamp"], t["bg"])).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(t["stamp"], t["bg-elevated"])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("body text clears AA on the second-copy tone", () => {
+    expect(contrastRatio(t["label"], t["bg-grouped"])).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("the accent clears AA as text, not just as a fill", () => {
+    expect(contrastRatio(t["accent"], t["bg"])).toBeGreaterThanOrEqual(4.5);
+    expect(contrastRatio(t["accent"], t["bg-elevated"])).toBeGreaterThanOrEqual(4.5);
+  });
 });
