@@ -52,11 +52,13 @@ export const viewport: Viewport = {
 };
 
 /*
-  Inline-block with vertical padding, so each policy link is a 44px target
-  without breaking the sentence they sit inside. They were 16px tall.
+  Inline-flex with a real min-height, so each policy link is a 44px target
+  without breaking the sentence they sit inside. They were 16px tall. The
+  footer wrapper below switches to flex-wrap so these targets sit on a line
+  instead of forcing the surrounding prose to reflow around them.
 */
 const policyLink =
-  "text-accent inline-block py-3 -my-3 align-baseline min-h-11 " +
+  "text-accent inline-flex items-center min-h-11 py-2 align-baseline " +
   "[@media(hover:hover)_and_(pointer:fine)]:hover:underline underline-offset-4";
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -65,11 +67,11 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   return (
     <html lang="en" className={`h-full ${archivo.variable} ${martian.variable}`}>
       {/*
-        The grouped tone (`--bg-grouped`, app/globals.css) rather than the
-        plain ground. Cards need something marginally different behind them
-        or they do not read as cards at all — which is why every panel used
-        to look like plain text on a page. The map route paints its own
-        full-bleed background over this.
+        <body> below paints the plain ground (`--bg`), not the grouped tone.
+        Cards are retired — the document reads off ruling and figures rather
+        than panels set apart from the page — so there is nothing left that
+        needed a marginally different backdrop to read as a card. The map
+        route still paints its own full-bleed background over this.
       */}
       <head>
         {/*
@@ -80,7 +82,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         */}
         <BotIdClient protect={[{ path: "/api/register", method: "POST" }]} />
       </head>
-      <body className="min-h-full flex flex-col bg-grouped">
+      <body className="min-h-full flex flex-col bg-bg">
         <a
           href="#main"
           className="sr-only focus:not-sr-only focus:absolute focus:z-100 focus:m-3 focus:rounded-control focus:bg-elevated focus:px-4 focus:py-3 focus:shadow-raised"
@@ -98,7 +100,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
         <main
           id="main"
-          className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-10"
+          className="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-14"
           style={{
             paddingLeft: "max(1rem, env(safe-area-inset-left))",
             paddingRight: "max(1rem, env(safe-area-inset-right))",
@@ -109,18 +111,18 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
         <footer className="border-t border-separator mt-8">
           <div
-            className="max-w-5xl mx-auto px-4 py-6 text-footnote text-secondary"
+            className="max-w-5xl mx-auto px-4 py-6 text-footnote text-secondary flex flex-wrap items-center gap-x-2 gap-y-1"
             style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
           >
-            Prices are reported by owners, not quotes from shops.{" "}
+            <span>Prices are reported by owners, not quotes from shops.</span>
             <a href="/policies/terms" className={policyLink}>
               Terms and ground rules
             </a>
-            {" · "}
+            <span aria-hidden="true">·</span>
             <a href="/policies/privacy" className={policyLink}>
               Privacy
             </a>
-            {" · "}
+            <span aria-hidden="true">·</span>
             <a href="/policies/receipts" className={policyLink}>
               How we handle receipts
             </a>

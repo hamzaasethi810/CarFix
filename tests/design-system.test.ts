@@ -168,3 +168,15 @@ describe("the reveal", () => {
     expect(css).not.toMatch(/\.reveal\s*\{[^}]*opacity:\s*0/);
   });
 });
+
+describe("the chrome", () => {
+  it("the header does not animate: it is on every page and touched constantly", () => {
+    const src = stripComments(read("components/site-header.tsx"));
+    expect(src).not.toMatch(/transition-\[transform\]|animate-/);
+  });
+
+  it("footer policy links meet the 44px target", () => {
+    // The critique found them at 16px. min-h-11 is the 44px floor.
+    expect(read("app/layout.tsx")).toMatch(/min-h-11/);
+  });
+});

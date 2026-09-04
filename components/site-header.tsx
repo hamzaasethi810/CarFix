@@ -1,10 +1,12 @@
-import Image from "next/image";
 import Link from "next/link";
 import { buttonStyles } from "@/components/ui";
 import { signOut } from "@/lib/auth";
 
 const navLink =
-  "inline-flex items-center min-h-11 px-3 -mx-1 rounded-control text-subhead text-secondary hover:text-label hover:bg-fill transition-colors duration-150";
+  "inline-flex items-center min-h-11 px-3 -mx-1 rounded-control text-subhead text-secondary " +
+  "[@media(hover:hover)_and_(pointer:fine)]:hover:text-label " +
+  "[@media(hover:hover)_and_(pointer:fine)]:hover:bg-fill " +
+  "transition-[color,background-color] duration-150";
 
 export function SiteHeader({
   isAuthed,
@@ -16,19 +18,7 @@ export function SiteHeader({
   isReviewer: boolean;
 }) {
   return (
-    /*
-      Translucent, blurred, with a hairline underneath.
-
-      It used to be fully transparent, which worked when it floated over a
-      dark globe and nothing else. On a light page with real content beneath
-      it, transparency means paragraphs scroll visibly through the wordmark
-      and the nav, which reads as a rendering fault rather than a design.
-
-      A blur plus a partial ground keeps the page feeling continuous without
-      letting text collide with the controls, and the rule only has to be a
-      hairline to stop the header dissolving into the section under it.
-    */
-    <header className="sticky top-0 z-50 border-b border-separator bg-[color-mix(in_srgb,var(--bg)_82%,transparent)] backdrop-blur-md supports-[not(backdrop-filter:blur(0))]:bg-bg">
+    <header className="sticky top-0 z-50 border-b border-separator bg-elevated">
       <nav
         aria-label="Primary"
         /*
@@ -42,29 +32,8 @@ export function SiteHeader({
         */
         className="w-full max-w-none px-3 sm:px-6 h-12 [@media(min-height:481px)]:h-16 flex items-center gap-2 sm:gap-4"
       >
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 min-h-11 pr-2 sm:pr-4 text-title3 font-bold tracking-tight"
-        >
-          {/*
-            The plate carries the name, so no wordmark sits beside it.
-
-            The white it was drawn on has been cut away rather than left in:
-            this header is translucent and blurs whatever is behind it, which
-            on the map page is the map, so a white rectangle would have shown
-            as a white rectangle.
-
-            priority, because it is the first thing above the fold on every
-            page and lazy-loading it only buys a flash of empty header.
-          */}
-          <Image
-            src="/gaari-logo.png"
-            alt="Gaari"
-            width={284}
-            height={132}
-            priority
-            className="h-10 w-auto shrink-0"
-          />
+        <Link href="/" className="inline-flex items-baseline min-h-11 pr-2 sm:pr-4">
+          <span className="text-title3 font-bold tracking-tight">Gaari</span>
         </Link>
 
         {isAuthed && (
