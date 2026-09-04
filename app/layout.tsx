@@ -53,12 +53,19 @@ export const viewport: Viewport = {
 
 /*
   Inline-flex with a real min-height, so each policy link is a 44px target
-  without breaking the sentence they sit inside. They were 16px tall. The
-  footer wrapper below switches to flex-wrap so these targets sit on a line
-  instead of forcing the surrounding prose to reflow around them.
+  without breaking the sentence they sit inside. They were 16px tall.
+
+  R27: the footer wrapper stays plain inline flow (no flex/flex-wrap) on
+  purpose. A flex container turns each child — including the sentence and
+  the link — into a sibling flex item, and flex items wrap BETWEEN items,
+  not within the running text: at 360px that stranded a dangling middot at
+  the end of one line and orphaned the last link alone on the next. An
+  inline-flex element is still an atomic inline-level box, so it sits inside
+  the surrounding paragraph's own line box and wraps exactly like a long
+  word would — with the sentence, not against it.
 */
 const policyLink =
-  "text-accent inline-flex items-center min-h-11 py-2 align-baseline " +
+  "text-accent inline-flex items-center min-h-11 py-2 " +
   "[@media(hover:hover)_and_(pointer:fine)]:hover:underline underline-offset-4";
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
@@ -111,18 +118,18 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
 
         <footer className="border-t border-separator mt-8">
           <div
-            className="max-w-5xl mx-auto px-4 py-6 text-footnote text-secondary flex flex-wrap items-center gap-x-2 gap-y-1"
+            className="max-w-5xl mx-auto px-4 py-6 text-footnote text-secondary"
             style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
           >
-            <span>Prices are reported by owners, not quotes from shops.</span>
+            Prices are reported by owners, not quotes from shops.{" "}
             <a href="/policies/terms" className={policyLink}>
               Terms and ground rules
             </a>
-            <span aria-hidden="true">·</span>
+            <span aria-hidden="true"> · </span>
             <a href="/policies/privacy" className={policyLink}>
               Privacy
             </a>
-            <span aria-hidden="true">·</span>
+            <span aria-hidden="true"> · </span>
             <a href="/policies/receipts" className={policyLink}>
               How we handle receipts
             </a>

@@ -175,9 +175,41 @@ describe("the chrome", () => {
     expect(src).not.toMatch(/transition-\[transform\]|animate-/);
   });
 
+  it("the header is opaque: glass is retired from the chrome", () => {
+    /*
+      The original version of this test only checked for transform/animate-
+      classes, which the pre-redesign header never had either — it passed
+      against the old translucent, backdrop-blurred header and guarded
+      nothing. This asserts the actual thing that changed: the blur, the
+      color-mix ground, and any --glass- token are gone, and the opaque
+      bg-elevated surface is in their place.
+    */
+    const src = stripComments(read("components/site-header.tsx"));
+    expect(src).not.toMatch(/backdrop-blur/);
+    expect(src).not.toMatch(/color-mix/);
+    expect(src).not.toMatch(/--glass-/);
+    expect(src).toMatch(/bg-elevated/);
+  });
+
   it("footer policy links meet the 44px target", () => {
     // The critique found them at 16px. min-h-11 is the 44px floor.
     expect(read("app/layout.tsx")).toMatch(/min-h-11/);
+  });
+
+  it("the footer stays inline flow so the sentence wraps as prose, not as flex items", () => {
+    /*
+      R27: flex/flex-wrap on the footer's wrapper turned the sentence and
+      each link into sibling flex items, which wrap BETWEEN items rather
+      than merging into the running text — at 360px that stranded a
+      dangling middot at the end of one line and orphaned the last link
+      alone on the next. Plain inline flow with inline-flex links (atomic
+      inline-level boxes) wraps the whole thing like ordinary prose.
+    */
+    const src = stripComments(read("app/layout.tsx"));
+    const footerMatch = src.match(/<footer[\s\S]*?<\/footer>/);
+    expect(footerMatch, "footer element not found").toBeTruthy();
+    expect(footerMatch![0]).not.toMatch(/\bflex\b/);
+    expect(footerMatch![0]).not.toMatch(/flex-wrap/);
   });
 });
 
