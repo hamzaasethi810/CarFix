@@ -61,7 +61,6 @@ export const PENDING: Record<string, string[]> = {
   retiredUtilities: [
     "app/discover.tsx",
     "app/garage/add-vehicle-sheet.tsx",
-    "app/page.tsx",
     "components/area-picker.tsx",
     "components/document-viewer.tsx",
     "components/job-card.tsx",
@@ -96,7 +95,6 @@ export const PENDING: Record<string, string[]> = {
     "app/discover.tsx",
     "app/garage/page.tsx",
     "app/not-found.tsx",
-    "app/page.tsx",
     "app/shops/[id]/subscription-panel.tsx",
     "components/job-card.tsx",
   ],

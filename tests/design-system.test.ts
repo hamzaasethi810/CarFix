@@ -180,3 +180,55 @@ describe("the chrome", () => {
     expect(read("app/layout.tsx")).toMatch(/min-h-11/);
   });
 });
+
+describe("the landing", () => {
+  const page = () => stripComments(read("app/page.tsx"));
+
+  it("has no scroll-snap chapters", () => {
+    /*
+      Snap plus a record long enough to read is a fight: a hard flick carried
+      you past a chapter, and a chapter taller than the window could not be
+      read without the browser dragging you off it.
+    */
+    expect(page()).not.toMatch(/snap-|className="chapter"/);
+    expect(stripComments(read("app/globals.css"))).not.toMatch(/scroll-snap/);
+  });
+
+  it("leads with the record, not a photograph", () => {
+    /*
+      The category ships a full-bleed car shot with a search field over it.
+      This page's argument is that a price is a document, so the first thing
+      on screen is an itemised record that reconciles. If a Plate ever appears
+      before the Reconciliation, the composition has drifted back to the rut.
+    */
+    const src = page();
+    const record = src.indexOf("<Reconciliation");
+    const plate = src.indexOf("<Plate");
+    expect(record).toBeGreaterThan(-1);
+    if (plate > -1) expect(record).toBeLessThan(plate);
+  });
+
+  it("uses one label per destination", () => {
+    /*
+      A critique counted four CTA labels for two destinations, three of them
+      pointing at /register. Two names for one action is not emphasis, it is a
+      reader wondering whether they are different things. The copy block now
+      holds a single cta object, so this asserts that shape rather than
+      counting strings: a second label would have to reintroduce a second key.
+    */
+    const src = page();
+    expect(src).toMatch(/cta:\s*\{/);
+    expect(src.match(/\bbutton:\s*"/g)).toBeNull();
+  });
+
+  it("has exactly one h1", () => {
+    /*
+      SheetHeader defaults to h1 because it is usually the page title. On this
+      page the claim owns the h1 and the example record's header is an h2, so
+      the header is passed as="h2". Two h1 elements is a heading order break.
+    */
+    const src = page();
+    expect(src.match(/<h1[\s>]/g)?.length ?? 0).toBe(1);
+    expect(src).toMatch(/<SheetHeader\s+as="h2"/);
+  });
+});

@@ -72,17 +72,28 @@ export function SheetHeader({
   code,
   meta,
   actions,
+  as: Heading = "h1",
 }: {
   title: string;
   code?: string;
   meta?: string;
   actions?: ReactNode;
+  /*
+    The heading level, because this is not always the page title.
+
+    It is an h1 on the twenty-odd routes where it opens the page, and an h2 on
+    the landing, where the page's own claim owns the h1 and this header names
+    the example record beneath it. Two h1 elements on one page is a heading
+    order break, and hand-writing the header on the landing to avoid it would
+    reintroduce the duplication this component exists to prevent.
+  */
+  as?: "h1" | "h2" | "h3";
 }) {
   return (
     <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-separator pb-4">
       <div className="min-w-0">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-          <h1 className="text-title1 font-semibold tracking-tight text-balance">{title}</h1>
+          <Heading className="text-title1 font-semibold tracking-tight text-balance">{title}</Heading>
           {code && <Code>{code}</Code>}
         </div>
         {meta && <p className="text-subhead text-secondary mt-1.5 text-pretty">{meta}</p>}
@@ -323,7 +334,16 @@ export function BlankForm({
 }
 
 /** A single figure with its label. Mono, tabular, no container. */
-export function Figure({ value, label, hint }: { value: string; label: string; hint?: string }) {
+export function Figure({
+  value,
+  label,
+  hint,
+}: {
+  /* A node, not a string: the landing's figures animate through CountUp. */
+  value: ReactNode;
+  label: string;
+  hint?: string;
+}) {
   return (
     <div>
       <p className="tabular text-title1 font-semibold leading-none">{value}</p>
