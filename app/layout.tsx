@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Barlow, Barlow_Condensed } from "next/font/google";
+import { Archivo, Martian_Mono } from "next/font/google";
 import "./globals.css";
 import { BotIdClient } from "botid/client";
 import { SessionGuard } from "@/components/session-guard";
@@ -8,24 +8,28 @@ import { SiteHeader } from "@/components/site-header";
 import { currentUser, isPrivileged } from "@/lib/auth/guards";
 
 /*
-  Self-hosted at build time via next/font/google: no runtime request to
-  Google, so the CSP stays intact and nothing about a visitor leaks to a
-  third party on page load.
+  Self-hosted at build time by next/font/google: no runtime request to a font
+  host, so the CSP in next.config.ts stays intact and nothing about a visitor
+  leaks to a third party on page load.
 
-  Barlow carries body text; Barlow Condensed carries display sizes only
-  (headings, prices, the title-scale text styles) — see globals.css. They're
-  the same superfamily, so the two sit together without clashing.
+  Archivo carries prose and headings. Martian Mono carries every operation
+  code, part number, VIN, chassis code and money figure — the impact-printer
+  voice, and the thing that makes the document unmistakable.
+
+  The variables are named for their faces, not for their roles. Tailwind v4
+  derives font-* utilities from the --font-* namespace, so a variable named
+  --font-mono here would be mapped to itself in @theme and resolve to nothing.
 */
-const body = Barlow({
+const archivo = Archivo({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-body",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-archivo",
 });
 
-const display = Barlow_Condensed({
+const martian = Martian_Mono({
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
-  variable: "--font-display",
+  weight: ["300", "400", "600"],
+  variable: "--font-martian",
 });
 
 export const metadata: Metadata = {
@@ -44,7 +48,7 @@ export const viewport: Viewport = {
   // Matches --bg, the tone <body> actually paints, so mobile browser chrome
   // sits flush with the page instead of capping it with a dark green bar
   // left over from the forest palette this replaced.
-  themeColor: "#F5F5F3",
+  themeColor: "#FBFAF8",
 };
 
 /*
@@ -59,7 +63,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const user = await currentUser();
 
   return (
-    <html lang="en" className={`h-full ${body.variable} ${display.variable}`}>
+    <html lang="en" className={`h-full ${archivo.variable} ${martian.variable}`}>
       {/*
         The grouped tone (`--bg-grouped`, app/globals.css) rather than the
         plain ground. Cards need something marginally different behind them
