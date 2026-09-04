@@ -63,7 +63,17 @@ describe("no dangling utility classes", () => {
 describe("the document has no cards", () => {
   it("no converted file imports or renders Card", () => {
     for (const f of converted("card")) {
-      expect(stripComments(read(f)), f).not.toMatch(/\bCard\b/);
+      /*
+        Component usage, not the word.
+
+        A bare /\bCard\b/ also matches prose: the privacy policy legitimately
+        says "Card details." and was pinned to this worklist by its own copy
+        rather than by any code. The rule is about importing or rendering the
+        deleted component, so that is what it matches.
+      */
+      expect(stripComments(read(f)), f).not.toMatch(
+        /<Card[\s/>]|\bCard\b\s*[,}][^;]*from\s+["']@\/components\/ui|from\s+["']@\/components\/ui["'][^;]*\bCard\b/,
+      );
     }
   });
 
@@ -75,7 +85,10 @@ describe("the document has no cards", () => {
 
   it("no converted file uses a deleted primitive", () => {
     for (const f of converted("deletedPrimitives")) {
-      expect(stripComments(read(f)), f).not.toMatch(/PageTitle|EmptyState|VerifiedBadge/);
+      /* Usage, not the word, for the same reason as Card above. */
+      expect(stripComments(read(f)), f).not.toMatch(
+        /<(?:PageTitle|EmptyState|VerifiedBadge)[\s/>]|\b(?:PageTitle|EmptyState|VerifiedBadge)\b[^;\n]*from\s+["']@\/components\/ui|from\s+["']@\/components\/ui["'][^;]*\b(?:PageTitle|EmptyState|VerifiedBadge)\b/,
+      );
     }
   });
 });

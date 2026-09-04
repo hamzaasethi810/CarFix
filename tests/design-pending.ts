@@ -33,7 +33,6 @@ export const PENDING: Record<string, string[]> = {
       in the privacy policy's payments section that must stay verbatim. The
       page itself no longer imports or renders the Card component.
     */
-    "app/policies/privacy/page.tsx",
     "app/profile/[username]/page.tsx",
     "app/register/register-form.tsx",
     "app/reset-password/reset-form.tsx",
