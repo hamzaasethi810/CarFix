@@ -1097,3 +1097,74 @@ body:has(.home-root) > main {
   font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
+
+/*
+  The reconciliation.
+
+  State is expressed as attribute selectors here rather than as Tailwind data
+  variants, matching the .reveal convention above so there is one way of doing
+  this in the project rather than two. See components/reconciliation.tsx.
+*/
+
+/*
+  The lines arrive in sequence on the landing page only. The filing form
+  renders them settled and never runs this, because staggering content the
+  owner is actively typing into would replay on the way to every result.
+*/
+.recon-line {
+  transition:
+    opacity 320ms var(--ease-out) var(--line-delay, 0ms),
+    transform 320ms var(--ease-out) var(--line-delay, 0ms);
+}
+
+.recon-line[data-pending] {
+  opacity: 0;
+  transform: translateY(6px);
+}
+
+/*
+  The stamp makes contact.
+
+  140ms because feedback under about 160ms reads as instant. The blur clearing
+  across the same interval is what makes it read as one object landing rather
+  than two states crossfading.
+*/
+.recon-stamp {
+  opacity: 0;
+  transform: scale(0.97);
+  filter: blur(2px);
+  transition:
+    opacity 140ms var(--ease-out),
+    transform 140ms var(--ease-out),
+    filter 140ms var(--ease-out);
+}
+
+.recon-stamp[data-settled] {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+    Reduced motion keeps the information and drops the movement: the stamp
+    still tells you the figures reconcile, it just stops travelling to say so.
+  */
+  .recon-line,
+  .recon-line[data-pending] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .recon-stamp {
+    transform: none;
+    filter: none;
+    transition: opacity 200ms var(--ease-out);
+  }
+
+  .recon-stamp[data-settled] {
+    transform: none;
+    filter: none;
+  }
+}
