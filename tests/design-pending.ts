@@ -50,7 +50,6 @@ export const PENDING: Record<string, string[]> = {
     "app/shops/claim/claim-form.tsx",
     "app/vehicle/[id]/page.tsx",
     "components/experience-card.tsx",
-    "components/ui.tsx",
   ],
   glass: [
     "app/discover.tsx",
@@ -58,7 +57,6 @@ export const PENDING: Record<string, string[]> = {
     "components/area-picker.tsx",
     "components/document-viewer.tsx",
     "components/mechanic-map.tsx",
-    "components/ui.tsx",
   ],
   retiredUtilities: [
     "app/discover.tsx",
@@ -69,7 +67,6 @@ export const PENDING: Record<string, string[]> = {
     "components/job-card.tsx",
     "components/landing/quick-filters.tsx",
     "components/session-guard.tsx",
-    "components/ui.tsx",
   ],
   deletedPrimitives: [
     "app/admin/claims/page.tsx",
@@ -94,6 +91,16 @@ export const PENDING: Record<string, string[]> = {
     "app/shops/claim/page.tsx",
     "app/vehicle/[id]/page.tsx",
     "components/experience-card.tsx",
-    "components/ui.tsx",
+  ],
+  deletedUtilities: [
+    "app/discover.tsx",
+    "app/garage/page.tsx",
+    "app/not-found.tsx",
+    "app/page.tsx",
+    "app/shops/[id]/subscription-panel.tsx",
+    "components/job-card.tsx",
+  ],
+  stampInk: [
+    "components/job-card.tsx",
   ],
 };

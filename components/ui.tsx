@@ -1,86 +1,322 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 
 /*
-  A surface, not a floating tile.
+  One definition of the column frame.
 
-  Every panel used to carry a four-layer shadow with an inset white highlight
-  along its top edge, simulating a card catching light above a textured
-  ground. Used on thirty-odd screens it stopped meaning anything: when
-  everything is raised, nothing is, and a page of soft drop-shadowed
-  rectangles is the single clearest signal of an interface that was styled
-  rather than designed.
-
-  The surface is now defined by a hairline and a tone change. Elevation is
-  reserved for things that genuinely float above the page — a dialog, a
-  popover — which is what `raised` is for, and it is rare on purpose.
-
-  Padding is up a step. Space is the cheapest thing that reads as expensive,
-  and the old 16px was set when every panel needed to stay small enough to
-  look like a card.
+  Columns, OperationLine and BlankForm must derive the same track list or the
+  heads stop sitting over their figures. Three copies of this string is exactly
+  how that drifts, so there is one.
 */
-export function Card({
+const gridTemplate = (n: number) =>
+  `minmax(0,1fr) repeat(${n}, minmax(5.5rem, 7rem))`;
+
+/*
+  A ruled region, not a floating tile.
+
+  Card is gone rather than restyled. A document separates its regions with a
+  hairline and a change of stock, and thirty screens of soft drop-shadowed
+  rectangles was the clearest signal that this interface had been styled
+  rather than designed. Elevation now belongs only to things that genuinely
+  float above the page, which is popoverSurface and nothing else.
+*/
+export function Sheet({
   children,
   className = "",
-  raised = false,
+  as: El = "div",
 }: {
   children: ReactNode;
   className?: string;
-  raised?: boolean;
+  as?: "div" | "section" | "article";
 }) {
   return (
-    <div
-      className={`rounded-card bg-elevated p-5 sm:p-6 ${
-        raised ? "shadow-raised" : "border border-separator"
-      } ${className}`}
-    >
+    <El className={`border-t border-separator bg-elevated ${className}`}>
+      {children}
+    </El>
+  );
+}
+
+/*
+  The document header block.
+
+  The code is set in mono and sits beside the title rather than under it,
+  because on a real repair order the identifying number and the description
+  share a line — the number is how the record is found, not a footnote to it.
+*/
+export function SheetHeader({
+  title,
+  code,
+  meta,
+  actions,
+}: {
+  title: string;
+  code?: string;
+  meta?: string;
+  actions?: ReactNode;
+}) {
+  return (
+    <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-b border-separator pb-4">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+          <h1 className="text-title1 font-semibold tracking-tight text-balance">{title}</h1>
+          {code && <Code>{code}</Code>}
+        </div>
+        {meta && <p className="text-subhead text-secondary mt-1.5 text-pretty">{meta}</p>}
+      </div>
+      {actions && <div className="flex items-center gap-2 shrink-0">{actions}</div>}
+    </div>
+  );
+}
+
+/** An operation code, VIN, or chassis code. Always mono, never wrapped. */
+export function Code({ children }: { children: ReactNode }) {
+  return (
+    <span className="tabular text-footnote text-tertiary-label uppercase whitespace-nowrap">
+      {children}
+    </span>
+  );
+}
+
+/*
+  The column frame.
+
+  The heads are rendered once, ruled, and every OperationLine inside aligns to
+  them. Figures are right-aligned in fixed-width columns so the decimal points
+  stack; that stacking is most of what makes a column of money read as printed
+  rather than typed.
+*/
+export function Columns({
+  heads,
+  children,
+  className = "",
+}: {
+  heads: string[];
+  children: ReactNode;
+  className?: string;
+}) {
+  const template = gridTemplate(heads.length);
+  return (
+    <div className={className} style={{ ["--cols" as string]: template }}>
+      <div
+        className="grid gap-x-4 sm:gap-x-8 border-b border-separator pb-2 text-caption text-tertiary-label"
+        style={{ gridTemplateColumns: template }}
+      >
+        <span>Operation</span>
+        {heads.map((h) => (
+          <span key={h} className="text-right">
+            {h}
+          </span>
+        ))}
+      </div>
       {children}
     </div>
   );
 }
 
-export function PageTitle({ title, subtitle }: { title: string; subtitle?: string }) {
+/*
+  One ruled row.
+
+  figures may contain null for a column that does not apply to this line; an
+  em dash is printed instead, because a blank cell in a ruled column reads as
+  a rendering fault rather than as "no charge".
+*/
+export function OperationLine({
+  label,
+  code,
+  note,
+  figures,
+  href,
+}: {
+  label: string;
+  code?: string;
+  note?: string;
+  figures: (string | null)[];
+  href?: string;
+}) {
+  const template = gridTemplate(figures.length);
+  const body = (
+    <div
+      className="grid gap-x-4 sm:gap-x-8 items-baseline border-b border-separator py-3.5 min-h-11"
+      style={{ gridTemplateColumns: template }}
+    >
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-baseline gap-x-2.5">
+          <span className="text-body">{label}</span>
+          {code && <Code>{code}</Code>}
+        </div>
+        {note && <p className="text-footnote text-secondary mt-0.5">{note}</p>}
+      </div>
+      {figures.map((f, i) => (
+        <span key={i} className="tabular text-body text-right">
+          {f ?? "—"}
+        </span>
+      ))}
+    </div>
+  );
+
+  if (!href) return body;
   return (
-    /*
-      title1 rather than large-title. Every page opening at the largest size in
-      the scale means nothing on the page is ever bigger than anything else,
-      which is the opposite of hierarchy — the size stops meaning "important"
-      and starts meaning "a page happened".
-    */
-    <div className="mb-6 sm:mb-8">
-      <h1 className="text-title1 font-bold tracking-tight text-balance">{title}</h1>
-      {subtitle && (
-        <p className="text-secondary text-callout mt-1.5 max-w-prose text-pretty">{subtitle}</p>
-      )}
+    <Link
+      href={href}
+      className="block [@media(hover:hover)_and_(pointer:fine)]:hover:bg-grouped transition-colors duration-150"
+    >
+      {body}
+    </Link>
+  );
+}
+
+/*
+  The stamp. Attests, never acts.
+
+  This is the only place --stamp appears in the entire codebase, and
+  tests/design-system.test.ts enforces that. A reserved accent that leaks into
+  a button or a border stops being a stamp and becomes a fourth brand colour.
+
+  The rotation is small and fixed rather than random: a stamp that lands at a
+  different angle on every render reads as a gimmick, and a stamp that is
+  perfectly square reads as a badge.
+*/
+export function Stamp({
+  children,
+  state = "verified",
+}: {
+  children: ReactNode;
+  state?: "verified" | "void";
+}) {
+  return (
+    <span
+      data-state={state}
+      className="inline-flex items-center gap-1.5 -rotate-2 border-2 border-current px-2.5 py-1 text-caption font-semibold uppercase tracking-[0.12em] text-[var(--stamp)]"
+    >
+      {/* Shape and word as well as colour, so the state survives greyscale. */}
+      <span aria-hidden="true">{state === "verified" ? "✓" : "✕"}</span>
+      {children}
+    </span>
+  );
+}
+
+/*
+  A token attached to the record, not floating near it.
+
+  The distinction matters: a badge that sits in the flow beside a title reads
+  as a label the interface applied, and a tag notched into the record's edge
+  reads as something fixed to the document itself.
+*/
+export function Tag({
+  children,
+  tone = "accent",
+}: {
+  children: ReactNode;
+  tone?: "accent" | "neutral";
+}) {
+  const ink = tone === "accent" ? "text-accent border-accent" : "text-secondary border-separator";
+  return (
+    <span
+      className={`inline-flex items-center gap-1.5 border-l-2 bg-grouped px-2 py-1 text-footnote font-medium ${ink}`}
+    >
+      {children}
+    </span>
+  );
+}
+
+/*
+  A value read against a printed scale.
+
+  The marker is derived from the values, never placed by hand — the previous
+  implementation hard-coded 38% for a value sitting at 23.9% of its range, a
+  fourteen-point error on the only chart on a page arguing that a number on
+  its own is a rumour.
+
+  Only the rule is aria-hidden. The two amounts are the most decision-relevant
+  numbers present and must reach a screen reader.
+*/
+export function RangeScale({
+  low,
+  high,
+  value,
+  caption,
+}: {
+  low: number;
+  high: number;
+  value: number;
+  caption?: string;
+}) {
+  const span = high - low;
+  const percent = span <= 0 ? 0 : Math.min(100, Math.max(0, ((value - low) / span) * 100));
+
+  return (
+    <div>
+      <div className="relative h-px bg-separator" aria-hidden="true">
+        <span className="absolute left-0 -top-1.5 h-3 w-px bg-separator" />
+        <span
+          className="absolute -top-2 h-4 w-0.5 bg-accent"
+          style={{ left: `${percent.toFixed(1)}%` }}
+        />
+        <span className="absolute right-0 -top-1.5 h-3 w-px bg-separator" />
+      </div>
+      <p className="mt-2 flex justify-between text-caption text-tertiary-label tabular">
+        <span>{money(low)}</span>
+        <span>{money(high)}</span>
+      </p>
+      {caption && <p className="mt-1 text-caption text-tertiary-label">{caption}</p>}
     </div>
   );
 }
 
 /*
-  A single figure with its label.
+  An empty form is a real object, not an apology.
 
-  Sentence case, not upper case. Shouting a label does not make it more
-  important — weight and size already carry the hierarchy, and setting every
-  label in capitals flattens it while making the words harder to scan.
-
-  There were two copies of this, one per page, drifting apart in size and
-  colour. One definition keeps the figures looking like they belong to the
-  same product.
+  Shops are listed and prices are not, so this is a primary surface rather
+  than a fallback. It keeps its column heads: a blank ruled form tells the
+  visitor exactly what would go here, which an "Add your first item" panel
+  does not.
 */
-export function Stat({
-  label,
-  value,
+export function BlankForm({
+  heads,
+  title,
   hint,
+  action,
 }: {
-  label: string;
-  value: string;
+  heads: string[];
+  title: string;
   hint?: string;
+  action?: ReactNode;
 }) {
+  const template = gridTemplate(heads.length);
   return (
-    <Card>
-      <p className="text-footnote text-secondary">{label}</p>
-      <p className="text-title2 font-semibold mt-0.5 tabular-nums tracking-tight">{value}</p>
-      {hint && <p className="text-footnote text-secondary mt-1">{hint}</p>}
-    </Card>
+    <div>
+      <div
+        className="grid gap-x-4 sm:gap-x-8 border-b border-separator pb-2 text-caption text-tertiary-label"
+        style={{ gridTemplateColumns: template }}
+      >
+        <span>Operation</span>
+        {heads.map((h) => (
+          <span key={h} className="text-right">
+            {h}
+          </span>
+        ))}
+      </div>
+      {/* Three ruled but empty lines: the shape of the thing that is missing. */}
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="h-11 border-b border-separator" aria-hidden="true" />
+      ))}
+      <div className="pt-8 text-center">
+        <p className="text-headline font-semibold">{title}</p>
+        {hint && <p className="text-subhead text-secondary mt-1.5 max-w-sm mx-auto text-pretty">{hint}</p>}
+        {action && <div className="mt-5 flex justify-center">{action}</div>}
+      </div>
+    </div>
+  );
+}
+
+/** A single figure with its label. Mono, tabular, no container. */
+export function Figure({ value, label, hint }: { value: string; label: string; hint?: string }) {
+  return (
+    <div>
+      <p className="tabular text-title1 font-semibold leading-none">{value}</p>
+      <p className="text-footnote text-secondary mt-2">{label}</p>
+      {hint && <p className="text-footnote text-tertiary-label mt-0.5">{hint}</p>}
+    </div>
   );
 }
 
@@ -90,15 +326,6 @@ export function SectionTitle({ children, hint }: { children: ReactNode; hint?: s
       <h2 className="text-title3 font-semibold">{children}</h2>
       {hint && <p className="text-secondary text-subhead mt-0.5">{hint}</p>}
     </div>
-  );
-}
-
-export function EmptyState({ title, hint }: { title: string; hint?: string }) {
-  return (
-    <Card className="text-center py-12">
-      <p className="text-headline font-semibold">{title}</p>
-      {hint && <p className="text-secondary text-subhead mt-1.5 max-w-sm mx-auto">{hint}</p>}
-    </Card>
   );
 }
 
@@ -126,22 +353,6 @@ export function Stars({ value }: { value: number }) {
       </span>
       {/* The rating is stated in text too, so it never depends on colour alone. */}
       <span className="sr-only">{value} out of 5</span>
-    </span>
-  );
-}
-
-/*
-  Verification state is carried by an icon shape AND a word AND a colour, so it
-  survives colour blindness and greyscale.
-*/
-export function VerifiedBadge({ verified }: { verified: boolean }) {
-  return verified ? (
-    <span className="inline-flex items-center gap-1 text-footnote font-medium rounded-control px-2 py-1 text-success bg-[color-mix(in_srgb,var(--success)_12%,transparent)]">
-      <span aria-hidden="true">✓</span> Verified
-    </span>
-  ) : (
-    <span className="inline-flex items-center gap-1 text-footnote font-medium rounded-control px-2 py-1 text-secondary bg-fill">
-      <span aria-hidden="true">○</span> Unverified
     </span>
   );
 }
@@ -204,58 +415,23 @@ export const distance = (n: number | null | undefined) =>
   regardless of variant.
 */
 const BUTTON_BASE =
-  "inline-flex items-center justify-center min-h-11 px-4 rounded-control text-headline transition-[background-color,opacity] duration-150 disabled:opacity-40 disabled:cursor-not-allowed";
+  "inline-flex items-center justify-center min-h-11 px-4 rounded-control text-headline " +
+  "transition-[background-color,opacity] duration-150 disabled:opacity-40 disabled:cursor-not-allowed";
 
 /*
-  The surface a floating menu sits on.
+  Pressed things go in.
 
-  Deliberately opaque. Menus open over the map and over the glass panels
-  floating on it, and a translucent menu on top of those stops being a surface
-  at all — the shop list's distance labels and the map's roads show straight
-  through it. Glass belongs to the panels anchored to the page; anything that
-  opens above them needs something solid to sit on.
-
-  shadow-raised (see --shadow-raised in globals.css) gives it the same top
-  highlight as Card, plus a deeper drop shadow — popovers float further off
-  the page than a card sitting in the flow does, so they need more separation.
-*/
-export const popoverSurface =
-  "bg-elevated shadow-raised border border-separator";
-
-/*
-  Pressed things go IN.
-
-  The one piece of physics every person already knows, so it never has to be
-  learned. Paired with the 1px translate it reads as the control taking the
-  press rather than the page acknowledging it. 140ms because feedback under
-  ~160ms reads as instant, and anything slower reads as lag.
+  140ms because feedback under ~160ms reads as instant and anything slower
+  reads as lag. transform and opacity only, so it never touches layout.
 */
 const PRESS =
-  "transition-[transform,box-shadow] duration-[140ms] ease-[cubic-bezier(0.23,1,0.32,1)] " +
-  "active:translate-y-px active:scale-[0.985] " +
+  "transition-[transform] duration-[140ms] ease-[var(--ease-out)] " +
+  "active:translate-y-px active:scale-[0.98] " +
   "motion-reduce:transition-none motion-reduce:active:translate-y-0 motion-reduce:active:scale-100";
 
 export const buttonStyles = {
-  /*
-    Every variant used to be MACHINED, distinguished only by a coloured rim.
-
-    A hero material used on every control is not a material, it is wallpaper:
-    nothing reads as more important than anything else, and on the warm paper
-    ground metal-on-near-metal loses its edges entirely. Metal now appears
-    once per component and only where a metal thing belongs — the plate
-    wordmark, and nothing else here.
-
-    Variant reads from VALUE instead, which survives any ground: a filled
-    green primary, a bordered card-stock secondary, a filled red destructive.
-  */
-  primary:
-    `${BUTTON_BASE} ${PRESS} bg-accent-fill text-on-accent font-semibold ` +
-    "shadow-[inset_0_1px_0_rgba(255,255,255,0.28),0_1px_1px_rgba(22,24,26,0.18),0_4px_10px_-3px_rgba(27,107,60,0.5)] " +
-    "hover:bg-accent-hover",
-  secondary:
-    `${BUTTON_BASE} ${PRESS} bg-elevated text-label border border-separator ` +
-    "shadow-[inset_0_0.5px_0_rgba(255,255,255,0.9),0_1px_1px_rgba(22,24,26,0.08)] " +
-    "hover:bg-grouped",
+  primary: `${BUTTON_BASE} ${PRESS} bg-accent-fill text-on-accent font-semibold hover:bg-accent-hover`,
+  secondary: `${BUTTON_BASE} ${PRESS} bg-elevated text-label border border-separator hover:bg-grouped`,
   /*
     A secondary button that speaks in the accent.
 
@@ -264,17 +440,20 @@ export const buttonStyles = {
     generated stylesheet, not by the order they appear in a className. The
     override silently lost.
   */
-  secondaryAccent:
-    `${BUTTON_BASE} ${PRESS} bg-elevated text-accent font-medium border border-separator ` +
-    "shadow-[inset_0_0.5px_0_rgba(255,255,255,0.9),0_1px_1px_rgba(22,24,26,0.08)] " +
-    "hover:bg-grouped",
-  destructive:
-    `${BUTTON_BASE} ${PRESS} bg-destructive-fill text-on-destructive font-semibold ` +
-    "shadow-[inset_0_1px_0_rgba(255,255,255,0.24),0_1px_1px_rgba(22,24,26,0.18)] " +
-    "hover:brightness-110",
+  secondaryAccent: `${BUTTON_BASE} ${PRESS} bg-elevated text-accent font-medium border border-separator hover:bg-grouped`,
+  destructive: `${BUTTON_BASE} ${PRESS} bg-destructive-fill text-on-destructive font-semibold hover:brightness-110`,
   // Text button: no material — a slab behind a link would misread as a control.
   plain: `${BUTTON_BASE} ${PRESS} text-accent hover:bg-fill`,
 } as const;
+
+/*
+  The surface a floating menu sits on.
+
+  Deliberately opaque, and now the only place in the design system that uses
+  a shadow. Menus open over the map, and a translucent menu over cartography
+  stops being a surface at all. tests/popover-legibility.test.ts pins this.
+*/
+export const popoverSurface = "bg-elevated shadow-raised border border-separator";
 
 export function Skeleton({ className = "" }: { className?: string }) {
   return (
@@ -283,17 +462,13 @@ export function Skeleton({ className = "" }: { className?: string }) {
       className={`relative overflow-hidden rounded-md bg-fill ${className}`}
     >
       {/*
-        The page has one appearance — dark, forced via `color-scheme: dark`
-        in globals.css, never toggled by a `.dark` class or media query — so
-        there is no separate light-mode sweep to keep the old `dark:`
-        variant for. `via-black/5` was a light-page sweep (a light page
-        already close to white just needs a faint shadow to read as a
-        highlight); over this dark ground it vanished into the fill instead
-        of sweeping across it, which is what the dead `dark:via-white/5`
-        variant was quietly correcting for on the light theme this design no
-        longer has.
+        The page has one appearance — light stock, never toggled by a `.dark`
+        class or media query — so there is no separate dark-mode sweep to keep
+        an alternate variant for. The sweep runs at white/60 rather than
+        white/10: over this light ground a faint highlight vanishes into the
+        fill instead of reading as a sweep across it.
       */}
-      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/10 to-transparent motion-safe:animate-[shimmer_1.6s_infinite]" />
+      <div className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/60 to-transparent motion-safe:animate-[shimmer_1.6s_infinite]" />
     </div>
   );
 }

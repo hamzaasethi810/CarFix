@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { sources } from "./source-files";
 
 const css = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 
@@ -43,5 +44,26 @@ describe("globals.css variables", () => {
     );
 
     expect(unresolved, `unresolved var() in app/globals.css: ${unresolved.join(", ")}`).toEqual([]);
+  });
+
+  it("every var() used in a component resolves to a globals.css definition", () => {
+    /*
+      Every finding in R11-R13 lived in a .tsx file, not in globals.css, so the
+      guard above never saw any of them. A deleted token whose only remaining
+      consumer is a component's className or style prop fails exactly the same
+      way — the declaration it sits inside is silently dropped — and is exactly
+      as invisible to CI.
+    */
+    const defined = new Set(
+      [...css.matchAll(/^\s*(--[a-z0-9-]+)\s*:/gim)].map((m) => m[1]),
+    );
+    const offenders: string[] = [];
+    for (const f of sources()) {
+      const src = readFileSync(new URL(`../${f}`, import.meta.url), "utf8");
+      for (const m of src.matchAll(/var\(\s*(--[a-z0-9-]+)/gi)) {
+        if (!defined.has(m[1])) offenders.push(`${f}: ${m[1]}`);
+      }
+    }
+    expect(offenders, `unresolved var() in components: ${offenders.join(", ")}`).toEqual([]);
   });
 });

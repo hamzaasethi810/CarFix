@@ -91,6 +91,16 @@
   */
   --brand: var(--accent);
 
+  /*
+    On death row until Task 13, exactly like the --glass-* set above.
+
+    Two files still reach for this through color-mix(), and an undefined var()
+    there silently drops the entire background declaration. The subscription
+    mark becomes a blue Tag when those files convert; this alias only has to
+    keep the interim coherent.
+  */
+  --gold: var(--warning);
+
   --radius-control: 3px;
   --radius-glass: 12px;
 
