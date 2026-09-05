@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { PageTitle } from "@/components/ui";
+import { SheetHeader } from "@/components/ui";
 import { currentUser } from "@/lib/auth/guards";
 import { getMechanic } from "@/lib/services/mechanics";
 import { getMyShops, getShopPrices } from "@/lib/services/shops";
@@ -33,7 +33,7 @@ export default async function ShopAdminPage({ params }: { params: Promise<{ id: 
 
   return (
     <div className="max-w-3xl mx-auto space-y-4">
-      <PageTitle title={shop.name} subtitle={owned.place || "Your shop"} />
+      <SheetHeader title={shop.name} meta={owned.place || "Your shop"} />
 
       <SubscriptionPanel
         mechanicId={id}

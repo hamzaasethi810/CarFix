@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, ErrorText, money } from "@/components/ui";
+import { ErrorText, Sheet, money } from "@/components/ui";
 import { Field, Select, TextInput } from "@/components/form";
 import { buttonStyles } from "@/components/ui";
 
@@ -65,7 +65,7 @@ export function PriceEditor({
   }
 
   return (
-    <Card className="space-y-4">
+    <Sheet className="p-5 space-y-4">
       <div>
         <h2 className="text-headline font-semibold">Your published prices</h2>
         <p className="text-subhead text-secondary mt-1">
@@ -136,6 +136,6 @@ export function PriceEditor({
       </form>
 
       {error && <ErrorText>{error}</ErrorText>}
-    </Card>
+    </Sheet>
   );
 }

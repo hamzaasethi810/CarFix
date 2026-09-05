@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, ErrorText, formatDate } from "@/components/ui";
+import { ErrorText, Sheet, Tag, formatDate } from "@/components/ui";
 import { buttonStyles } from "@/components/ui";
 
 type Status = "NONE" | "ACTIVE" | "PAST_DUE" | "CANCELED";
@@ -52,7 +52,7 @@ export function SubscriptionPanel({
   const active = status === "ACTIVE";
 
   return (
-    <Card className="space-y-4">
+    <Sheet className="p-5 space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-headline font-semibold">Shop subscription</h2>
@@ -65,11 +65,7 @@ export function SubscriptionPanel({
           </p>
         </div>
 
-        {active && (
-          <span className="inline-flex items-center gap-1.5 text-footnote font-semibold rounded-control px-3 py-1.5 bg-[color-mix(in_srgb,var(--gold)_15%,transparent)] text-gold">
-            <GoldCar className="size-4" /> Subscribed
-          </span>
-        )}
+        {active && <Tag>Subscribed</Tag>}
       </div>
 
       {endsAt && (
@@ -121,7 +117,7 @@ export function SubscriptionPanel({
         Payment is handled entirely by Stripe. Card details are entered on their
         page and never reach this site.
       </p>
-    </Card>
+    </Sheet>
   );
 }
 

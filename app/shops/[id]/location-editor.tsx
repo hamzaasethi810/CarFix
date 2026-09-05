@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, ErrorText, SectionTitle, buttonStyles } from "@/components/ui";
+import { ErrorText, SectionTitle, Sheet, buttonStyles } from "@/components/ui";
 import { Field, TextInput } from "@/components/form";
 import { AddressFields, type AddressValue } from "@/components/address-fields";
 import { usesStates } from "@/lib/geo/regions";
@@ -83,7 +83,7 @@ export function LocationEditor({ mechanicId, shop }: { mechanicId: string; shop:
     return (
       <>
         <SectionTitle hint="What people see on the map.">Name and location</SectionTitle>
-        <Card className="space-y-3">
+        <Sheet className="p-5 space-y-3">
           <div>
             <p className="text-headline font-semibold">{shop.name}</p>
             <p className="text-subhead text-secondary">{place}</p>
@@ -95,7 +95,7 @@ export function LocationEditor({ mechanicId, shop }: { mechanicId: string; shop:
           <button type="button" onClick={() => setEditing(true)} className={buttonStyles.secondary}>
             Correct these details
           </button>
-        </Card>
+        </Sheet>
       </>
     );
   }
@@ -106,7 +106,7 @@ export function LocationEditor({ mechanicId, shop }: { mechanicId: string; shop:
         Name and location
       </SectionTitle>
       <form action={onSubmit}>
-        <Card className="space-y-4">
+        <Sheet className="p-5 space-y-4">
           <Field label="Shop name">
             {({ id }) => <TextInput id={id} name="name" defaultValue={shop.name} required maxLength={200} />}
           </Field>
@@ -140,7 +140,7 @@ export function LocationEditor({ mechanicId, shop }: { mechanicId: string; shop:
               Cancel
             </button>
           </div>
-        </Card>
+        </Sheet>
       </form>
     </>
   );

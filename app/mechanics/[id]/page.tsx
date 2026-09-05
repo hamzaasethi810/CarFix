@@ -1,12 +1,22 @@
 import { notFound } from "next/navigation";
-import { Card, EmptyState, SectionTitle, Stat, money } from "@/components/ui";
+import {
+  BlankForm,
+  Columns,
+  Figure,
+  OperationLine,
+  SectionTitle,
+  Sheet,
+  SheetHeader,
+  Stamp,
+  Tag,
+  money,
+} from "@/components/ui";
 import { ExperienceCard } from "@/components/experience-card";
 import { currentUser } from "@/lib/auth/guards";
 import { getMechanic } from "@/lib/services/mechanics";
 import { browseExperiences, getPricing } from "@/lib/services/experiences";
 import { AppError } from "@/lib/errors";
 import { getShopPrices } from "@/lib/services/shops";
-import { GoldCar } from "@/app/shops/[id]/subscription-panel";
 
 export default async function MechanicPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -23,28 +33,43 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
     getShopPrices(id),
   ]);
 
+  /*
+    Each filed rate gets its own Typical figure: what owners have actually
+    reported paying for that same service at this shop, not the site-wide
+    range above. Fetched per row rather than reusing the aggregate, because a
+    shop that files ten prices and gets one report on each looks nothing like
+    one that gets ten reports on a single service.
+  */
+  const typicals = await Promise.all(
+    published.map((p) => getPricing({ mechanicId: id, serviceId: p.serviceId })),
+  );
+
   return (
     <>
-      <div className="mb-6">
-        <h1 className="text-large-title font-bold inline-flex items-center gap-2.5">
-          {mechanic.subscribed && <GoldCar className="size-7 shrink-0" />}
-          {mechanic.name}
-        </h1>
-        <p className="text-secondary text-callout mt-1">
-          {[mechanic.city, mechanic.state].filter(Boolean).join(", ")}
-          {mechanic.subscribed && " · Subscribed shop"}
-        </p>
-      </div>
+      <SheetHeader
+        title={mechanic.name}
+        meta={[mechanic.city, mechanic.state].filter(Boolean).join(", ")}
+        actions={
+          <>
+            {mechanic.subscribed && <Tag>Subscribed</Tag>}
+            {mechanic.confirmed ? (
+              <Stamp>Confirmed</Stamp>
+            ) : (
+              <Tag tone="neutral">Unconfirmed</Tag>
+            )}
+          </>
+        }
+      />
 
       {!mechanic.confirmed && (
-        <Card className="mb-4 border-l-2 border-warning">
+        <Sheet className="mt-4 p-5 border-l-2 border-warning">
           <p className="text-subhead">
             <span className="font-semibold">Unconfirmed listing.</span>{" "}
             Somebody added this shop and nobody has corroborated it yet. It is
             confirmed once several different people report work here, or the
             shop claims it.
           </p>
-        </Card>
+        </Sheet>
       )}
 
       {/*
@@ -53,13 +78,13 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
         found a home for.
       */}
       {mechanic.description && (
-        <p className="-mt-2 mb-5 text-body text-secondary text-pretty max-w-prose">
+        <p className="mt-4 mb-1 text-body text-secondary text-pretty max-w-prose">
           {mechanic.description}
         </p>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Stat
+      <div className="mt-8 grid grid-cols-2 gap-8 border-t border-separator pt-8">
+        <Figure
           label="Experiences"
           value={String(mechanic.experienceCount)}
           hint={`${mechanic.verifiedCount} verified`}
@@ -70,7 +95,7 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
           as a precise figure while being nearly noise. A range says what was
           actually seen without implying more than the data supports.
         */}
-        <Stat
+        <Figure
           label="Reported prices"
           value={
             pricing.min === null || pricing.max === null
@@ -81,33 +106,27 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
           }
           hint={pricing.label}
         />
-        {/*
-          Sits beside the two figures, so it matches their label treatment.
-          Chips rather than a comma list: these are the things somebody scans
-          for, and a run-on sentence is the hardest shape to scan.
-        */}
-        <Card>
-          <p className="text-footnote text-secondary">Specialties</p>
-          {mechanic.specialties.length ? (
-            <ul className="flex flex-wrap gap-1.5 mt-2">
-              {mechanic.specialties.map((sp) => (
-                <li
-                  key={sp.id ?? sp.name}
-                  className="rounded-control bg-fill px-2.5 py-1 text-footnote font-medium"
-                >
-                  {sp.name}
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-subhead text-secondary mt-2">Not listed</p>
-          )}
-        </Card>
       </div>
 
+      {/*
+        Chips rather than a comma list: these are the things somebody scans
+        for, and a run-on sentence is the hardest shape to scan.
+      */}
+      {mechanic.specialties.length > 0 && (
+        <div className="mt-6">
+          <p className="text-footnote text-secondary mb-2">Specialties</p>
+          <ul className="flex flex-wrap gap-1.5">
+            {mechanic.specialties.map((sp) => (
+              <li key={sp.id ?? sp.name}>
+                <Tag tone="neutral">{sp.name}</Tag>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
-      <Card className="mt-6">
-        <h2 className="text-headline font-semibold mb-3">Contact</h2>
+      <SectionTitle>Contact</SectionTitle>
+      <Sheet className="p-5">
         <address className="not-italic text-subhead text-secondary space-y-2">
           <p>
             {/*
@@ -141,29 +160,40 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
             </p>
           )}
         </address>
-      </Card>
+      </Sheet>
 
-      {published.length > 0 && (
-        <>
-          <SectionTitle hint="Set by the shop. Owner-reported prices are further down.">
-            The shop&rsquo;s prices
-          </SectionTitle>
-          <Card>
-            <ul className="divide-y divide-separator">
-              {published.map((p) => (
-                <li key={p.serviceId} className="flex flex-wrap items-baseline justify-between gap-3 py-2.5 first:pt-0 last:pb-0">
-                  <span className="text-subhead font-medium">{p.service}</span>
-                  <span className="text-subhead tabular-nums">
-                    {p.maxPrice != null && p.maxPrice !== p.minPrice
-                      ? `${money(p.minPrice)} – ${money(p.maxPrice)}`
-                      : money(p.minPrice)}
-                    {p.note && <span className="text-secondary font-normal"> · {p.note}</span>}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        </>
+      <SectionTitle hint="Typical is what owners have reported paying here for the same service. Filed is what the shop asks.">
+        The shop&rsquo;s prices
+      </SectionTitle>
+      {published.length === 0 ? (
+        <BlankForm
+          heads={["Typical", "Filed"]}
+          title="No published prices yet"
+          hint="This shop has not filed prices for any service."
+        />
+      ) : (
+        <Columns heads={["Typical", "Filed"]} label="The shop's published prices">
+          {published.map((p, i) => {
+            const t = typicals[i];
+            return (
+              <OperationLine
+                key={p.serviceId}
+                label={p.service}
+                note={p.note ?? undefined}
+                figures={[
+                  t.min === null || t.max === null
+                    ? null
+                    : t.max !== t.min
+                      ? `${money(t.min)} – ${money(t.max)}`
+                      : money(t.min),
+                  p.maxPrice != null && p.maxPrice !== p.minPrice
+                    ? `${money(p.minPrice)} – ${money(p.maxPrice)}`
+                    : money(p.minPrice),
+                ]}
+              />
+            );
+          })}
+        </Columns>
       )}
 
       <SectionTitle hint="Reported by owners who had work done here.">
@@ -171,7 +201,8 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
       </SectionTitle>
 
       {experiences.items.length === 0 ? (
-        <EmptyState
+        <BlankForm
+          heads={["Service", "Cost"]}
           title="No experiences logged yet"
           hint="Be the first to report what you paid here."
         />
