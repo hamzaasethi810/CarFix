@@ -3,7 +3,8 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckboxRow, Field, Select, SubmitButton, TextArea, TextInput } from "@/components/form";
-import { Card, ErrorText } from "@/components/ui";
+import { ErrorText, Sheet } from "@/components/ui";
+import { Reconciliation } from "@/components/reconciliation";
 import { MechanicPicker } from "@/components/mechanic-picker";
 import { ServicePicker } from "@/components/service-picker";
 
@@ -30,6 +31,12 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
   const [priceWarning, setPriceWarning] = useState<string | null>(null);
   const [warningAccepted, setWarningAccepted] = useState(false);
   const [workPhotos, setWorkPhotos] = useState<File[]>([]);
+  // Tracked only to drive the live reconciliation below the money fields;
+  // the fields themselves stay uncontrolled and the form still reads them
+  // from FormData by name at submit time.
+  const [totalPrice, setTotalPrice] = useState("");
+  const [partsCost, setPartsCost] = useState("");
+  const [laborCost, setLaborCost] = useState("");
 
   async function onSubmit(formData: FormData) {
     if (submitting.current) return;
@@ -117,7 +124,7 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
 
   return (
     <form action={onSubmit} className="space-y-5">
-      <Card className="space-y-4">
+      <Sheet className="p-5 space-y-4">
         <h2 className="text-headline font-semibold">What was done</h2>
 
         <Field label="Which car?">
@@ -149,9 +156,9 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
           />
           <input type="hidden" name="serviceId" value={serviceId} />
         </div>
-      </Card>
+      </Sheet>
 
-      <Card className="space-y-4">
+      <Sheet className="p-5 space-y-4">
         <h2 className="text-headline font-semibold">Cost and date</h2>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -166,6 +173,7 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
                 min={0}
                 step="0.01"
                 required
+                onChange={(e) => setTotalPrice(e.target.value)}
               />
             )}
           </Field>
@@ -194,6 +202,7 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
                 min={0}
                 step="0.01"
                 placeholder="Optional"
+                onChange={(e) => setPartsCost(e.target.value)}
               />
             )}
           </Field>
@@ -209,6 +218,7 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
                 min={0}
                 step="0.01"
                 placeholder="Optional"
+                onChange={(e) => setLaborCost(e.target.value)}
               />
             )}
           </Field>
@@ -227,9 +237,19 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
             )}
           </Field>
         </div>
-      </Card>
 
-      <Card className="space-y-4">
+        <Reconciliation
+          live
+          lines={[
+            { label: "Parts", amount: Number(partsCost) || 0 },
+            { label: "Labor", amount: Number(laborCost) || 0 },
+          ]}
+          total={Number(totalPrice) || 0}
+          className="mt-8"
+        />
+      </Sheet>
+
+      <Sheet className="p-5 space-y-4">
         <h2 className="text-headline font-semibold">How was it?</h2>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -265,9 +285,9 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
             />
           )}
         </Field>
-      </Card>
+      </Sheet>
 
-      <Card>
+      <Sheet className="p-5">
         <h2 className="text-headline font-semibold mb-1">Receipt</h2>
         <p className="text-subhead text-secondary mb-4">
           Optional. We check the shop name and total, then delete it — permanently,
@@ -287,9 +307,9 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
             onChange={(e) => setReceipt(e.target.files?.[0] ?? null)}
           />
         </label>
-      </Card>
+      </Sheet>
 
-      <Card>
+      <Sheet className="p-5">
         <Field
           label="Photos of the work (optional)"
           hint="The wrap, the brake kit, the exhaust — up to four. Not the whole car."
@@ -307,17 +327,17 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
             </label>
           )}
         </Field>
-      </Card>
+      </Sheet>
 
       {priceWarning && (
-        <Card className="border-l-2 border-warning">
+        <Sheet className="p-5 border-l-2 border-warning">
           <p className="text-subhead">
             <span className="font-semibold">Does that look right?</span> {priceWarning}
           </p>
           <p className="text-footnote text-secondary mt-2">
             Submit again to save it as entered.
           </p>
-        </Card>
+        </Sheet>
       )}
 
       {error && <ErrorText>{error}</ErrorText>}
