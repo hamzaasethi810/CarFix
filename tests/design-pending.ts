@@ -16,14 +16,6 @@
 */
 export const PENDING: Record<string, string[]> = {
   card: [
-    "app/experiences/[id]/engagement.tsx",
-    "app/experiences/[id]/owner-actions.tsx",
-    "app/forgot-password/forgot-form.tsx",
-    "app/join/shop/shop-signup-form.tsx",
-    "app/register/register-form.tsx",
-    "app/reset-password/reset-form.tsx",
-    "app/shops/add/add-shop-form.tsx",
-    "app/shops/claim/claim-form.tsx",
   ],
   glass: [
     "app/discover.tsx",
@@ -36,7 +28,6 @@ export const PENDING: Record<string, string[]> = {
     "app/discover.tsx",
     "components/area-picker.tsx",
     "components/document-viewer.tsx",
-    "components/session-guard.tsx",
   ],
   deletedPrimitives: [],
   deletedUtilities: [

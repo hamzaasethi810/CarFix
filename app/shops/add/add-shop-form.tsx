@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Card, ErrorText } from "@/components/ui";
+import { Sheet, ErrorText } from "@/components/ui";
 import { Field, SubmitButton, TextArea, TextInput } from "@/components/form";
 import { AddressFields, emptyAddress, type AddressValue } from "@/components/address-fields";
 import { usesStates } from "@/lib/geo/regions";
@@ -82,7 +82,7 @@ export function AddShopForm() {
 
   if (added) {
     return (
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <h2 className="text-headline font-semibold">{added.name} is on the map</h2>
         <p className="text-subhead text-secondary">{added.message}</p>
         <p className="text-footnote text-secondary">
@@ -107,13 +107,13 @@ export function AddShopForm() {
             Add another
           </button>
         </div>
-      </Card>
+      </Sheet>
     );
   }
 
   return (
     <form action={onSubmit} className="space-y-5">
-      <Card className="space-y-4">
+      <Sheet className="p-5 space-y-4">
         <Field label="Shop name">
           {({ id }) => <TextInput id={id} name="name" required maxLength={200} />}
         </Field>
@@ -132,9 +132,9 @@ export function AddShopForm() {
           <span className="block text-subhead font-medium text-label mb-1.5">Where it is</span>
           <AddressFields value={where} onChange={setWhere} />
         </div>
-      </Card>
+      </Sheet>
 
-      <Card className="space-y-4">
+      <Sheet className="p-5 space-y-4">
         <Field label="Phone">
           {({ id }) => <TextInput id={id} name="phone" type="tel" maxLength={40} placeholder="Optional" />}
         </Field>
@@ -147,10 +147,10 @@ export function AddShopForm() {
               placeholder="Optional — wraps, tuning, body work, whatever they are known for" />
           )}
         </Field>
-      </Card>
+      </Sheet>
 
       {duplicate && (
-        <Card className="space-y-3 border border-warning">
+        <Sheet className="p-5 space-y-3 border border-warning">
           <h2 className="text-headline font-semibold">
             Is this {duplicate.name}?
           </h2>
@@ -176,7 +176,7 @@ export function AddShopForm() {
               {pending ? "Adding…" : "It is a different shop — add it"}
             </button>
           </div>
-        </Card>
+        </Sheet>
       )}
 
       {error && <ErrorText>{error}</ErrorText>}

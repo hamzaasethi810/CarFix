@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, ErrorText, buttonStyles, num, formatDate } from "@/components/ui";
+import { Sheet, ErrorText, buttonStyles, num, formatDate } from "@/components/ui";
 import { TextArea } from "@/components/form";
 
 type Reply = { id: string; body: string; createdAt: string; edited: boolean; shop: { id: string; name: string } } | null;
@@ -58,7 +58,7 @@ export function Engagement({
   return (
     <div className="space-y-4 mt-4">
       {photos.length > 0 && (
-        <Card>
+        <Sheet className="p-5">
           <h2 className="text-headline font-semibold mb-3">Photos of the work</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {photos.map((p) => (
@@ -71,10 +71,10 @@ export function Engagement({
               />
             ))}
           </div>
-        </Card>
+        </Sheet>
       )}
 
-      <Card className="flex flex-wrap items-center gap-3">
+      <Sheet className="p-5 flex flex-wrap items-center gap-3">
         {/* The author cannot vote for their own report, so it is not offered. */}
         {!isOwn && (
           <button
@@ -92,10 +92,10 @@ export function Engagement({
         <span className="text-subhead text-secondary">
           {num(vote.count)} {vote.count === 1 ? "person found" : "people found"} this helpful
         </span>
-      </Card>
+      </Sheet>
 
       {reply && !editing && (
-        <Card className="border-l-2 border-accent">
+        <Sheet className="p-5 border-l-2 border-accent">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-subhead font-semibold">{reply.shop.name} replied</h2>
             <span className="text-footnote text-secondary">
@@ -109,11 +109,11 @@ export function Engagement({
               Edit reply
             </button>
           )}
-        </Card>
+        </Sheet>
       )}
 
       {canReply && (!reply || editing) && (
-        <Card>
+        <Sheet className="p-5">
           <h2 className="text-headline font-semibold mb-1">Reply as the shop</h2>
           <p className="text-subhead text-secondary mb-3">
             Your reply appears publicly beneath this report.
@@ -132,7 +132,7 @@ export function Engagement({
               )}
             </div>
           </form>
-        </Card>
+        </Sheet>
       )}
 
       {error && !editing && <ErrorText>{error}</ErrorText>}

@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, ErrorText, buttonStyles } from "@/components/ui";
+import { Sheet, ErrorText, buttonStyles } from "@/components/ui";
 import { Field, TextArea, TextInput } from "@/components/form";
 
 /*
@@ -96,7 +96,7 @@ export function OwnerActions({
 
   if (editing) {
     return (
-      <Card className="mt-4">
+      <Sheet className="p-5 mt-4">
         <h2 className="text-headline font-semibold mb-1">Edit your report</h2>
         <p className="text-footnote text-secondary mb-4">
           {minutes}:{String(seconds).padStart(2, "0")} left to make changes.
@@ -143,12 +143,12 @@ export function OwnerActions({
             </button>
           </div>
         </form>
-      </Card>
+      </Sheet>
     );
   }
 
   return (
-    <Card className="mt-4">
+    <Sheet className="p-5 mt-4">
       {confirmingDelete ? (
         <div role="alertdialog" aria-label="Confirm deletion" className="space-y-3">
           <p className="text-subhead">
@@ -192,6 +192,6 @@ export function OwnerActions({
           </button>
         </div>
       )}
-    </Card>
+    </Sheet>
   );
 }

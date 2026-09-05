@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Card, ErrorText } from "@/components/ui";
+import { Sheet, ErrorText } from "@/components/ui";
 import { Field, SubmitButton, TextInput } from "@/components/form";
 
 export function ForgotForm() {
@@ -30,7 +30,7 @@ export function ForgotForm() {
 
   if (sent) {
     return (
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <h2 className="text-headline font-semibold">Check your email</h2>
         <p className="text-subhead text-secondary">{sent}</p>
         <p className="text-footnote text-secondary">
@@ -39,20 +39,20 @@ export function ForgotForm() {
         <Link href="/login" className="text-subhead text-accent font-medium">
           Back to sign in
         </Link>
-      </Card>
+      </Sheet>
     );
   }
 
   return (
     <form action={onSubmit} className="space-y-5">
-      <Card>
+      <Sheet className="p-5">
         <Field label="Your email">
           {({ id }) => (
             <TextInput id={id} name="email" type="email" required autoComplete="email"
               inputMode="email" autoCapitalize="none" autoFocus />
           )}
         </Field>
-      </Card>
+      </Sheet>
 
       {error && <ErrorText>{error}</ErrorText>}
       <SubmitButton pending={pending}>Send the link</SubmitButton>

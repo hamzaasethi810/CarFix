@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { signOut } from "next-auth/react";
+import { popoverSurface } from "@/components/ui";
 
 /*
   Idle timeout, with the choice made explicit.
@@ -64,11 +65,22 @@ export function SessionGuard() {
       aria-modal="true"
       aria-labelledby="idle-title"
       aria-describedby="idle-body"
-      className="fixed inset-0 z-[100] grid place-items-center bg-black/40 p-4"
+      /*
+        The scrim is the ink at low alpha, not raw black. Every other value in
+        this design derives from the same near-black; a true #000 wash reads
+        colder than the page it is dimming.
+      */
+      className="fixed inset-0 z-[100] grid place-items-center bg-[color-mix(in_srgb,var(--label)_45%,transparent)] p-4"
     >
       <div
         ref={panel}
-        className="w-full max-w-sm rounded-card border border-separator bg-elevated p-6 animate-[sheet-in_200ms_cubic-bezier(0.23,1,0.32,1)]"
+        /*
+          A dialog genuinely floats above the page, which is the one case this
+          design still allows elevation for, so it takes the shared popover
+          surface rather than a ruled region. The card radius went with the
+          cards; controls and floating surfaces carry the 3px control radius.
+        */
+        className={`w-full max-w-sm rounded-control p-6 ${popoverSurface} animate-[sheet-in_200ms_cubic-bezier(0.23,1,0.32,1)]`}
       >
         <h2 id="idle-title" className="text-headline font-semibold">
           Still there?

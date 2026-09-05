@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Field, SubmitButton, TextInput } from "@/components/form";
-import { Card, ErrorText } from "@/components/ui";
+import { Sheet, ErrorText } from "@/components/ui";
 
 /*
   Same account model as an owner — one login, whatever else you are. A shop
@@ -48,7 +48,7 @@ export function ShopSignupForm() {
 
   return (
     <form action={onSubmit} className="space-y-5">
-      <Card className="space-y-4">
+      <Sheet className="p-5 space-y-4">
         <Field label="Your name">
           {({ id }) => <TextInput id={id} name="displayName" required maxLength={60} autoComplete="name" />}
         </Field>
@@ -73,7 +73,7 @@ export function ShopSignupForm() {
               required minLength={12} autoComplete="new-password" />
           )}
         </Field>
-      </Card>
+      </Sheet>
 
       {error && <ErrorText>{error}</ErrorText>}
       <SubmitButton pending={pending}>Create account and continue</SubmitButton>

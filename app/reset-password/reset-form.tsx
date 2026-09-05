@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Card, ErrorText } from "@/components/ui";
+import { Sheet, ErrorText } from "@/components/ui";
 import { Field, SubmitButton, TextInput } from "@/components/form";
 
 type State =
@@ -79,12 +79,12 @@ export function ResetForm() {
   }
 
   if (state.kind === "checking") {
-    return <Card><p className="text-subhead text-secondary">Checking your link…</p></Card>;
+    return <Sheet className="p-5"><p className="text-subhead text-secondary">Checking your link…</p></Sheet>;
   }
 
   if (state.kind === "invalid") {
     return (
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <h2 className="text-headline font-semibold">That link is no longer valid</h2>
         <p className="text-subhead text-secondary">
           Reset links work once and expire after an hour. Ask for a fresh one.
@@ -92,13 +92,13 @@ export function ResetForm() {
         <Link href="/forgot-password" className="text-subhead text-accent font-medium">
           Send a new link
         </Link>
-      </Card>
+      </Sheet>
     );
   }
 
   if (state.kind === "done") {
     return (
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <h2 className="text-headline font-semibold">Password changed</h2>
         <p className="text-subhead text-secondary">
           You have been signed out everywhere else, so anyone who was in this
@@ -107,13 +107,13 @@ export function ResetForm() {
         <Link href="/login" className="text-subhead text-accent font-medium">
           Sign in
         </Link>
-      </Card>
+      </Sheet>
     );
   }
 
   return (
     <form action={onSubmit} className="space-y-5">
-      <Card className="space-y-4">
+      <Sheet className="p-5 space-y-4">
         <Field label="New password" hint="At least 12 characters.">
           {({ id, describedBy }) => (
             <TextInput id={id} aria-describedby={describedBy} name="password" type="password"
@@ -140,7 +140,7 @@ export function ResetForm() {
             )}
           </Field>
         )}
-      </Card>
+      </Sheet>
 
       {error && <ErrorText>{error}</ErrorText>}
       <SubmitButton pending={pending}>Change my password</SubmitButton>

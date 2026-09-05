@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { Field, SubmitButton, TextInput } from "@/components/form";
-import { Card, ErrorText } from "@/components/ui";
+import { Sheet, ErrorText } from "@/components/ui";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -55,7 +55,7 @@ export function RegisterForm() {
 
   return (
     <form action={onSubmit} className="space-y-5">
-      <Card className="space-y-4">
+      <Sheet className="p-5 space-y-4">
         <Field label="Display name">
           {({ id, describedBy }) => (
             <TextInput
@@ -126,7 +126,7 @@ export function RegisterForm() {
             />
           )}
         </Field>
-      </Card>
+      </Sheet>
 
       {error && <ErrorText>{error}</ErrorText>}
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Card, ErrorText } from "@/components/ui";
+import { Sheet, ErrorText } from "@/components/ui";
 import { Field, SubmitButton, TextArea, TextInput } from "@/components/form";
 import { MechanicPicker } from "@/components/mechanic-picker";
 
@@ -47,19 +47,19 @@ export function ClaimForm() {
 
   if (done) {
     return (
-      <Card>
+      <Sheet className="p-5">
         <h2 className="text-headline font-semibold">Claim submitted</h2>
         <p className="text-subhead text-secondary mt-1">
           We will review it shortly. Your document is deleted as soon as a
           decision is made, whichever way it goes.
         </p>
-      </Card>
+      </Sheet>
     );
   }
 
   return (
     <form action={onSubmit} className="space-y-5">
-      <Card className="space-y-4">
+      <Sheet className="p-5 space-y-4">
         <Field label="Which shop?" hint="Search by name or town. Search the map first if it is not listed yet.">
           {() => <MechanicPicker name="mechanicId" required />}
         </Field>
@@ -71,9 +71,9 @@ export function ClaimForm() {
         <Field label="Contact phone">
           {({ id }) => <TextInput id={id} name="contactPhone" type="tel" maxLength={40} placeholder="Optional" />}
         </Field>
-      </Card>
+      </Sheet>
 
-      <Card>
+      <Sheet className="p-5">
         <Field
           label="Proof you run this business"
           hint="A business licence, utility bill, or insurance certificate showing the business name and address. Image or PDF."
@@ -96,7 +96,7 @@ export function ClaimForm() {
             {({ id }) => <TextArea id={id} name="note" rows={3} maxLength={1000} placeholder="Optional" />}
           </Field>
         </div>
-      </Card>
+      </Sheet>
 
       {error && <ErrorText>{error}</ErrorText>}
       <SubmitButton pending={pending}>Submit claim</SubmitButton>
