@@ -22,10 +22,8 @@ export const PENDING: Record<string, string[]> = {
     "app/experiences/[id]/engagement.tsx",
     "app/experiences/[id]/owner-actions.tsx",
     "app/forgot-password/forgot-form.tsx",
-    "app/garage/loading.tsx",
     "app/join/shop/shop-signup-form.tsx",
     "app/mechanics/[id]/page.tsx",
-    "app/profile/[username]/page.tsx",
     "app/register/register-form.tsx",
     "app/reset-password/reset-form.tsx",
     "app/review/listing-row.tsx",
@@ -39,8 +37,6 @@ export const PENDING: Record<string, string[]> = {
     "app/shops/[id]/subscription-panel.tsx",
     "app/shops/add/add-shop-form.tsx",
     "app/shops/claim/claim-form.tsx",
-    "app/vehicle/[id]/page.tsx",
-    "components/experience-card.tsx",
   ],
   glass: [
     "app/discover.tsx",
@@ -51,10 +47,8 @@ export const PENDING: Record<string, string[]> = {
   ],
   retiredUtilities: [
     "app/discover.tsx",
-    "app/garage/add-vehicle-sheet.tsx",
     "components/area-picker.tsx",
     "components/document-viewer.tsx",
-    "components/job-card.tsx",
     "components/session-guard.tsx",
   ],
   deletedPrimitives: [
@@ -62,25 +56,18 @@ export const PENDING: Record<string, string[]> = {
     "app/admin/page.tsx",
     "app/admin/verifications/page.tsx",
     "app/mechanics/[id]/page.tsx",
-    "app/profile/[username]/page.tsx",
     "app/review/page.tsx",
     "app/settings/security/page.tsx",
     "app/setup-2fa/page.tsx",
     "app/shops/[id]/page.tsx",
-    "app/vehicle/[id]/page.tsx",
-    "components/experience-card.tsx",
   ],
   deletedUtilities: [
     "app/discover.tsx",
-    "app/garage/page.tsx",
     "app/not-found.tsx",
     "app/shops/[id]/subscription-panel.tsx",
-    "components/job-card.tsx",
   ],
   layoutTransitions: [
     "app/discover.tsx",
   ],
-  stampInk: [
-    "components/job-card.tsx",
-  ],
+  stampInk: [],
 };

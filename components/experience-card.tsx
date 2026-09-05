@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Card, Stars, VerifiedBadge, miles, money } from "@/components/ui";
+import { Sheet, Stamp, Stars, Tag, miles, money } from "@/components/ui";
 
 export type ExperienceView = {
   id: string;
@@ -26,14 +26,14 @@ export function ExperienceCard({
   showMechanic?: boolean;
 }) {
   return (
-    <Card>
+    <Sheet as="article" className="p-5">
       <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
         <h3 className="text-headline font-semibold">
           {e.vehicle.year} {e.vehicle.make} {e.vehicle.model}{" "}
           <span className="text-secondary font-normal">{e.vehicle.generation}</span>
           {e.vehicle.trim && <span className="text-secondary font-normal"> · {e.vehicle.trim}</span>}
         </h3>
-        <VerifiedBadge verified={e.verified} />
+        {e.verified ? <Stamp>Verified</Stamp> : <Tag tone="neutral">Unverified</Tag>}
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2">
@@ -81,6 +81,6 @@ export function ExperienceCard({
         {e.author && ` · ${e.author.displayName}`}
         {e.wouldReturn && " · would return"}
       </p>
-    </Card>
+    </Sheet>
   );
 }

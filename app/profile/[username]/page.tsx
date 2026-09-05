@@ -1,9 +1,17 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Card, EmptyState, PageTitle, SectionTitle } from "@/components/ui";
+import { BlankForm, Columns, OperationLine, SectionTitle, SheetHeader } from "@/components/ui";
 import { getPublicProfile } from "@/lib/services/account";
 import { AppError } from "@/lib/errors";
 
+/*
+  An owner's index, not forty-eight lines of grey boxes.
+
+  The garage used to be a stack of Cards, each one a rounded tile with a
+  nickname and a chassis code sitting inside it — this was the weakest page
+  on the site by a wide margin. It is a ruled index now, the same one the
+  garage and vehicle pages use: one line per car, its generation in the
+  column that promises it.
+*/
 export default async function ProfilePage({ params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
 
@@ -14,34 +22,28 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
   return (
     <>
-      <PageTitle
+      <SheetHeader
         title={profile.displayName}
-        subtitle={[`@${profile.username}`, profile.generalLocation].filter(Boolean).join(" · ")}
+        meta={[`@${profile.username}`, profile.generalLocation].filter(Boolean).join(" · ")}
       />
 
-      {profile.bio && <p className="text-body max-w-2xl text-pretty">{profile.bio}</p>}
+      {profile.bio && <p className="text-body max-w-2xl text-pretty mt-2">{profile.bio}</p>}
 
       <SectionTitle>Garage</SectionTitle>
 
       {vehicles.length === 0 ? (
-        <EmptyState title="No cars listed" />
+        <BlankForm heads={["Generation"]} title="No cars listed" />
       ) : (
-        <ul className="space-y-3">
+        <Columns heads={["Generation"]} label="Garage">
           {vehicles.map((v) => (
-            <li key={v.id}>
-              <Link href={`/vehicle/${v.id}`} className="block group">
-                <Card className="group-hover:bg-tertiary transition-colors duration-150">
-                  <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-                    <span className="text-headline font-semibold">
-                      {v.nickname ?? `${v.year} ${v.make} ${v.model}`}
-                    </span>
-                    <span className="text-subhead text-secondary">{v.generation}</span>
-                  </div>
-                </Card>
-              </Link>
-            </li>
+            <OperationLine
+              key={v.id}
+              label={v.nickname ?? `${v.year} ${v.make} ${v.model}`}
+              figures={[v.generation]}
+              href={`/vehicle/${v.id}`}
+            />
           ))}
-        </ul>
+        </Columns>
       )}
     </>
   );

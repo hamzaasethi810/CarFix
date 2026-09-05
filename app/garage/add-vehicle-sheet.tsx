@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { buttonStyles } from "@/components/ui";
+import { buttonStyles, popoverSurface } from "@/components/ui";
 import { AddVehicleForm } from "./add-vehicle-form";
 
 type Option = { id: string; name: string };
@@ -86,8 +86,11 @@ export function AddVehicleSheet({ makes }: { makes: Option[] }) {
               Enters from 0.97, never from 0: nothing in the real world
               appears out of nothing. Centred origin, because a modal is not
               anchored to its trigger.
+
+              Square, like every other ruled region, but this one genuinely
+              floats above the page — the same surface a menu opens on.
             */
-            className="w-full max-w-lg rounded-card border border-separator bg-elevated p-6 my-8 animate-[sheet-in_200ms_cubic-bezier(0.23,1,0.32,1)]"
+            className={`w-full max-w-lg p-6 my-8 animate-[sheet-in_200ms_cubic-bezier(0.23,1,0.32,1)] ${popoverSurface}`}
           >
             <div className="flex items-start justify-between gap-4 mb-5">
               <h2 id="add-car-title" className="text-headline font-semibold">
@@ -96,7 +99,7 @@ export function AddVehicleSheet({ makes }: { makes: Option[] }) {
               <button
                 onClick={() => setOpen(false)}
                 aria-label="Close"
-                className="-m-2 p-2 text-secondary transition-transform duration-150 ease-out active:scale-[0.97]"
+                className="-m-2 inline-flex min-h-11 min-w-11 items-center justify-center p-2 text-secondary transition-transform duration-150 ease-out active:scale-[0.97]"
               >
                 &times;
               </button>
