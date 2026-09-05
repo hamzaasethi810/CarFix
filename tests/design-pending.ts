@@ -27,12 +27,6 @@ export const PENDING: Record<string, string[]> = {
     "app/garage/loading.tsx",
     "app/join/shop/shop-signup-form.tsx",
     "app/mechanics/[id]/page.tsx",
-    /*
-      Not the Sheet conversion — the sweep's \bCard\b regex cannot tell this
-      component import from the word "Card" in "Card details.", genuine copy
-      in the privacy policy's payments section that must stay verbatim. The
-      page itself no longer imports or renders the Card component.
-    */
     "app/profile/[username]/page.tsx",
     "app/register/register-form.tsx",
     "app/reset-password/reset-form.tsx",
