@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { EmptyState, PageTitle } from "@/components/ui";
+import { BlankForm, SheetHeader } from "@/components/ui";
 import { currentUser, isPrivileged } from "@/lib/auth/guards";
 import { getClaimQueue } from "@/lib/services/shops";
 import { ClaimRow } from "./claim-row";
@@ -14,21 +14,27 @@ export default async function ClaimsPage() {
 
   return (
     <>
-      <PageTitle
+      <SheetHeader
         title="Shop claims"
-        subtitle="Approving hands the listing to the claimant. The document is deleted either way."
+        meta="Approving hands the listing to the claimant. The document is deleted either way."
       />
-      {queue.length === 0 ? (
-        <EmptyState title="No claims awaiting review" />
-      ) : (
-        <ul className="space-y-3">
-          {queue.map((c) => (
-            <li key={c.id}>
-              <ClaimRow item={c} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="mt-8">
+        {queue.length === 0 ? (
+          <BlankForm
+            heads={["Claimant"]}
+            title="No claims awaiting review"
+            hint="The queue is clear."
+          />
+        ) : (
+          <ul className="space-y-3">
+            {queue.map((c) => (
+              <li key={c.id}>
+                <ClaimRow item={c} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </>
   );
 }

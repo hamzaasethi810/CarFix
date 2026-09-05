@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, ErrorText, buttonStyles } from "@/components/ui";
+import { ErrorText, Sheet, Stamp, buttonStyles } from "@/components/ui";
 import { Field, TextInput } from "@/components/form";
 
 type Status = { enabled: boolean; required: boolean; backupCodesRemaining: number };
@@ -84,7 +84,7 @@ export function MfaPanel({ initial }: { initial: Status }) {
 
   if (codes) {
     return (
-      <Card className="space-y-4">
+      <Sheet className="p-5 space-y-4">
         <div>
           <h2 className="text-headline font-semibold">Save your backup codes</h2>
           <p className="text-subhead text-secondary mt-1">
@@ -110,13 +110,13 @@ export function MfaPanel({ initial }: { initial: Status }) {
         <button type="button" onClick={() => setCodes(null)} className={buttonStyles.primary}>
           I have saved them
         </button>
-      </Card>
+      </Sheet>
     );
   }
 
   if (setup) {
     return (
-      <Card className="space-y-4">
+      <Sheet className="p-5 space-y-4">
         <div>
           <h2 className="text-headline font-semibold">Scan this in your authenticator</h2>
           <p className="text-subhead text-secondary mt-1">
@@ -129,9 +129,18 @@ export function MfaPanel({ initial }: { initial: Status }) {
         {/*
           Generated on our server as a data URI. No third party ever sees the
           secret, and no external request is needed to display it.
+
+          The code is content, not decoration, so it keeps its own framed
+          region — the same Plate-style rule (a border, a stock change, a
+          margin) as any other image bound into the document — rather than
+          sitting loose against the page. It is never tinted, filtered, or
+          shrunk: a QR code that has been styled is a QR code that no longer
+          scans.
         */}
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={setup.qrDataUri} alt="" className="size-48 rounded-control bg-white p-2" />
+        <div className="w-fit border border-separator bg-grouped p-1.5">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={setup.qrDataUri} alt="" className="size-48 bg-white" />
+        </div>
 
         <div>
           <p className="text-footnote text-secondary">Or enter this key by hand:</p>
@@ -149,12 +158,12 @@ export function MfaPanel({ initial }: { initial: Status }) {
             {pending ? "Checking…" : "Turn on two-factor"}
           </button>
         </form>
-      </Card>
+      </Sheet>
     );
   }
 
   return (
-    <Card className="space-y-4">
+    <Sheet className="p-5 space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-headline font-semibold">Two-factor authentication</h2>
@@ -164,11 +173,7 @@ export function MfaPanel({ initial }: { initial: Status }) {
               : "A code from your phone, on top of your password."}
           </p>
         </div>
-        {status.enabled && (
-          <span className="text-footnote font-medium rounded-control px-2.5 py-1 bg-[color-mix(in_srgb,var(--success)_12%,transparent)] text-success">
-            ✓ On
-          </span>
-        )}
+        {status.enabled && <Stamp>On</Stamp>}
       </div>
 
       {status.required && !status.enabled && (
@@ -231,6 +236,6 @@ export function MfaPanel({ initial }: { initial: Status }) {
           {pending ? "Preparing…" : "Set up two-factor"}
         </button>
       )}
-    </Card>
+    </Sheet>
   );
 }

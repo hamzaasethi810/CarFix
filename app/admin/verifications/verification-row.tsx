@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Card, ErrorText, buttonStyles, miles, money, formatDate } from "@/components/ui";
+import { Code, ErrorText, Sheet, Tag, buttonStyles, miles, money, formatDate } from "@/components/ui";
 import { DocumentViewer } from "@/components/document-viewer";
 
 type QueueItem = {
@@ -86,15 +86,21 @@ export function VerificationRow({ item }: { item: QueueItem }) {
         </div>
       </DocumentViewer>
     )}
-    <Card className="space-y-3">
+    <Sheet as="article" className="p-5 space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 className="text-headline font-semibold">
-          {item.vehicle.year} {item.vehicle.make} {item.vehicle.model}{" "}
-          <span className="text-secondary font-normal">{item.vehicle.generation}</span>
-        </h2>
-        <span className="text-subhead text-secondary">
-          {item.author?.displayName ?? "Unknown"}
-        </span>
+        <div className="flex flex-wrap items-baseline gap-x-2.5">
+          <h2 className="text-headline font-semibold">
+            {item.vehicle.year} {item.vehicle.make} {item.vehicle.model}{" "}
+            <span className="text-secondary font-normal">{item.vehicle.generation}</span>
+          </h2>
+          <Code>{item.id}</Code>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <Tag tone="neutral">Pending review</Tag>
+          <span className="text-subhead text-secondary">
+            {item.author?.displayName ?? "Unknown"}
+          </span>
+        </div>
       </div>
 
       <p className="text-subhead text-secondary">
@@ -169,7 +175,7 @@ export function VerificationRow({ item }: { item: QueueItem }) {
       )}
 
       {error && <ErrorText>{error}</ErrorText>}
-    </Card>
+    </Sheet>
     </>
   );
 }

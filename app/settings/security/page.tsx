@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { PageTitle } from "@/components/ui";
+import { SheetHeader } from "@/components/ui";
 import { currentUser } from "@/lib/auth/guards";
 import { getMfaStatus } from "@/lib/services/mfa";
 import { MfaPanel } from "./mfa-panel";
@@ -14,10 +14,12 @@ export default async function SecurityPage() {
 
   return (
     <div className="max-w-xl mx-auto">
-      <PageTitle title="Security" subtitle="Protect your account with a second factor." />
-      <MfaPanel initial={status} />
-      <ChangePassword />
-      <DeleteAccount />
+      <SheetHeader title="Security" meta="Protect your account with a second factor." />
+      <div className="mt-8">
+        <MfaPanel initial={status} />
+        <ChangePassword />
+        <DeleteAccount />
+      </div>
     </div>
   );
 }

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { Card, ErrorText, SectionTitle } from "@/components/ui";
+import { ErrorText, SectionTitle, Sheet } from "@/components/ui";
 import { Field, TextInput } from "@/components/form";
 
 /*
@@ -45,7 +45,7 @@ export function DeleteAccount() {
   return (
     <>
       <SectionTitle hint="This cannot be undone from here.">Delete your account</SectionTitle>
-      <Card className="space-y-3">
+      <Sheet className="p-5 space-y-3">
         <p className="text-subhead text-secondary text-pretty">
           Removes your profile, your cars, and your saved searches, and withdraws
           the reports you have filed so nobody can see them. Receipts were already
@@ -104,7 +104,7 @@ export function DeleteAccount() {
             </div>
           </div>
         )}
-      </Card>
+      </Sheet>
     </>
   );
 }

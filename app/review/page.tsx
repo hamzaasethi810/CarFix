@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { Card, EmptyState, PageTitle, SectionTitle } from "@/components/ui";
+import { BlankForm, SectionTitle, Sheet, SheetHeader } from "@/components/ui";
 import { currentUser, isPrivileged } from "@/lib/auth/guards";
 import { getVerificationQueue } from "@/lib/services/experiences";
 import { getClaimQueue } from "@/lib/services/shops";
@@ -34,12 +34,16 @@ export default async function ReviewPage() {
 
   return (
     <>
-      <PageTitle
+      <SheetHeader
         title="Review desk"
-        subtitle="Approve or reject. Either way the document is deleted immediately."
+        meta="Approve or reject. Either way the document is deleted immediately."
       />
 
-      {nothingWaiting && <EmptyState title="Nothing waiting" hint="The queues are clear." />}
+      {nothingWaiting && (
+        <div className="mt-8">
+          <BlankForm heads={["Submitted"]} title="Nothing waiting" hint="The queues are clear." />
+        </div>
+      )}
 
       {receipts.length > 0 && (
         <>
@@ -86,13 +90,13 @@ export default async function ReviewPage() {
         </>
       )}
 
-      <Card className="mt-8">
+      <Sheet className="mt-8 p-5">
         <p className="text-footnote text-secondary">
           Opening a document mints a link that lasts 120 seconds and is recorded
           against your account. The file itself is destroyed the moment you
           decide, whichever way you decide.
         </p>
-      </Card>
+      </Sheet>
     </>
   );
 }

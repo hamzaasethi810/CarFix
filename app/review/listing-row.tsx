@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Card, ErrorText, buttonStyles, num, formatDate } from "@/components/ui";
+import { Code, ErrorText, Sheet, Tag, buttonStyles, num, formatDate } from "@/components/ui";
 
 type Listing = {
   id: string;
@@ -42,10 +42,16 @@ export function ListingRow({ item }: { item: Listing }) {
   }
 
   return (
-    <Card className="space-y-3">
+    <Sheet as="article" className="p-5 space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 className="text-headline font-semibold">{item.name}</h2>
-        <span className="text-subhead text-secondary">added by {item.submittedBy}</span>
+        <div className="flex flex-wrap items-baseline gap-x-2.5">
+          <h2 className="text-headline font-semibold">{item.name}</h2>
+          <Code>{item.id}</Code>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <Tag tone="neutral">Unconfirmed</Tag>
+          <span className="text-subhead text-secondary">added by {item.submittedBy}</span>
+        </div>
       </div>
 
       <p className="text-subhead text-secondary">
@@ -113,6 +119,6 @@ export function ListingRow({ item }: { item: Listing }) {
       )}
 
       {error && <ErrorText>{error}</ErrorText>}
-    </Card>
+    </Sheet>
   );
 }

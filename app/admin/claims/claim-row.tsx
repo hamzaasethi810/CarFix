@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { DocumentViewer } from "@/components/document-viewer";
 import { useRouter } from "next/navigation";
-import { Card, ErrorText, buttonStyles, formatDate } from "@/components/ui";
+import { Code, ErrorText, Sheet, Tag, buttonStyles, formatDate } from "@/components/ui";
 
 type Claim = {
   id: string;
@@ -66,10 +66,16 @@ export function ClaimRow({ item }: { item: Claim }) {
         </div>
       </DocumentViewer>
     )}
-    <Card className="space-y-3">
+    <Sheet as="article" className="p-5 space-y-3">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 className="text-headline font-semibold">{item.businessName}</h2>
-        <span className="text-subhead text-secondary">{item.claimant}</span>
+        <div className="flex flex-wrap items-baseline gap-x-2.5">
+          <h2 className="text-headline font-semibold">{item.businessName}</h2>
+          <Code>{item.id}</Code>
+        </div>
+        <div className="flex items-baseline gap-2">
+          <Tag tone="neutral">Pending review</Tag>
+          <span className="text-subhead text-secondary">{item.claimant}</span>
+        </div>
       </div>
 
       <p className="text-subhead text-secondary">
@@ -122,7 +128,7 @@ export function ClaimRow({ item }: { item: Claim }) {
       )}
 
       {error && <ErrorText>{error}</ErrorText>}
-    </Card>
+    </Sheet>
     </>
   );
 }

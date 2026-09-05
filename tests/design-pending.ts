@@ -16,21 +16,12 @@
 */
 export const PENDING: Record<string, string[]> = {
   card: [
-    "app/admin/claims/claim-row.tsx",
-    "app/admin/page.tsx",
-    "app/admin/verifications/verification-row.tsx",
     "app/experiences/[id]/engagement.tsx",
     "app/experiences/[id]/owner-actions.tsx",
     "app/forgot-password/forgot-form.tsx",
     "app/join/shop/shop-signup-form.tsx",
     "app/register/register-form.tsx",
     "app/reset-password/reset-form.tsx",
-    "app/review/listing-row.tsx",
-    "app/review/page.tsx",
-    "app/settings/security/change-password.tsx",
-    "app/settings/security/delete-account.tsx",
-    "app/settings/security/mfa-panel.tsx",
-    "app/setup-2fa/page.tsx",
     "app/shops/add/add-shop-form.tsx",
     "app/shops/claim/claim-form.tsx",
   ],
@@ -47,17 +38,9 @@ export const PENDING: Record<string, string[]> = {
     "components/document-viewer.tsx",
     "components/session-guard.tsx",
   ],
-  deletedPrimitives: [
-    "app/admin/claims/page.tsx",
-    "app/admin/page.tsx",
-    "app/admin/verifications/page.tsx",
-    "app/review/page.tsx",
-    "app/settings/security/page.tsx",
-    "app/setup-2fa/page.tsx",
-  ],
+  deletedPrimitives: [],
   deletedUtilities: [
     "app/discover.tsx",
-    "app/not-found.tsx",
   ],
   layoutTransitions: [
     "app/discover.tsx",

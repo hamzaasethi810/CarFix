@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { EmptyState, PageTitle } from "@/components/ui";
+import { BlankForm, SheetHeader } from "@/components/ui";
 import { currentUser, isPrivileged } from "@/lib/auth/guards";
 import { getVerificationQueue } from "@/lib/services/experiences";
 import { VerificationRow } from "./verification-row";
@@ -14,22 +14,24 @@ export default async function VerificationsPage() {
 
   return (
     <>
-      <PageTitle
+      <SheetHeader
         title="Verification queue"
-        subtitle="Approving or rejecting deletes the receipt immediately. Only the outcome is kept."
+        meta="Approving or rejecting deletes the receipt immediately. Only the outcome is kept."
       />
 
-      {queue.length === 0 ? (
-        <EmptyState title="Nothing awaiting review" />
-      ) : (
-        <ul className="space-y-3">
-          {queue.map((item) => (
-            <li key={item.id}>
-              <VerificationRow item={item} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className="mt-8">
+        {queue.length === 0 ? (
+          <BlankForm heads={["Reported"]} title="Nothing awaiting review" hint="The queue is clear." />
+        ) : (
+          <ul className="space-y-3">
+            {queue.map((item) => (
+              <li key={item.id}>
+                <VerificationRow item={item} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </>
   );
 }

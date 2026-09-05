@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { signOut } from "next-auth/react";
 import { Field, SubmitButton, TextInput } from "@/components/form";
-import { Card, ErrorText, SectionTitle } from "@/components/ui";
+import { ErrorText, SectionTitle, Sheet } from "@/components/ui";
 
 /*
   Changing a password from inside the account.
@@ -55,7 +55,7 @@ export function ChangePassword() {
     <>
       <SectionTitle>Password</SectionTitle>
       <form action={onSubmit}>
-        <Card className="space-y-4">
+        <Sheet className="p-5 space-y-4">
           <p className="text-subhead text-secondary">
             Changing this signs you out on every device, including this one.
           </p>
@@ -103,7 +103,7 @@ export function ChangePassword() {
           {error && <ErrorText>{error}</ErrorText>}
 
           <SubmitButton pending={pending}>Change password</SubmitButton>
-        </Card>
+        </Sheet>
       </form>
     </>
   );
