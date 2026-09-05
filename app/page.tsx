@@ -1,17 +1,9 @@
 import Link from "next/link";
 import { CountUp } from "@/components/landing/count-up";
-import { QuickFilters } from "@/components/landing/quick-filters";
+import { LiveRecord } from "@/components/landing/live-record";
 import { Reveal } from "@/components/landing/reveal";
 import { Plate } from "@/components/plate";
-import { Reconciliation } from "@/components/reconciliation";
-import {
-  Columns,
-  Figure,
-  OperationLine,
-  RangeScale,
-  SheetHeader,
-  buttonStyles,
-} from "@/components/ui";
+import { Figure, buttonStyles } from "@/components/ui";
 import { hasImage } from "@/lib/design/assets";
 import { getProofNumbers } from "@/lib/services/stats";
 import { getMakes } from "@/lib/services/taxonomy";
@@ -41,9 +33,14 @@ const COPY = {
     label: "File a price",
     href: "/register",
   },
-  start: {
-    heading: "Start with the car you actually own.",
-    body: "Or start from the other end. Add what you were charged, and the next owner with your car stops guessing.",
+  /*
+    Captions, because a photograph with no relationship to the words beside it
+    is decoration. Each plate is labelled by its chassis code, which is the
+    site's whole argument: these are specimens filed by generation, not badges.
+  */
+  plates: {
+    trades: "Mercedes-AMG GT R. Filed under C190.",
+    proof: "Porsche 911 GT3 RS. Filed under 992.",
   },
   record: {
     heading: "One record, three kinds of work.",
@@ -143,23 +140,21 @@ export default async function HomePage() {
   return (
     <div className="home-root">
       {/*
-        One: the record.
+        One: the record, and it is theirs.
 
         No car photograph above the fold. The category ships a full-bleed hero
         shot with a search field floating over it, and the whole argument of
-        this page is that a price is a document rather than a mood. So the
-        first thing on screen is an actual itemised record that reconciles.
+        this page is that a price is a document rather than a mood.
+
+        The record is live. Naming a car in its header re-prints it: with
+        filings the figures roll over to the real median and range, and with
+        none it stays a blank ruled form stamped VOID with their car already on
+        it. Shops are listed and prices are not, so asking a stranger to finish
+        a document about their own car is a far smaller request than asking
+        them to trust an empty database.
       */}
       <section className="mx-auto w-full max-w-5xl px-5 sm:px-8 pt-10 pb-20 sm:pt-20 sm:pb-28">
         <Reveal>
-          {/*
-            Smaller on a phone than the type scale's large-title.
-
-            At 3rem a five-word claim runs to three lines and pushes the record
-            itself below the fold, which breaks the one promise this page makes
-            about its first viewport. The claim still leads; it just stops
-            taking half the screen to do it.
-          */}
           <h1 className="text-[2.4rem] leading-[1.08] sm:text-[3.25rem] sm:leading-[1.05] tracking-[-0.03em] text-balance">
             {COPY.hero.heading}
           </h1>
@@ -167,79 +162,23 @@ export default async function HomePage() {
         </Reveal>
 
         <Reveal delay={120} className="mt-10 sm:mt-14">
-          {/*
-            The header names the car, the ruled line names the work.
-
-            Both used to say "Carbon ceramic pads, front", which read as a
-            stutter: a repair order identifies the vehicle at the top and the
-            operations underneath, and repeating the operation as the record
-            title makes the document look like it has one field filled in twice.
-          */}
-          <SheetHeader as="h2" title={ex.vehicle} code={ex.generation} />
-
-          <Columns
-            heads={["Parts", "Labour"]}
-            label="Example repair order"
-            className="mt-2"
-          >
-            <OperationLine label={ex.service} figures={[ex.parts, ex.labour]} />
-          </Columns>
-
-          <div className="mt-10 grid gap-10 sm:grid-cols-2 sm:gap-14 sm:items-start">
-            {/*
-              The range sits beside the total rather than under it, so the
-              question the visitor actually arrived with (is this number
-              normal) is answered alongside the number rather than below it.
-
-              Aligned to the top of its cell, not the bottom. Bottom-aligning it
-              against a taller reconciliation left a large hole in the middle of
-              the record, which reads as a layout fault rather than as space.
-            */}
-            <RangeScale
-              low={amount(ex.low)}
-              high={amount(ex.high)}
-              value={total}
-              caption={ex.range}
-            />
-
-            <Reconciliation
-              lines={[
-                { label: "Parts", amount: parts },
-                { label: "Labour", amount: labour },
-              ]}
-              total={total}
-            />
-          </div>
-
-          {/*
-            The signature line. On a repair order the owner signs bottom
-            right, so that is where the action goes: the position is a
-            convention the visitor has obeyed their whole adult life, which
-            is worth more than any amount of emphasis.
-          */}
-          <div className="mt-10 flex flex-wrap items-baseline justify-between gap-4 border-t border-separator pt-6">
-            <p className="text-footnote text-tertiary-label max-w-sm text-pretty">{ex.caption}</p>
-            <Link href={COPY.cta.href} className={`${buttonStyles.primary} px-8`}>
-              {COPY.cta.label}
-            </Link>
-          </div>
+          <LiveRecord
+            makes={makes}
+            example={{
+              service: ex.service,
+              vehicle: ex.vehicle,
+              generation: ex.generation,
+              parts,
+              labour,
+              total,
+              low: amount(ex.low),
+              high: amount(ex.high),
+              caption: ex.caption,
+              range: ex.range,
+            }}
+          />
         </Reveal>
       </section>
-
-      {/* Two: the way in. */}
-      <Section labelledBy="start">
-        <div className="grid gap-12 md:grid-cols-2 md:gap-16 md:items-center">
-          <Reveal>
-            <QuickFilters makes={makes} />
-          </Reveal>
-          <Reveal delay={140}>
-            <h2 id="start" className="text-title1 tracking-[-0.022em] text-balance">
-              {COPY.start.heading}
-            </h2>
-            <p className="mt-4 text-body text-secondary text-pretty">{COPY.start.body}</p>
-          </Reveal>
-        </div>
-      </Section>
 
       {/*
         Three: what is covered.
@@ -274,10 +213,11 @@ export default async function HomePage() {
             <Reveal delay={200} className="hidden lg:block lg:self-end">
               <Plate
                 src={PLATE_TRADES}
-                alt=""
+                alt="A Mercedes-AMG GT R photographed from the front three-quarter."
                 width={1500}
                 height={2250}
                 sizes="(max-width: 1024px) 0px, 28rem"
+                caption={COPY.plates.trades}
               />
             </Reveal>
           )}
@@ -307,10 +247,11 @@ export default async function HomePage() {
           <Reveal delay={160} className="mt-12">
             <Plate
               src={PLATE_PROOF}
-              alt=""
+              alt="A Porsche 911 GT3 RS parked on a road through open country."
               width={2400}
               height={1600}
               sizes="(max-width: 640px) 90vw, (max-width: 1024px) 92vw, 64rem"
+              caption={COPY.plates.proof}
             />
           </Reveal>
         )}

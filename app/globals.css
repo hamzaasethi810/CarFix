@@ -1176,3 +1176,65 @@ body:has(.home-root) > main {
     grid-column: auto;
   }
 }
+
+/*
+  The odometer.
+
+  See components/landing/rolling-figure.tsx. A changed digit slides in from the
+  direction the value moved, blurred, and clears as it lands. The blur is doing
+  the work a crossfade cannot: without it you see two characters overlapping,
+  with it you see one character travelling.
+
+  --dir is +1 when the digit grew and -1 when it shrank, so the roll matches
+  what a real trip meter would do. Getting that backwards is the one thing that
+  makes an odometer read as fake.
+*/
+.rolling-wrap {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+.rolling {
+  display: inline-flex;
+  align-items: baseline;
+  font-variant-numeric: tabular-nums;
+}
+
+.rolling-cell {
+  display: inline-block;
+  overflow: hidden;
+}
+
+.rolling-digit {
+  display: inline-block;
+  animation: digit-roll 340ms var(--ease-out) both;
+}
+
+@keyframes digit-roll {
+  from {
+    /*
+    Fallbacked deliberately. --dir is set inline per digit; if it were ever
+    absent, a bare var() would invalidate this whole transform and the digit
+    would appear without moving. Defaulting to +1 degrades to an upward roll.
+  */
+    transform: translateY(calc(var(--dir, 1) * 0.7em));
+    opacity: 0;
+    filter: blur(3px);
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /*
+    The figure still updates; it simply stops travelling to do it. The
+    component also stops marking digits as changed under this setting, so this
+    is belt and braces for a preference toggled after load.
+  */
+  .rolling-digit {
+    animation: none;
+  }
+}

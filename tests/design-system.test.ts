@@ -247,7 +247,12 @@ describe("the landing", () => {
       before the Reconciliation, the composition has drifted back to the rut.
     */
     const src = page();
-    const record = src.indexOf("<Reconciliation");
+    /*
+      The record moved into LiveRecord when the hero became interactive, so
+      that is what must come first now. The rule is unchanged: no photograph
+      may precede the record.
+    */
+    const record = src.indexOf("<LiveRecord");
     const plate = src.indexOf("<Plate");
     expect(record).toBeGreaterThan(-1);
     if (plate > -1) expect(record).toBeLessThan(plate);
@@ -274,6 +279,12 @@ describe("the landing", () => {
     */
     const src = page();
     expect(src.match(/<h1[\s>]/g)?.length ?? 0).toBe(1);
-    expect(src).toMatch(/<SheetHeader\s+as="h2"/);
+    /*
+      The record's own header is inside LiveRecord now. It must be an h2: the
+      page claim owns the h1, and two h1 elements is a heading order break.
+    */
+    const live = stripComments(read("components/landing/live-record.tsx"));
+    expect(live).toMatch(/<h2[\s>]/);
+    expect(live.match(/<h1[\s>]/g)?.length ?? 0).toBe(0);
   });
 });
