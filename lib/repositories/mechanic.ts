@@ -353,6 +353,46 @@ export async function pricingStats(filters: {
   return row ?? { count: 0, verifiedCount: 0, min: null, max: null, avg: null, median: null };
 }
 
+/*
+  Per-service pricing for one shop, in a single round trip.
+
+  The page needs a Typical figure for every rate a shop has published, and
+  asking pricingStats once per row turned a shop page into one aggregate scan
+  per published rate on the only route with no auth wall. Grouping collapses
+  that to one query whose cost does not move when a shop publishes more rates.
+*/
+export async function pricingStatsByService(
+  mechanicId: string,
+  serviceIds: string[],
+): Promise<Map<string, PricingStats>> {
+  const map = new Map<string, PricingStats>();
+  if (serviceIds.length === 0) return map;
+
+  const rows = await prisma.$queryRaw<(PricingStats & { serviceId: string })[]>(Prisma.sql`
+    SELECT
+      e."serviceId" AS "serviceId",
+      COUNT(*)::int AS count,
+      COUNT(*) FILTER (WHERE e."verificationStatus" = 'VERIFIED')::int AS "verifiedCount",
+      MIN(e."totalPrice")::float AS min,
+      MAX(e."totalPrice")::float AS max,
+      AVG(e."totalPrice")::float AS avg,
+      PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY e."totalPrice")::float AS median
+    FROM "MechanicExperience" e
+    JOIN "Vehicle" v ON v.id = e."vehicleId"
+    JOIN "Generation" g ON g.id = v."generationId"
+    WHERE e."deletedAt" IS NULL
+      AND e."mechanicId" = ${mechanicId}
+      AND e."serviceId" IN (${Prisma.join(serviceIds)})
+    GROUP BY e."serviceId"
+  `);
+
+  // A service with no reported experiences simply has no row — and no entry
+  // in the map. Callers must fall back to pricingStats's own empty shape
+  // rather than treat a missing key as a crash or an "undefined" figure.
+  for (const { serviceId, ...stats } of rows) map.set(serviceId, stats);
+  return map;
+}
+
 /**
  * Typeahead lookup by name or town. Matching runs in Postgres and only a
  * handful of rows come back, so the browser never holds the shop list.

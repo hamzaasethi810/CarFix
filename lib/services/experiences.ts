@@ -17,7 +17,7 @@ import {
   softDeleteExperience,
   updateExperienceOwnedBy,
 } from "../repositories/experience";
-import { mechanicExists, pricingStats } from "../repositories/mechanic";
+import { mechanicExists, pricingStats, pricingStatsByService } from "../repositories/mechanic";
 import { writeAuditLog } from "../repositories/moderation";
 import { serviceExists } from "../repositories/taxonomy";
 import { vehicleBelongsTo } from "../repositories/vehicle";
@@ -211,6 +211,15 @@ export async function removeExperience(
   if (!ok) throw notFound();
 }
 
+// The UI leads with the median and the sample size; it never presents this
+// as an authoritative quote.
+const pricingLabel = (count: number) =>
+  count === 0
+    ? "No reported experiences yet"
+    : count === 1
+      ? "1 reported experience"
+      : `Based on ${count} reported experiences`;
+
 export async function getPricing(filters: {
   mechanicId?: string;
   serviceId?: string;
@@ -219,17 +228,28 @@ export async function getPricing(filters: {
   verifiedOnly?: boolean;
 }) {
   const stats = await pricingStats(filters);
-  return {
-    ...stats,
-    // The UI leads with the median and the sample size; it never presents this
-    // as an authoritative quote.
-    label:
-      stats.count === 0
-        ? "No reported experiences yet"
-        : stats.count === 1
-          ? "1 reported experience"
-          : `Based on ${stats.count} reported experiences`,
-  };
+  return { ...stats, label: pricingLabel(stats.count) };
+}
+
+/*
+  Typical pricing for every rate a shop has published, in one query.
+
+  Used by the shop's public page, which has no auth wall and is crawled: a
+  Promise.all of getPricing per published rate turned into one aggregate scan
+  per row, at a row count the shop owner controls. A service with no reported
+  experiences has no row in the grouped result, so it is filled in here with
+  the same empty shape pricingStats itself returns for that case.
+*/
+export async function getPricingByService(mechanicId: string, serviceIds: string[]) {
+  const stats = await pricingStatsByService(mechanicId, serviceIds);
+  const empty = { count: 0, verifiedCount: 0, min: null, max: null, avg: null, median: null };
+
+  const result = new Map<string, Awaited<ReturnType<typeof getPricing>>>();
+  for (const serviceId of serviceIds) {
+    const s = stats.get(serviceId) ?? empty;
+    result.set(serviceId, { ...s, label: pricingLabel(s.count) });
+  }
+  return result;
 }
 
 // ---------- Receipts ----------

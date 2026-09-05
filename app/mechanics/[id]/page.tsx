@@ -14,7 +14,7 @@ import {
 import { ExperienceCard } from "@/components/experience-card";
 import { currentUser } from "@/lib/auth/guards";
 import { getMechanic } from "@/lib/services/mechanics";
-import { browseExperiences, getPricing } from "@/lib/services/experiences";
+import { browseExperiences, getPricing, getPricingByService } from "@/lib/services/experiences";
 import { AppError } from "@/lib/errors";
 import { getShopPrices } from "@/lib/services/shops";
 
@@ -36,12 +36,13 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
   /*
     Each filed rate gets its own Typical figure: what owners have actually
     reported paying for that same service at this shop, not the site-wide
-    range above. Fetched per row rather than reusing the aggregate, because a
-    shop that files ten prices and gets one report on each looks nothing like
-    one that gets ten reports on a single service.
+    range above. One grouped query for every row (R42) rather than one
+    aggregate scan per row — this route has no auth wall and is crawled, and
+    the row count is controlled by the shop owner.
   */
-  const typicals = await Promise.all(
-    published.map((p) => getPricing({ mechanicId: id, serviceId: p.serviceId })),
+  const typicals = await getPricingByService(
+    id,
+    published.map((p) => p.serviceId),
   );
 
   return (
@@ -173,8 +174,10 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
         />
       ) : (
         <Columns heads={["Typical", "Filed"]} label="The shop's published prices">
-          {published.map((p, i) => {
-            const t = typicals[i];
+          {published.map((p) => {
+            // getPricingByService fills every requested serviceId, so this is
+            // only a defensive fallback, never the real path.
+            const t = typicals.get(p.serviceId) ?? { min: null, max: null };
             return (
               <OperationLine
                 key={p.serviceId}
