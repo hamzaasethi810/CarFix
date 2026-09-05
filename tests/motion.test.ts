@@ -71,6 +71,29 @@ describe("the motion grammar", () => {
     }
   });
 
+  it("gates hover effects that MOVE behind a real pointer", () => {
+    /*
+      A touch device fires hover on tap and then leaves the element in the
+      hovered state, so a hover effect that MOVES something reads as the
+      interface twitching under your thumb and staying twitched.
+
+      Deliberately narrower than "gate every hover". Colour and background
+      changes on tap are instantaneous and harmless, they are how the whole
+      codebase expresses button feedback, and an absolute rule here would be a
+      rule nobody could follow. What has to be gated is transform: scale,
+      translate, rotate, skew.
+    */
+    for (const [f, src] of code()) {
+      const ungated = [...src.matchAll(/(?<!hover:hover\)\]:)hover:(scale|translate|rotate|skew)[-\w./[\]]*/g)]
+        .map((m) => m[0])
+        .filter((hit) => {
+          const at = src.indexOf(hit);
+          return !src.slice(Math.max(0, at - 60), at).includes("@media(hover:hover)");
+        });
+      expect(ungated, `${f}: ${ungated.join(", ")}`).toEqual([]);
+    }
+  });
+
   it("nothing enters from scale(0)", () => {
     /*
       Nothing in the physical world appears out of nothing. An element growing
