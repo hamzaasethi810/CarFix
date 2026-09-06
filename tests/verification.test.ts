@@ -9,7 +9,7 @@ import {
   uploadReceipt,
 } from "../lib/services/experiences";
 import { addVehicle } from "../lib/services/vehicles";
-import { fixtures, makeUser, resetData, validExperience, fakeFile, PNG_BYTES } from "./helpers";
+import { fixtures, makeUser, resetData, validExperience, fakeFile, JPEG_BYTES } from "./helpers";
 
 async function scenario() {
   const fx = await fixtures();
@@ -46,7 +46,7 @@ describe("receipt verification", () => {
 
   it("uploading a receipt moves the experience to PENDING, not VERIFIED", async () => {
     const { owner, experience } = await scenario();
-    const result = await uploadReceipt(experience.id, owner.id, fakeFile(PNG_BYTES));
+    const result = await uploadReceipt(experience.id, owner.id, fakeFile(JPEG_BYTES));
     expect(result.status).toBe("PENDING");
 
     const row = await prisma.mechanicExperience.findUniqueOrThrow({
@@ -58,7 +58,7 @@ describe("receipt verification", () => {
 
   it("an approval deletes the stored receipt and keeps only the outcome", async () => {
     const { owner, admin, experience } = await scenario();
-    await uploadReceipt(experience.id, owner.id, fakeFile(PNG_BYTES));
+    await uploadReceipt(experience.id, owner.id, fakeFile(JPEG_BYTES));
 
     const result = await decideReceiptVerification({
       experienceId: experience.id,
@@ -79,7 +79,7 @@ describe("receipt verification", () => {
 
   it("a rejection also destroys the receipt", async () => {
     const { owner, admin, experience } = await scenario();
-    await uploadReceipt(experience.id, owner.id, fakeFile(PNG_BYTES));
+    await uploadReceipt(experience.id, owner.id, fakeFile(JPEG_BYTES));
 
     await decideReceiptVerification({
       experienceId: experience.id,
@@ -97,7 +97,7 @@ describe("receipt verification", () => {
 
   it("every decision writes an audit entry naming the admin", async () => {
     const { owner, admin, experience } = await scenario();
-    await uploadReceipt(experience.id, owner.id, fakeFile(PNG_BYTES));
+    await uploadReceipt(experience.id, owner.id, fakeFile(JPEG_BYTES));
     await decideReceiptVerification({
       experienceId: experience.id,
       adminId: admin.id,
@@ -113,7 +113,7 @@ describe("receipt verification", () => {
 
   it("a receipt cannot be fetched once the decision has destroyed it", async () => {
     const { owner, admin, experience } = await scenario();
-    await uploadReceipt(experience.id, owner.id, fakeFile(PNG_BYTES));
+    await uploadReceipt(experience.id, owner.id, fakeFile(JPEG_BYTES));
     await decideReceiptVerification({
       experienceId: experience.id,
       adminId: admin.id,
@@ -127,7 +127,7 @@ describe("receipt verification", () => {
 
   it("viewing a receipt is itself audited", async () => {
     const { owner, admin, experience } = await scenario();
-    await uploadReceipt(experience.id, owner.id, fakeFile(PNG_BYTES));
+    await uploadReceipt(experience.id, owner.id, fakeFile(JPEG_BYTES));
     await readReceiptForReview(experience.id, admin.id);
 
     const logs = await prisma.auditLog.findMany({

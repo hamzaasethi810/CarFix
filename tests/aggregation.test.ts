@@ -3,7 +3,7 @@ import { prisma } from "../lib/db";
 import { addVehicle } from "../lib/services/vehicles";
 import { getPricing, submitExperience, decideReceiptVerification, uploadReceipt } from "../lib/services/experiences";
 import { search } from "../lib/services/mechanics";
-import { fixtures, makeUser, resetData, validExperience, fakeFile, PNG_BYTES } from "./helpers";
+import { fixtures, makeUser, resetData, validExperience, fakeFile, JPEG_BYTES } from "./helpers";
 
 describe("pricing and generation aggregation", () => {
   let fx: Awaited<ReturnType<typeof fixtures>>;
@@ -98,7 +98,7 @@ describe("pricing and generation aggregation", () => {
       select: { id: true, userId: true },
     });
     const admin = await makeUser("ADMIN");
-    await uploadReceipt(target.id, target.userId, fakeFile(PNG_BYTES));
+    await uploadReceipt(target.id, target.userId, fakeFile(JPEG_BYTES));
     await decideReceiptVerification({
       experienceId: target.id,
       adminId: admin.id,

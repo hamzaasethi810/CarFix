@@ -83,8 +83,23 @@ export const validExperience = (over: Record<string, unknown> = {}) => ({
   ...over,
 });
 
-export const fakeFile = (bytes: number[], name = "receipt.png", type = "image/png") =>
+export const fakeFile = (bytes: number[], name = "receipt.jpg", type = "image/jpeg") =>
   new File([new Uint8Array(bytes)], name, { type });
+
+/*
+  A minimal but complete JPEG: SOI marker, some payload, EOI terminator.
+
+  The default fixture, because the accepted upload formats narrowed to JPEG for
+  photographs and JPEG or PDF for receipts. PNG_BYTES is kept below so the
+  suites that assert a PNG is now REFUSED still have one to hand.
+*/
+export const JPEG_BYTES = [
+  ...Buffer.concat([
+    Buffer.from([0xff, 0xd8, 0xff, 0xe0]),
+    Buffer.from("JFIF-fixture"),
+    Buffer.from([0xff, 0xd9]),
+  ]),
+];
 
 /** A minimal but complete PNG: signature, a chunk, and the IEND terminator. */
 export const PNG_BYTES = [

@@ -6,7 +6,7 @@ import {
   mechanicSearchSchema,
 } from "../lib/validation/schemas";
 import { inspectImage, inspectReceipt } from "../lib/storage/files";
-import { fakeFile, PNG_BYTES } from "./helpers";
+import { fakeFile, JPEG_BYTES, PNG_BYTES } from "./helpers";
 
 const base = {
   vehicleId: "v1",
@@ -120,8 +120,17 @@ describe("input validation", () => {
 });
 
 describe("upload inspection", () => {
-  it("accepts a real PNG", async () => {
-    await expect(inspectImage(fakeFile(PNG_BYTES))).resolves.toMatchObject({ mime: "image/png" });
+  it("accepts a real JPEG and refuses a PNG", async () => {
+    /*
+      Was "accepts a real PNG". The accepted formats narrowed to JPEG for
+      photographs and JPEG or PDF for receipts, so this asserts both halves of
+      that change: the format that is allowed still works, and the one that was
+      dropped is genuinely rejected rather than quietly still passing.
+    */
+    await expect(inspectImage(fakeFile(JPEG_BYTES))).resolves.toMatchObject({ mime: "image/jpeg" });
+    await expect(
+      inspectImage(fakeFile(PNG_BYTES, "photo.png", "image/png")),
+    ).rejects.toThrow();
   });
 
   it("rejects a script disguised with an image name and MIME type", async () => {

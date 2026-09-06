@@ -92,8 +92,18 @@ const PDF: Signature = {
   },
 };
 
-const IMAGE_SIGNATURES = [JPEG, PNG, WEBP];
-const RECEIPT_SIGNATURES = [JPEG, PNG, WEBP, PDF];
+/*
+  JPEG only for photographs, and JPEG or PDF for a receipt.
+
+  Narrowed deliberately. Every accepted format is one more parser a hostile
+  file gets to reach, and the two dropped here bought nothing: PNG and WebP
+  are not what a phone camera produces, and a receipt is either a photograph
+  of paper or a PDF from a shop's system. The magic-byte check, the trailing-
+  data strip and the size cap below all still apply on top of this; the point
+  of the narrower list is that they have less to defend.
+*/
+const IMAGE_SIGNATURES = [JPEG];
+const RECEIPT_SIGNATURES = [JPEG, PDF];
 
 export type InspectedFile = { bytes: Buffer; mime: string; ext: string };
 

@@ -35,11 +35,18 @@ describe("things that must be refused", () => {
     await expect(inspectImage(asFile(html, "photo.jpg", "image/jpeg"))).rejects.toThrow();
   });
 
-  it("strips a script appended after a real PNG", async () => {
+  it("strips a script appended after a real JPEG", async () => {
+    /*
+      Was written against a PNG. PNG is no longer an accepted photo format, so
+      the case is re-pointed at JPEG rather than deleted: the behaviour it
+      guards — that anything after the end marker never reaches storage — is
+      the whole reason the inspector exists, and it must stay covered on a
+      format that is actually accepted.
+    */
     const payload = "<script>alert(1)</script>";
-    const polyglot = bytes(PNG_HEADER, "IHDRdata", PNG_IEND, payload);
+    const polyglot = bytes(JPEG_HEADER, "photodata", JPEG_EOI, payload);
 
-    const stored = await inspectImage(asFile(polyglot, "x.png", "image/png"));
+    const stored = await inspectImage(asFile(polyglot, "x.jpg", "image/jpeg"));
 
     // The image survives; the payload never reaches storage.
     expect(stored.bytes.includes(Buffer.from(payload))).toBe(false);
@@ -56,10 +63,28 @@ describe("things that must be refused", () => {
     expect(stored.bytes.includes(Buffer.from("video-bytes"))).toBe(false);
   });
 
+  it("refuses a PNG now that only JPEG photographs are accepted", async () => {
+    /*
+      The accepted list narrowed to JPEG for photographs and JPEG or PDF for
+      receipts. Every extra format is another parser a hostile file can reach,
+      and neither PNG nor WebP is what a phone camera produces. This pins the
+      narrowing so it cannot be widened back by accident.
+    */
+    const png = bytes(PNG_HEADER, "IHDRdata", PNG_IEND);
+    await expect(inspectImage(asFile(png, "photo.png", "image/png"))).rejects.toThrow();
+    await expect(inspectReceipt(asFile(png, "receipt.png", "image/png"))).rejects.toThrow();
+  });
+
   it("refuses an image with no end marker at all", async () => {
-    // Not a truncation problem — it is not a PNG.
-    const truncated = bytes(PNG_HEADER, "IHDR", "no end marker here");
-    await expect(inspectImage(asFile(truncated, "x.png", "image/png"))).rejects.toThrow(
+    /*
+      Re-pointed at JPEG with the format narrowing: a PNG is now rejected for
+      being the wrong type before truncation is ever considered, which would
+      have tested the wrong branch. This still asserts the truncation message
+      specifically, because "damaged" and "unsupported" are different problems
+      and telling someone the wrong one sends them off fixing the wrong thing.
+    */
+    const truncated = bytes(JPEG_HEADER, "photo", "no end marker here");
+    await expect(inspectImage(asFile(truncated, "x.jpg", "image/jpeg"))).rejects.toThrow(
       /damaged or incomplete/i,
     );
   });
@@ -71,10 +96,12 @@ describe("things that must be refused", () => {
 });
 
 describe("things that must still work", () => {
-  it("accepts a well-formed PNG", async () => {
-    const png = bytes(PNG_HEADER, "IHDRdata", PNG_IEND);
-    await expect(inspectImage(asFile(png, "x.png", "image/png"))).resolves.toMatchObject({
-      mime: "image/png",
+  it("accepts a well-formed JPEG receipt", async () => {
+    // Replaces the PNG acceptance case: a receipt is a photograph of paper or
+    // a PDF, and those are now the only two shapes that get through.
+    const jpeg = bytes(JPEG_HEADER, "photodata", JPEG_EOI);
+    await expect(inspectReceipt(asFile(jpeg, "r.jpg", "image/jpeg"))).resolves.toMatchObject({
+      mime: "image/jpeg",
     });
   });
 

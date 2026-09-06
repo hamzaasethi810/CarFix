@@ -24,7 +24,7 @@ import { deleteObject, putObject, getObjectBytes } from "../storage/objects";
 import { inspectImage, randomKey } from "../storage/files";
 
 const MAX_SAVED_SEARCHES = 20;
-const MAX_WORK_PHOTOS = 4;
+const MAX_WORK_PHOTOS = 2;
 
 // ---------- Helpful votes ----------
 
