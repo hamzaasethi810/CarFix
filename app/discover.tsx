@@ -780,11 +780,11 @@ export function Discover({
                   onClick={() => setSubscribedOnly((v) => !v)}
                   className={`inline-flex items-center gap-2 min-h-11 px-4 rounded-control text-subhead font-medium transition-colors duration-150 ${
                     subscribedOnly
-                      ? "bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] text-accent"
+                      ? "bg-[color-mix(in_srgb,var(--gold)_18%,transparent)] text-gold"
                       : "bg-fill text-secondary hover:bg-grouped"
                   }`}
                 >
-                  Subscribed shops
+                  Gold shops
                 </button>
 
                 {/*
@@ -1061,7 +1061,7 @@ export function Discover({
                   >
                     <span className="flex items-baseline justify-between gap-2">
                       <span className="text-subhead font-semibold inline-flex items-center gap-1.5">
-                        {m.subscribed && <Tag>Subscribed</Tag>}
+                        {m.subscribed && <Tag tone="gold">Gold</Tag>}
                         {m.name}
                         {!m.confirmed && (
                           <span
@@ -1138,7 +1138,7 @@ export function Discover({
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-headline font-semibold inline-flex items-center gap-1.5">
-                    {selected.subscribed && <Tag>Subscribed</Tag>}
+                    {selected.subscribed && <Tag tone="gold">Gold</Tag>}
                     {selected.name}
                   </h2>
                   <p className="text-footnote text-secondary mt-0.5">

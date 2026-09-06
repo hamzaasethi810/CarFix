@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { Ban, Check, Star } from "lucide-react";
 
 /*
   One definition of the column frame.
@@ -204,15 +205,16 @@ export function OperationLine({
 }
 
 /*
-  The stamp. Attests, never acts.
+  A verification mark, not a rubber stamp.
 
-  This is the only place --stamp appears in the entire codebase, and
-  tests/design-system.test.ts enforces that. A reserved accent that leaks into
-  a button or a border stops being a stamp and becomes a fourth brand colour.
+  This was a rotated, double-bordered box in a reserved red — a literal stamp
+  pressed onto the page. It read as a costume: document-cosplay decorating a
+  fact rather than stating it, and it shouted louder than anything around it
+  for a piece of information that is meant to be reassuring rather than loud.
 
-  The rotation is small and fixed rather than random: a stamp that lands at a
-  different angle on every render reads as a gimmick, and a stamp that is
-  perfectly square reads as a badge.
+  What a person needs here is a tick, a word, and a colour. State still travels
+  three ways — icon shape, text, and colour — so it survives greyscale and
+  colour blindness, which is the only part of the old mark worth keeping.
 */
 export function Stamp({
   children,
@@ -221,13 +223,16 @@ export function Stamp({
   children: ReactNode;
   state?: "verified" | "void";
 }) {
+  const verified = state === "verified";
+  const Icon = verified ? Check : Ban;
   return (
     <span
       data-state={state}
-      className="inline-flex items-center gap-1.5 -rotate-2 border-2 border-current px-2.5 py-1 text-caption font-semibold uppercase tracking-[0.12em] text-[var(--stamp)]"
+      className={`inline-flex items-center gap-1.5 text-footnote font-medium ${
+        verified ? "text-accent" : "text-tertiary-label"
+      }`}
     >
-      {/* Shape and word as well as colour, so the state survives greyscale. */}
-      <span aria-hidden="true">{state === "verified" ? "✓" : "✕"}</span>
+      <Icon aria-hidden="true" strokeWidth={2.25} className="size-4 shrink-0" />
       {children}
     </span>
   );
@@ -245,9 +250,20 @@ export function Tag({
   tone = "accent",
 }: {
   children: ReactNode;
-  tone?: "accent" | "neutral";
+  tone?: "accent" | "neutral" | "gold";
 }) {
-  const ink = tone === "accent" ? "text-accent border-accent" : "text-secondary border-separator";
+  /*
+    Gold is the subscription tier's own name, not decoration. The tier is
+    called Gold in the product and in the billing copy, so the mark that
+    denotes it is gold; a blue tag made the badge stop matching the word
+    everywhere else on the site.
+  */
+  const ink =
+    tone === "gold"
+      ? "text-gold border-gold"
+      : tone === "accent"
+        ? "text-accent border-accent"
+        : "text-secondary border-separator";
   return (
     <span
       className={`inline-flex items-center gap-1.5 border-l-2 bg-grouped px-2 py-1 text-footnote font-medium ${ink}`}
@@ -380,14 +396,31 @@ export function ErrorText({ children, id }: { children: ReactNode; id?: string }
   );
 }
 
-export function Stars({ value }: { value: number }) {
+/*
+  The read-only counterpart to components/star-rating.tsx.
+
+  Both draw the same icon at the same weight in the same gold, so a rating
+  looks like one thing whether you are giving it or reading it. It used to be
+  the "★" character set in the body face, which rendered at whatever weight and
+  baseline that font happened to give it and never matched the input control.
+*/
+export function Stars({ value, size = 16 }: { value: number; size?: number }) {
   return (
-    <span className="inline-flex items-center gap-1 text-subhead">
-      <span aria-hidden="true" className="text-warning tracking-tight">
-        {"★".repeat(value)}
-        <span className="text-tertiary-label">{"★".repeat(5 - value)}</span>
-      </span>
-      {/* The rating is stated in text too, so it never depends on colour alone. */}
+    <span className="inline-flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map((n) => (
+        <Star
+          key={n}
+          aria-hidden="true"
+          strokeWidth={1.5}
+          style={{ width: size, height: size }}
+          className={
+            n <= value
+              ? "fill-[var(--gold-fill)] text-[var(--gold-fill)]"
+              : "fill-none text-separator"
+          }
+        />
+      ))}
+      {/* Stated in text too, so the rating never depends on colour alone. */}
       <span className="sr-only">{value} out of 5</span>
     </span>
   );

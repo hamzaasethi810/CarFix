@@ -55,7 +55,15 @@ describe("no dangling utility classes", () => {
       died with the old world.
     */
     for (const f of converted("deletedUtilities")) {
-      expect(stripComments(read(f)), f).not.toMatch(/font-condensed|text-gold|bg-gold/);
+      /*
+        text-gold and bg-gold came off this list when the gold token was
+        restored. They are real utilities again — the subscription tier is
+        called Gold in the product, so the mark that denotes it is gold — and a
+        rule that forbids a utility which exists would be a rule people delete
+        rather than obey. font-condensed stays: that token is genuinely gone,
+        retired with Barlow Condensed.
+      */
+      expect(stripComments(read(f)), f).not.toMatch(/font-condensed/);
     }
   });
 });

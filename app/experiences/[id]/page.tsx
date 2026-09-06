@@ -21,12 +21,19 @@ import { OwnerActions } from "./owner-actions";
 import { Engagement } from "./engagement";
 import { canReplyAsShop, getHelpful, getReply, getWorkPhotos } from "@/lib/services/engagement";
 
+/*
+  The four things a reviewer is asked to judge, and the same four they see back.
+
+  Price left with the rating form: the amount paid is the headline figure on
+  this record, so rating it as well asked the same question twice. Overall is
+  not listed because it is the mean of these four rather than an answer of its
+  own; it is shown once, above, as stars.
+*/
 const RATING_LABELS = [
   ["quality", "Work quality"],
-  ["price", "Price"],
-  ["communication", "Communication"],
-  ["turnaround", "Turnaround"],
-  ["knowledge", "Enthusiast knowledge"],
+  ["communication", "Professionalism"],
+  ["knowledge", "Knowledge"],
+  ["turnaround", "Time spent"],
 ] as const;
 
 export default async function ExperiencePage({ params }: { params: Promise<{ id: string }> }) {
@@ -94,7 +101,7 @@ export default async function ExperiencePage({ params }: { params: Promise<{ id:
             className="flex justify-between items-center py-2 border-b border-separator last:border-0 sm:last:border-b"
           >
             <dt className="text-subhead text-secondary">{label}</dt>
-            <dd className="text-subhead font-medium tabular-nums">{e.ratings[key]} / 5</dd>
+            <dd><Stars value={e.ratings[key]} /></dd>
           </div>
         ))}
         <div className="flex justify-between items-center py-2 border-b border-separator sm:border-0">

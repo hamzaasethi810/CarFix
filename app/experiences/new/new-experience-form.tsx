@@ -3,23 +3,44 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckboxRow, Field, Select, SubmitButton, TextArea, TextInput } from "@/components/form";
-import { ErrorText, Sheet } from "@/components/ui";
+import { StarRating } from "@/components/star-rating";
+import { ErrorText, Sheet, Stars } from "@/components/ui";
 import { Reconciliation } from "@/components/reconciliation";
 import { MechanicPicker } from "@/components/mechanic-picker";
 import { ServicePicker } from "@/components/service-picker";
 
 type Option = { id: string; label?: string; name?: string };
 
+/*
+  Four things a person can actually judge about a job, and no Overall.
+
+  There were six, each a <select> pre-set to "5 - Excellent". A pre-filled top
+  score is not a neutral default: it is a rating the form supplies on the
+  reviewer's behalf, and most people submit it untouched, which quietly poisons
+  the only data this product has. Price came out because the price is already
+  the headline number on the record above -- asking someone to also star-rate it
+  is asking the same question twice.
+
+  Overall is no longer asked at all. It is the mean of these four, rounded, so
+  it cannot disagree with them. It still exists in the database because shop
+  averages are computed from it in SQL.
+*/
 const RATINGS = [
-  ["overallRating", "Overall"],
   ["qualityRating", "Work quality"],
-  ["priceRating", "Price"],
-  ["communicationRating", "Communication"],
-  ["turnaroundRating", "Turnaround"],
-  ["knowledgeRating", "Enthusiast knowledge"],
+  ["communicationRating", "Professionalism"],
+  ["knowledgeRating", "Knowledge"],
+  ["turnaroundRating", "Time spent"],
 ] as const;
 
+type RatingKey = (typeof RATINGS)[number][0];
+
 export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
+  const [ratings, setRatings] = useState<Partial<Record<RatingKey, number>>>({});
+  const given = RATINGS.map(([k]) => ratings[k]).filter((n): n is number => typeof n === "number");
+  const overall = given.length === RATINGS.length
+    ? Math.round(given.reduce((a, b) => a + b, 0) / given.length)
+    : 0;
+
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -66,7 +87,26 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
     if (labor !== undefined) payload.laborCost = labor;
     const review = formData.get("reviewText");
     if (review) payload.reviewText = String(review);
-    for (const [key] of RATINGS) payload[key] = num(key);
+    for (const [key] of RATINGS) payload[key] = ratings[key] ?? undefined;
+
+    /*
+      Overall is derived, never asked. Rounded to the nearest whole star so it
+      matches how it is displayed, and it is the value shop averages are built
+      from in SQL, so it has to be present.
+    */
+    const given = RATINGS.map(([k]) => ratings[k]).filter((n): n is number => typeof n === "number");
+    payload.overallRating = given.length
+      ? Math.round(given.reduce((a, b) => a + b, 0) / given.length)
+      : undefined;
+
+    /*
+      priceRating is still a NOT NULL column and is no longer collected. It is
+      written as the derived overall so the insert succeeds, and it is no longer
+      shown anywhere. Dropping the column needs a migration, which is a change
+      to the database rather than to this form, so it is deliberately not done
+      here.
+    */
+    payload.priceRating = payload.overallRating;
 
     /*
       Sanity-check the figure before saving. This never blocks — if they have
@@ -254,18 +294,38 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
 
         <div className="grid gap-4 sm:grid-cols-2">
           {RATINGS.map(([name, label]) => (
-            <Field key={name} label={label}>
-              {({ id }) => (
-                <Select id={id} name={name} defaultValue="5" required>
-                  {[5, 4, 3, 2, 1].map((n) => (
-                    <option key={n} value={n}>
-                      {n} — {["Poor", "Fair", "Good", "Great", "Excellent"][n - 1]}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Field>
+            <StarRating
+              key={name}
+              name={name}
+              label={label}
+              value={ratings[name] ?? null}
+              onChange={(v: number) => setRatings((r) => ({ ...r, [name]: v }))}
+            />
           ))}
+        </div>
+
+        {/*
+          Overall, shown rather than asked.
+
+          It is the mean of the four above, so it updates as they are set and
+          cannot contradict them. Read-only on purpose: a separate Overall
+          control invites a score that disagrees with its own parts, which is
+          exactly the kind of number this product exists to stop publishing.
+        */}
+        <div className="flex items-baseline justify-between border-t border-separator pt-4">
+          <span className="text-subhead font-medium">Overall</span>
+          {overall ? (
+            <span className="flex items-center gap-2">
+              <Stars value={overall} />
+              <span className="text-footnote text-secondary tabular-nums">
+                {overall} of 5, averaged
+              </span>
+            </span>
+          ) : (
+            <span className="text-footnote text-tertiary-label">
+              Rate the four above and this fills in.
+            </span>
+          )}
         </div>
 
         <div className="flex flex-col sm:flex-row sm:gap-8">
@@ -312,7 +372,7 @@ export function NewExperienceForm({ vehicles }: { vehicles: Option[] }) {
       <Sheet className="p-5">
         <Field
           label="Photos of the work (optional)"
-          hint="The wrap, the brake kit, the exhaust — up to four. Not the whole car."
+          hint="The wrap, the brake kit, the exhaust. Up to two, and JPEG only."
         >
           {() => (
             <label className="flex items-center justify-center min-h-11 rounded-control bg-fill text-accent text-subhead font-medium cursor-pointer hover:opacity-80 transition-opacity duration-150">

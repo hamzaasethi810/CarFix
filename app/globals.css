@@ -49,6 +49,22 @@
   --accent-hover: #16407F;
   --on-accent: #FFFFFF;
 
+  /*
+    Gold. Earned back.
+
+    It was retired with the old palette on the argument that a document has one
+    reserved accent and a second would dilute it. That was wrong on the
+    evidence: gold is what this product already calls the thing, the
+    subscription tier is named for it, and the mark was doing real work that a
+    blue tag does not do. It also gives stars the one colour every person
+    already reads as a rating.
+
+    Deep enough to sit on paper: contrast-checked against the stock, not a
+    yellow that vanishes on white.
+  */
+  --gold: #8A6A12;
+  --gold-fill: #A8830F;
+
   --destructive: #A32B18;
   --destructive-fill: #A32B18;
   --on-destructive: #FFFFFF;
@@ -143,6 +159,8 @@
   --color-accent-fill: var(--accent-fill);
   --color-accent-hover: var(--accent-hover);
   --color-on-accent: var(--on-accent);
+  --color-gold: var(--gold);
+  --color-gold-fill: var(--gold-fill);
   --color-destructive: var(--destructive);
   --color-destructive-fill: var(--destructive-fill);
   --color-on-destructive: var(--on-destructive);

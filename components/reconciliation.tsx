@@ -8,8 +8,8 @@ import { Stamp } from "@/components/ui";
 
   One component in two places, which is the whole argument. On the landing page
   it runs once on scroll-in and demonstrates the mechanism. On the filing form
-  it runs live as the owner types, and there it is a real validation: the stamp
-  lands only when parts plus labour plus tax equals the total they entered.
+  it runs live as the owner types, and there it is a real validation: the mark
+  appears only when parts plus labour equals the total they entered.
 
   A marketing animation that is also the product's validation cannot be a lie.
   That is the only reason this one is worth animating at all.
@@ -60,7 +60,15 @@ export function Reconciliation({
     currency field can hold, which an epsilon tolerance only approximates.
   */
   const cents = (n: number) => Math.round(n * 100);
-  const reconciles = lines.length > 0 && cents(sum) === cents(total);
+  /*
+    An empty form does not reconcile.
+
+    0 + 0 = 0 is arithmetically true and completely meaningless, and it was
+    landing the verified mark on a form nobody had typed into yet — the one
+    place this component must not claim anything. It reconciles only once there
+    is a total to reconcile against.
+  */
+  const reconciles = lines.length > 0 && cents(total) > 0 && cents(sum) === cents(total);
 
   const money = formatter([...lines.map((l) => l.amount), total]);
 
@@ -163,8 +171,8 @@ export function Reconciliation({
       {live && (
         <p role="status" className="mt-2 text-right text-footnote text-secondary">
           {reconciles
-            ? "Parts, labour and tax match the total."
-            : "Parts, labour and tax do not add up to the total yet."}
+            ? "Parts and labour match the total."
+            : "Parts and labour do not add up to the total yet."}
         </p>
       )}
     </div>

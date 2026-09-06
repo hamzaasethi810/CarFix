@@ -65,7 +65,7 @@ export function SubscriptionPanel({
           </p>
         </div>
 
-        {active && <Tag>Subscribed</Tag>}
+        {active && <Tag tone="gold">Subscribed</Tag>}
       </div>
 
       {endsAt && (

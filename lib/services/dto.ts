@@ -114,7 +114,12 @@ export const toExperienceView = (e: ExperienceRow, viewerId?: string) => ({
   ratings: {
     overall: e.overallRating,
     quality: e.qualityRating,
-    price: e.priceRating,
+    /*
+      No longer surfaced. Price is not rated any more -- the figure itself is
+      the headline on the record, so asking for a star rating of it was asking
+      the same question twice. The column still exists and is written with the
+      derived overall so the insert succeeds; dropping it needs a migration.
+    */
     communication: e.communicationRating,
     turnaround: e.turnaroundRating,
     knowledge: e.knowledgeRating,
