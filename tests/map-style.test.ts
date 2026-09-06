@@ -26,16 +26,26 @@ describe("mapStyleUrl", () => {
     expect(fallbackStyleUrl()).toContain("openfreemap");
   });
 
-  it("asks for a dark style either way", () => {
+  it("asks for a light style either way", () => {
     /*
-      The ground is near-black forest green; a light basemap fights it and
-      reduces the redesign to a header strip. Assert "dark" specifically —
-      an earlier draft of this plan allowed "positron", which is CARTO's
-      LIGHT theme, so the test would have passed the exact bug it exists
-      to prevent.
+      Inverted deliberately, and this comment records why so nobody restores
+      the old rule from memory.
+
+      It used to assert "dark", because the page was a near-black forest
+      ground and a light basemap would have reduced the redesign to a header
+      strip. That ground is retired: the page is bone paper with blue-black
+      ink and the panels over the map are opaque white, so a dark basemap now
+      reads as a hole cut in the document.
+
+      The original test's real insight is kept and pointed the other way. It
+      warned that "positron" is CARTO's LIGHT theme, so allowing it would have
+      passed the bug the test existed to prevent. The same trap exists in
+      reverse now, which is why this asserts the ABSENCE of "dark" rather than
+      the presence of any particular style name.
     */
-    expect(mapStyleUrl(undefined).toLowerCase()).toContain("dark");
-    expect(mapStyleUrl("abc123").toLowerCase()).toContain("dark");
+    expect(mapStyleUrl(undefined).toLowerCase()).not.toContain("dark");
+    expect(mapStyleUrl("abc123").toLowerCase()).not.toContain("dark");
+    expect(fallbackStyleUrl().toLowerCase()).not.toContain("dark");
   });
 });
 

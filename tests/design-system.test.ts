@@ -110,11 +110,11 @@ describe("the stamp stays reserved", () => {
 
 describe("the conversion worklist", () => {
   /*
-    Task 13 removes this .skip. Until then the worklist is the honest record of
-    work outstanding, and a skipped test says so out loud — a test that returns
-    early and then asserts trivially would say nothing at all.
+    Armed. Every array is empty, so all seven sweeps are now unconditional and
+    a file that regresses fails immediately rather than being excused by a
+    worklist entry.
   */
-  it.skip("is empty once every task has run", () => {
+  it("is empty once every task has run", () => {
     expect(Object.values(PENDING).flat()).toEqual([]);
   });
 });

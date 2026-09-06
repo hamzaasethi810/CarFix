@@ -17,24 +17,10 @@
 export const PENDING: Record<string, string[]> = {
   card: [
   ],
-  glass: [
-    "app/discover.tsx",
-    "components/anchored-menu.tsx",
-    "components/area-picker.tsx",
-    "components/document-viewer.tsx",
-    "components/mechanic-map.tsx",
-  ],
-  retiredUtilities: [
-    "app/discover.tsx",
-    "components/area-picker.tsx",
-    "components/document-viewer.tsx",
-  ],
+  glass: [  ],
+  retiredUtilities: [  ],
   deletedPrimitives: [],
-  deletedUtilities: [
-    "app/discover.tsx",
-  ],
-  layoutTransitions: [
-    "app/discover.tsx",
-  ],
+  deletedUtilities: [  ],
+  layoutTransitions: [  ],
   stampInk: [],
 };

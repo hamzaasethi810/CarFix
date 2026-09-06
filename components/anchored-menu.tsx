@@ -6,7 +6,7 @@ import { createPortal } from "react-dom";
 /*
   A dropdown that escapes whatever is trying to clip it.
 
-  The filter bar is a scrolling glass panel — it has to be, or an open panel
+  The filter bar is a scrolling opaque panel — it has to be, or an open panel
   pushes the Search button off a landscape phone with nothing to scroll it back.
   But a menu positioned inside a scrolling box is clipped by that box, which is
   what made the service and area pickers look broken: you typed, matches

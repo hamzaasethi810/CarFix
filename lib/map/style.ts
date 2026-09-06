@@ -7,12 +7,19 @@
   account. It runs on donated infrastructure with no uptime guarantee, which is
   acceptable as a fallback and not as the default.
 
-  Both are dark. A light basemap on this ground reduces the whole redesign to a
-  header strip.
+  Both are LIGHT, and that is a deliberate reversal.
+
+  They used to be dark, chosen when the page was a near-black forest ground and
+  a light basemap would have reduced the redesign to a header strip. That
+  ground is gone: the page is bone paper with blue-black ink, the panels over
+  the map are opaque white, and a dark basemap under them now reads as a hole
+  cut in the document. The reason for dark retired with the palette it was
+  chosen for.
 */
 
-// Verified 200 on 2026-08-27. Note: their "positron" style is LIGHT — not this one.
-const OPENFREEMAP_DARK = "https://tiles.openfreemap.org/styles/dark";
+// CARTO's Positron, served by OpenFreeMap. Light, and the counterpart to the
+// dark style this used to point at.
+const OPENFREEMAP_LIGHT = "https://tiles.openfreemap.org/styles/positron";
 
 export function mapStyleUrl(maptilerKey: string | undefined): string {
   /*
@@ -34,8 +41,8 @@ export function mapStyleUrl(maptilerKey: string | undefined): string {
     just its key parameter.
   */
   const key = maptilerKey?.trim();
-  if (!key) return OPENFREEMAP_DARK;
-  return `https://api.maptiler.com/maps/streets-v2-dark/style.json?key=${encodeURIComponent(key)}`;
+  if (!key) return OPENFREEMAP_LIGHT;
+  return `https://api.maptiler.com/maps/streets-v2/style.json?key=${encodeURIComponent(key)}`;
 }
 
 /*
@@ -43,7 +50,7 @@ export function mapStyleUrl(maptilerKey: string | undefined): string {
   not.
 
   MapTiler's style JSON declares its own attribution and MapLibre renders it
-  automatically. OpenFreeMap's dark style declares none, so the attribution
+  automatically. OpenFreeMap's Positron style declares none, so the attribution
   control comes up EMPTY on the fallback path — which is worse than having no
   control at all, because it looks like credit is being given when it is not.
   OpenFreeMap serves OpenStreetMap data, and ODbL requires the credit whoever
@@ -55,7 +62,7 @@ export const FALLBACK_ATTRIBUTION =
 
 /** The source to use once MapTiler has stopped serving. Always keyless. */
 export function fallbackStyleUrl(): string {
-  return OPENFREEMAP_DARK;
+  return OPENFREEMAP_LIGHT;
 }
 
 /*

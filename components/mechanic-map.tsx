@@ -113,7 +113,7 @@ function startedOnFallback(): boolean {
 
 /*
   MapLibre GL with a dark vector style (MapTiler when a key is configured,
-  OpenFreeMap otherwise — see lib/map/style.ts). The glass panels need a dark
+  OpenFreeMap otherwise — see lib/map/style.ts). The panels over it need a light
   ground to read against, which is why both style options are dark rather than
   the desaturated-light-raster trick the Leaflet version used.
 

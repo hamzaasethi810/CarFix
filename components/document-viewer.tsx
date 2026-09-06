@@ -95,7 +95,7 @@ export function DocumentViewer({ src, title, onClose, children }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="glass rounded-glass w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden"
+        className="bg-elevated border border-separator shadow-raised rounded-control w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden"
       >
         <div className="flex items-center justify-between gap-3 px-4 min-h-14 border-b border-separator">
           <h2 className="text-headline font-semibold">{title}</h2>

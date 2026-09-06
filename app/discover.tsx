@@ -4,9 +4,8 @@ import dynamic from "next/dynamic";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import type { MapMechanic } from "@/components/mechanic-map";
-import { buttonStyles, distance, money, num } from "@/components/ui";
+import { Tag, buttonStyles, distance, money, num } from "@/components/ui";
 import { AreaPicker, type Area } from "@/components/area-picker";
-import { GoldCar } from "@/app/shops/[id]/subscription-panel";
 import { ServicePicker } from "@/components/service-picker";
 
 // MapLibre needs `window`, so the map never renders on the server.
@@ -620,7 +619,7 @@ export function Discover({
         {/*
           z-20 / z-10 on these two wrappers is load-bearing, not decoration.
 
-          Both the filter bar and the results panel use .glass, and
+          Both the filter bar and the results panel are opaque panels, and
           backdrop-filter creates a stacking context. That trapped the area
           picker's menu inside the bar's own context, so its z-50 could not
           lift it above the results panel — the two contexts both sat at
@@ -628,7 +627,7 @@ export function Discover({
           (results) on top. Ordering the wrappers is what actually decides it.
           Verified against a reduction: with backdrop-filter removed the menu
           won, with it present the panel won, and ordering the wrappers fixed
-          it while keeping the glass.
+          it while keeping the panel legible over cartography.
         */}
         <div
           className="pointer-events-auto p-3 sm:p-4 relative z-20 map-enter-bar"
@@ -646,7 +645,7 @@ export function Discover({
           */}
           <div
             ref={filterBarRef}
-            className="glass rounded-glass p-3 sm:p-4 max-w-4xl mx-auto max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain"
+            className="bg-elevated border border-separator shadow-raised rounded-control p-3 sm:p-4 max-w-4xl mx-auto max-h-[calc(100dvh-6rem)] overflow-y-auto overscroll-contain"
             onPointerDown={onFilterPointerDown}
             onPointerUp={onFilterPointerUp}
           >
@@ -781,12 +780,11 @@ export function Discover({
                   onClick={() => setSubscribedOnly((v) => !v)}
                   className={`inline-flex items-center gap-2 min-h-11 px-4 rounded-control text-subhead font-medium transition-colors duration-150 ${
                     subscribedOnly
-                      ? "bg-[color-mix(in_srgb,var(--gold)_18%,transparent)] text-gold"
-                      : "bg-white/[0.06] text-secondary hover:bg-fill"
+                      ? "bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] text-accent"
+                      : "bg-fill text-secondary hover:bg-grouped"
                   }`}
                 >
-                  <GoldCar className="size-4" />
-                  Gold shops
+                  Subscribed shops
                 </button>
 
                 {/*
@@ -867,9 +865,24 @@ export function Discover({
             aria-hidden={panelStowed}
           >
           <div
-            className={`relative glass rounded-glass overflow-hidden flex flex-col ${
-              panelOpen ? "max-h-[45vh]" : "max-h-16"
-            } sm:max-h-none sm:flex-1 transition-[max-height] duration-300`}
+            /*
+              The peek/open sheet moves by transform, not by max-height.
+
+              It used to transition max-height between 4rem and 45vh, which
+              forces layout on every frame of the animation, on the most
+              complex page in the app. Both heights are fixed, so a transform
+              is available: the panel is always 45vh tall on a phone and simply
+              slides down until only its 4rem handle is above the viewport
+              edge. Nothing below the fold is clipped because the whole overlay
+              sits inside a viewport-spanning fixed element.
+
+              The transform goes on THIS element rather than the wrapper: the
+              wrapper's transform is already claimed twice over, by the stow
+              translate and by the inline drag offset.
+            */
+            className={`relative bg-elevated border border-separator shadow-raised rounded-control overflow-hidden flex flex-col h-[45vh] sm:h-auto sm:flex-1 motion-safe:transition-transform motion-safe:duration-300 ${
+              panelOpen ? "translate-y-0" : "translate-y-[calc(45vh-4rem)]"
+            } sm:translate-y-0`}
           >
             {/* Signals the sheet can be dragged, the way sheets usually do. */}
             <span
@@ -1048,7 +1061,7 @@ export function Discover({
                   >
                     <span className="flex items-baseline justify-between gap-2">
                       <span className="text-subhead font-semibold inline-flex items-center gap-1.5">
-                        {m.subscribed && <GoldCar className="size-4 shrink-0" />}
+                        {m.subscribed && <Tag>Subscribed</Tag>}
                         {m.name}
                         {!m.confirmed && (
                           <span
@@ -1121,11 +1134,11 @@ export function Discover({
         */}
         {selected && (
           <div className="pointer-events-auto absolute left-3 right-3 bottom-10 sm:left-auto sm:right-4 sm:w-80 z-30">
-            <div className="glass rounded-glass p-4">
+            <div className="bg-elevated border border-separator shadow-raised rounded-control p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-headline font-semibold inline-flex items-center gap-1.5">
-                    {selected.subscribed && <GoldCar className="size-5 shrink-0" />}
+                    {selected.subscribed && <Tag>Subscribed</Tag>}
                     {selected.name}
                   </h2>
                   <p className="text-footnote text-secondary mt-0.5">

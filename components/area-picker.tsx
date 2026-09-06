@@ -125,7 +125,7 @@ export function AreaPicker({
           ref={panelRef}
           role="dialog"
           aria-label="Choose an area"
-          className={`w-[min(22rem,calc(100vw-2rem))] rounded-glass p-4 ${popoverSurface}`}
+          className={`w-[min(22rem,calc(100vw-2rem))] rounded-control p-4 ${popoverSurface}`}
         >
           <form onSubmit={submit} className="space-y-3">
             <label className="block">

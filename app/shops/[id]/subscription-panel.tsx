@@ -121,21 +121,3 @@ export function SubscriptionPanel({
   );
 }
 
-/** The gold mark that identifies a subscribing shop. */
-export function GoldCar({ className = "size-5" }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" className={className} role="img" aria-label="Subscribed shop">
-      <defs>
-        <linearGradient id="goldcar" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#f3d27a" />
-          <stop offset="55%" stopColor="#d4a017" />
-          <stop offset="100%" stopColor="#9a6f06" />
-        </linearGradient>
-      </defs>
-      <path
-        fill="url(#goldcar)"
-        d="M5 15.5a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0Zm11 0a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0ZM3.3 13l1.2-4.1A2.5 2.5 0 0 1 6.9 7h10.2a2.5 2.5 0 0 1 2.4 1.9L20.7 13a1.6 1.6 0 0 1 .3.9v2.6a.9.9 0 0 1-.9.9h-1.2a2.9 2.9 0 0 0-5.8 0h-2.2a2.9 2.9 0 0 0-5.8 0H3.9a.9.9 0 0 1-.9-.9v-2.6c0-.32.1-.63.3-.9Zm2.4-.7h12.6l-.9-3a.7.7 0 0 0-.7-.5H7.3a.7.7 0 0 0-.7.5Z"
-      />
-    </svg>
-  );
-}
