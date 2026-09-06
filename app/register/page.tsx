@@ -1,22 +1,38 @@
 import Link from "next/link";
 import { RegisterForm } from "./register-form";
-import { SheetHeader } from "@/components/ui";
+import { AuthPanel } from "@/components/auth-panel";
 
+/*
+  Create an account.
+
+  Same split screen as sign-in, so the two screens feel like one product rather
+  than two pages that happen to both have a form on them.
+*/
 export default function RegisterPage() {
   return (
-    <div className="max-w-md mx-auto">
-      <SheetHeader title="Create your account" meta="Then add your car and start logging work." />
-      <div className="mt-8">
-        <RegisterForm />
-      </div>
-
-      {/* Shops have their own route so neither audience wades through the other's copy. */}
-      <p className="text-subhead text-secondary text-center mt-6">
-        Run a shop?{" "}
-        <Link href="/join/shop" className="text-accent font-medium">
-          List your business
-        </Link>
-      </p>
-    </div>
+    <AuthPanel
+      title="Create your account"
+      subtitle="Then add your car and start logging work."
+      aside="Filed by generation, not by badge. A price for a W204 is a price for a W204."
+      footer={
+        <>
+          <span className="block">
+            Already have one?{" "}
+            <Link href="/login" className="text-accent underline underline-offset-4">
+              Sign in
+            </Link>
+          </span>
+          {/* Shops have their own route so neither audience wades through the other's copy. */}
+          <span className="block mt-2">
+            Run a shop?{" "}
+            <Link href="/join/shop" className="text-accent underline underline-offset-4">
+              List your business
+            </Link>
+          </span>
+        </>
+      }
+    >
+      <RegisterForm />
+    </AuthPanel>
   );
 }

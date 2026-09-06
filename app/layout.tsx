@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
-import { Archivo, Martian_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { BotIdClient } from "botid/client";
 import { SessionGuard } from "@/components/session-guard";
@@ -12,24 +12,29 @@ import { currentUser, isPrivileged } from "@/lib/auth/guards";
   host, so the CSP in next.config.ts stays intact and nothing about a visitor
   leaks to a third party on page load.
 
-  Archivo carries prose and headings. Martian Mono carries every operation
-  code, part number, VIN, chassis code and money figure — the impact-printer
-  voice, and the thing that makes the document unmistakable.
+  Geist carries prose and headings; Geist Mono carries every chassis code, VIN
+  and money figure.
+
+  This replaced Archivo with Martian Mono. Martian Mono is a wide, quirky face
+  with a lot of personality, and personality is the last thing wanted on a
+  column of prices: it made money look like a novelty rather than a figure. The
+  pair here is quieter and more precise, which is what a product asking to be
+  trusted with numbers should sound like.
 
   The variables are named for their faces, not for their roles. Tailwind v4
   derives font-* utilities from the --font-* namespace, so a variable named
   --font-mono here would be mapped to itself in @theme and resolve to nothing.
 */
-const archivo = Archivo({
+const sans = Geist({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
-  variable: "--font-archivo",
+  variable: "--font-geist",
 });
 
-const martian = Martian_Mono({
+const mono = Geist_Mono({
   subsets: ["latin"],
-  weight: ["300", "400", "600"],
-  variable: "--font-martian",
+  weight: ["400", "500", "600"],
+  variable: "--font-geist-mono",
 });
 
 export const metadata: Metadata = {
@@ -72,7 +77,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
   const user = await currentUser();
 
   return (
-    <html lang="en" className={`h-full ${archivo.variable} ${martian.variable}`}>
+    <html lang="en" className={`h-full ${sans.variable} ${mono.variable}`}>
       {/*
         <body> below paints the plain ground (`--bg`), not the grouped tone.
         Cards are retired — the document reads off ruling and figures rather

@@ -3,6 +3,7 @@ import { CountUp } from "@/components/landing/count-up";
 import { GenerationPicker } from "@/components/landing/generation-picker";
 import { Reveal } from "@/components/landing/reveal";
 import { Plate } from "@/components/plate";
+import { ReceiptExample } from "@/components/landing/receipt-example";
 import { buttonStyles } from "@/components/ui";
 import { hasImage } from "@/lib/design/assets";
 import { getProofNumbers } from "@/lib/services/stats";
@@ -28,9 +29,10 @@ const COPY = {
     ],
   },
   why: {
-    heading: "A price is only worth something with a receipt behind it",
-    body: "Upload the receipt and it is read, checked against the shop and total you entered, then destroyed. Only the confirmation is kept. That is the difference between a figure and a rumour.",
-    caption: "Mercedes-AMG GT R, filed under C190. Every price here is filed by generation, not by badge.",
+    heading: "Every price is checked against its receipt",
+    body: "Upload the receipt and it is read, matched against the shop and total you entered, then destroyed. Only the outcome is kept.",
+    verification:
+      "If the figures do not match what you uploaded, the price is marked unverified and labelled as such wherever it appears. Filing without a receipt is allowed and stays unverified too. Nobody is stopped from posting a number; nobody gets to pass an unchecked one off as confirmed.",
   },
   scale: {
     heading: "Where it stands today",
@@ -40,7 +42,6 @@ const COPY = {
 } as const;
 
 const PLATE_HERO = "/img/gt3rs.webp";
-const PLATE_WHY = "/img/gtr.webp";
 
 function Section({
   children,
@@ -150,23 +151,17 @@ export default async function HomePage() {
               {COPY.why.heading}
             </h2>
             <p className="mt-5 text-body text-secondary max-w-md text-pretty">{COPY.why.body}</p>
+            <p className="mt-4 text-subhead text-secondary max-w-md text-pretty">
+              {COPY.why.verification}
+            </p>
             <Link href={COPY.cta.href} className={`${buttonStyles.secondaryAccent} mt-7 px-6`}>
               {COPY.cta.label}
             </Link>
           </Reveal>
 
-          {hasImage(PLATE_WHY) && (
-            <Reveal delay={160}>
-              <Plate
-                src={PLATE_WHY}
-                alt="A Mercedes-AMG GT R photographed from the front three-quarter."
-                width={1500}
-                height={2250}
-                sizes="(max-width: 1024px) 88vw, 28rem"
-                caption={COPY.why.caption}
-              />
-            </Reveal>
-          )}
+          <Reveal delay={160}>
+            <ReceiptExample />
+          </Reveal>
         </div>
       </Section>
 

@@ -168,8 +168,8 @@
   --color-warning: var(--warning);
   --color-brand: var(--brand);
 
-  --font-sans: var(--font-archivo), system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: var(--font-martian), ui-monospace, "SF Mono", Menlo, monospace;
+  --font-sans: var(--font-geist), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono", Menlo, monospace;
 
   /* Apple's text styles. Body is 17px — the platform default. */
   --text-large-title: 3rem;
@@ -1224,6 +1224,44 @@ body:has(.home-root) > main {
   from {
     opacity: 0;
     transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/*
+  The auth screens run full bleed.
+
+  The layout's centred column is right for every ordinary page and wrong for a
+  split screen, which needs the whole width to split. Same shape the map route
+  already uses to stand the container down for itself.
+*/
+body:has(.auth-root) > main {
+  max-width: none;
+  padding-inline: 0 !important;
+  padding-block: 0 !important;
+}
+
+/*
+  Entrance for the auth form.
+
+  Above the fold on load, so a scroll observer would never fire. Short and
+  staggered: these are screens people pass through, and a slow entrance on a
+  screen you cross weekly is a tax.
+*/
+@media (prefers-reduced-motion: no-preference) {
+  .auth-enter {
+    animation: auth-in 300ms var(--ease-out) both;
+    animation-delay: var(--enter-delay, 0ms);
+  }
+}
+
+@keyframes auth-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
   to {
     opacity: 1;

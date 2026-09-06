@@ -82,7 +82,7 @@ const GENERATED = /^--(tw-|color-|text-|radius-|shadow-|ease-|spacing|container-
   single most likely way this task breaks. An allowlist has to be edited when
   the names change, which is the point.
 */
-const INJECTED = new Set(["--font-archivo", "--font-martian"]);
+const INJECTED = new Set(["--font-geist", "--font-geist-mono"]);
 
 /*
   Declared only inside `@theme inline`, which the base-scope strip removes, but

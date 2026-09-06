@@ -21,8 +21,8 @@ describe("the type layer", () => {
   it("loads both faces through next/font, never a third-party origin", () => {
     const src = read("app/layout.tsx");
     expect(src).toContain("next/font/google");
-    expect(src).toContain("Archivo");
-    expect(src).toContain("Martian_Mono");
+    expect(src).toContain("Geist");
+    expect(src).toContain("Geist_Mono");
     // A stylesheet link to a font host would break the CSP in next.config.ts.
     expect(src).not.toMatch(/fonts\.googleapis\.com|fonts\.gstatic\.com/);
   });
@@ -41,8 +41,8 @@ describe("the type layer", () => {
     */
     const css = read("app/globals.css");
     expect(css).not.toMatch(/--font-(sans|mono):\s*var\(--font-\1\)/);
-    expect(css).toContain("--font-archivo");
-    expect(css).toContain("--font-martian");
+    expect(css).toContain("--font-geist");
+    expect(css).toContain("--font-geist-mono");
   });
 });
 
@@ -242,17 +242,28 @@ describe("the landing", () => {
     expect(stripComments(read("app/globals.css"))).not.toMatch(/scroll-snap/);
   });
 
-  it("invents no prices", () => {
+  it("shows no money figure that is not marked an example", () => {
     /*
-      The landing used to show a worked example: an invented Mercedes with an
-      invented $2,180 brake job, labelled as an example. It taught the shape of
-      a report nobody asked to read, with numbers that were not real, on a page
-      whose whole argument is that you should trust real numbers.
+      Nothing has been filed yet, so every money figure anywhere on this page is
+      invented. That is allowed in exactly one place — the worked receipt beside
+      the paragraph about receipts — and only because it says so on screen and
+      in the markup.
 
-      Nothing has been filed yet, so any money figure on this page is fiction.
-      This fails if one comes back.
+      This checks the page AND the components it renders, because an earlier
+      version of this rule only read app/page.tsx and would have passed happily
+      the moment the figures moved into a component. A guard that can be
+      satisfied by moving code is not a guard.
     */
-    expect(page()).not.toMatch(/\$[\d,]+/);
+    const landing = ["app/page.tsx", "components/landing/generation-picker.tsx"];
+    for (const f of landing) {
+      expect(stripComments(read(f)), f).not.toMatch(/\$[\d,]+/);
+    }
+
+    // The one exception has to declare itself, both ways.
+    const receipt = read("components/landing/receipt-example.tsx");
+    expect(receipt).toMatch(/\$[\d,]+/);
+    expect(receipt).toContain('data-example="true"');
+    expect(receipt).toMatch(/An example\. No prices have been filed yet\./);
   });
 
   it("does not query prices that cannot exist yet", () => {
