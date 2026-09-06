@@ -238,61 +238,42 @@ describe("the landing", () => {
   const page = () => stripComments(read("app/page.tsx"));
 
   it("has no scroll-snap chapters", () => {
-    /*
-      Snap plus a record long enough to read is a fight: a hard flick carried
-      you past a chapter, and a chapter taller than the window could not be
-      read without the browser dragging you off it.
-    */
     expect(page()).not.toMatch(/snap-|className="chapter"/);
     expect(stripComments(read("app/globals.css"))).not.toMatch(/scroll-snap/);
   });
 
-  it("leads with the record, not a photograph", () => {
+  it("invents no prices", () => {
     /*
-      The category ships a full-bleed car shot with a search field over it.
-      This page's argument is that a price is a document, so the first thing
-      on screen is an itemised record that reconciles. If a Plate ever appears
-      before the Reconciliation, the composition has drifted back to the rut.
+      The landing used to show a worked example: an invented Mercedes with an
+      invented $2,180 brake job, labelled as an example. It taught the shape of
+      a report nobody asked to read, with numbers that were not real, on a page
+      whose whole argument is that you should trust real numbers.
+
+      Nothing has been filed yet, so any money figure on this page is fiction.
+      This fails if one comes back.
     */
-    const src = page();
-    /*
-      The record moved into LiveRecord when the hero became interactive, so
-      that is what must come first now. The rule is unchanged: no photograph
-      may precede the record.
-    */
-    const record = src.indexOf("<LiveRecord");
-    const plate = src.indexOf("<Plate");
-    expect(record).toBeGreaterThan(-1);
-    if (plate > -1) expect(record).toBeLessThan(plate);
+    expect(page()).not.toMatch(/\$[\d,]+/);
   });
 
-  it("uses one label per destination", () => {
+  it("does not query prices that cannot exist yet", () => {
     /*
-      A critique counted four CTA labels for two destinations, three of them
-      pointing at /register. Two names for one action is not emphasis, it is a
-      reader wondering whether they are different things. The copy block now
-      holds a single cta object, so this asserts that shape rather than
-      counting strings: a second label would have to reintroduce a second key.
+      The hero queried /api/pricing on every generation picked. It returns zero
+      for all of them because nothing is filed, so it was a database round trip
+      whose answer was known in advance.
     */
+    for (const f of ["app/page.tsx", "components/landing/generation-picker.tsx"]) {
+      expect(stripComments(read(f)), f).not.toContain("/api/pricing");
+    }
+  });
+
+  it("states one action per intent", () => {
     const src = page();
     expect(src).toMatch(/cta:\s*\{/);
     expect(src.match(/\bbutton:\s*"/g)).toBeNull();
   });
 
   it("has exactly one h1", () => {
-    /*
-      SheetHeader defaults to h1 because it is usually the page title. On this
-      page the claim owns the h1 and the example record's header is an h2, so
-      the header is passed as="h2". Two h1 elements is a heading order break.
-    */
-    const src = page();
-    expect(src.match(/<h1[\s>]/g)?.length ?? 0).toBe(1);
-    /*
-      The record's own header is inside LiveRecord now. It must be an h2: the
-      page claim owns the h1, and two h1 elements is a heading order break.
-    */
-    const live = stripComments(read("components/landing/live-record.tsx"));
-    expect(live).toMatch(/<h2[\s>]/);
-    expect(live.match(/<h1[\s>]/g)?.length ?? 0).toBe(0);
+    expect(page().match(/<h1[\s>]/g)?.length ?? 0).toBe(1);
   });
 });
+

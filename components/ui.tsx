@@ -21,7 +21,15 @@ const figureCount = (n: number) =>
   LABELS aligned too. Two copies of a heading row is how a blank form ends up
   promising different columns than the filled one.
 */
-function HeadRow({ heads }: { heads: string[] }) {
+/*
+  The first column is named by its caller.
+
+  It was hardcoded to "Operation", which is right on a repair order and wrong
+  everywhere else it got reused: the garage's first column is a car, the
+  profile's is a car, a docket's is a claim. A table whose heading describes a
+  different table is worse than a table with no heading at all.
+*/
+function HeadRow({ heads, first = "Item" }: { heads: string[]; first?: string }) {
   return (
     <div
       role="row"
@@ -29,7 +37,7 @@ function HeadRow({ heads }: { heads: string[] }) {
       style={figureCount(heads.length)}
     >
       <span role="columnheader" className="op-label">
-        Operation
+        {first}
       </span>
       {heads.map((h) => (
         <span key={h} role="columnheader" className="text-right">
@@ -130,15 +138,18 @@ export function Columns({
   children,
   className = "",
   label,
+  first,
 }: {
   heads: string[];
   children: ReactNode;
   className?: string;
   label?: string;
+  /** Names the first column. Defaults to "Item"; say what it actually holds. */
+  first?: string;
 }) {
   return (
     <div role="table" aria-label={label} className={className}>
-      <HeadRow heads={heads} />
+      <HeadRow heads={heads} first={first} />
       {children}
     </div>
   );
@@ -325,25 +336,31 @@ export function RangeScale({
   visitor exactly what would go here, which an "Add your first item" panel
   does not.
 */
+/*
+  An empty state that says something, rather than drawing empty rows.
+
+  This used to print three blank ruled lines above the message — the shape of
+  the missing thing. It looked like a rendering fault: a table that had failed
+  to load its data rather than one that has none, and on a product where most
+  tables are empty today it was the first thing a new person saw. Ruled nothing
+  is still nothing.
+
+  What is left is the message and the way out of it.
+*/
 export function BlankForm({
-  heads,
   title,
   hint,
   action,
 }: {
-  heads: string[];
+  /** Accepted and ignored, so callers that pass table heads still compile. */
+  heads?: string[];
   title: string;
   hint?: string;
   action?: ReactNode;
 }) {
   return (
-    <div>
-      <HeadRow heads={heads} />
-      {/* Three ruled but empty lines: the shape of the thing that is missing. */}
-      {[0, 1, 2].map((i) => (
-        <div key={i} className="h-11 border-b border-separator" aria-hidden="true" />
-      ))}
-      <div className="pt-8 text-center">
+    <div className="border-t border-separator">
+      <div className="py-12 text-center">
         <p className="text-headline font-semibold">{title}</p>
         {hint && <p className="text-subhead text-secondary mt-1.5 max-w-sm mx-auto text-pretty">{hint}</p>}
         {action && <div className="mt-5 flex justify-center">{action}</div>}

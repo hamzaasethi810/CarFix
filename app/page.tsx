@@ -1,9 +1,9 @@
 import Link from "next/link";
 import { CountUp } from "@/components/landing/count-up";
-import { LiveRecord } from "@/components/landing/live-record";
+import { GenerationPicker } from "@/components/landing/generation-picker";
 import { Reveal } from "@/components/landing/reveal";
 import { Plate } from "@/components/plate";
-import { Figure, buttonStyles } from "@/components/ui";
+import { buttonStyles } from "@/components/ui";
 import { hasImage } from "@/lib/design/assets";
 import { getProofNumbers } from "@/lib/services/stats";
 import { getMakes } from "@/lib/services/taxonomy";
@@ -12,96 +12,36 @@ export const revalidate = 300;
 
 /* ------------------------------------------------------------------------
    ALL THE WORDS ON THIS PAGE LIVE HERE.
-
-   Edit anything in COPY and the page updates. Nothing below this block needs
-   touching to change wording; the markup reads from it.
    --------------------------------------------------------------------- */
 const COPY = {
   hero: {
-    heading: "Real prices, tailored to your car.",
-    body: "What owners paid their mechanic, wrap shop and tuner. Filed by generation, not by badge.",
+    heading: "Find the shop that knows your car.",
+    body: "Thousands of garages, wrap shops and tuners, searchable by the generation you actually drive. Then tell the next owner what you paid.",
   },
-  /*
-    One label, one destination.
-
-    There used to be two: "File a price" here and "File your first price" at
-    the foot, both pointing at /register. A design critique counted four CTA
-    labels for two destinations. Two names for one action is not emphasis, it
-    is a reader wondering whether they are different things.
-  */
-  cta: {
-    label: "File a price",
-    href: "/register",
-  },
-  /*
-    Captions, because a photograph with no relationship to the words beside it
-    is decoration. Each plate is labelled by its chassis code, which is the
-    site's whole argument: these are specimens filed by generation, not badges.
-  */
-  plates: {
-    trades: "Mercedes-AMG GT R. Filed under C190.",
-    proof: "Porsche 911 GT3 RS. Filed under 992.",
-  },
-  record: {
-    heading: "One record, three kinds of work.",
-    trades: [
-      {
-        id: "mechanics",
-        name: "Mechanics",
-        line: "Brakes, oil, clutches, diagnostics. What the shop charged, not what it quoted.",
-      },
-      {
-        id: "appearance",
-        name: "Wrap shops",
-        line: "Wraps, PPF, respray. Work that never had a list price to begin with.",
-      },
-      {
-        id: "performance",
-        name: "Tuners",
-        line: "Exhausts, tunes, kits. Priced by generation, not by guesswork.",
-      },
+  cta: { label: "File a price", href: "/register" },
+  trades: {
+    heading: "Three kinds of work, one record.",
+    items: [
+      { id: "mechanics", name: "Mechanics", line: "Brakes, oil, clutches, diagnostics. What the shop charged, not what it quoted." },
+      { id: "appearance", name: "Wrap shops", line: "Wraps, PPF, respray. Work that never had a list price to begin with." },
+      { id: "performance", name: "Tuners", line: "Exhausts, tunes, kits. Priced by generation, not by guesswork." },
     ],
   },
-  proof: {
-    heading: "Every price carries its receipt.",
-    body: "A number on its own is a rumour. Upload the receipt and it is read, checked against the shop and total you entered, then destroyed. Only the confirmation is kept.",
-    example: {
-      service: "Carbon ceramic pads, front",
-      vehicle: "Mercedes-AMG GT R",
-      generation: "C190",
-      total: "$2,180",
-      low: "$1,640",
-      high: "$3,900",
-      parts: "$1,690",
-      labour: "$490",
-      caption: "An example, to show the shape of a report. Not a real price.",
-      range: "What this job typically runs.",
-    },
+  why: {
+    heading: "A price is only worth something with a receipt behind it",
+    body: "Upload the receipt and it is read, checked against the shop and total you entered, then destroyed. Only the confirmation is kept. That is the difference between a figure and a rumour.",
+    caption: "Mercedes-AMG GT R, filed under C190. Every price here is filed by generation, not by badge.",
   },
   scale: {
-    heading: "What is in it so far.",
-    labels: {
-      shops: "Garages listed",
-      generations: "Vehicle generations",
-      services: "Kinds of work",
-    },
+    heading: "Where it stands today",
+    body: "The shops are in. The prices are not, yet, and that is the honest state of it: every figure on this site has to be filed by somebody who paid it.",
+    labels: { shops: "Garages listed", generations: "Vehicle generations", services: "Kinds of work" },
   },
 } as const;
 
-const PLATE_TRADES = "/img/gtr.webp";
-const PLATE_PROOF = "/img/gt3rs.webp";
+const PLATE_HERO = "/img/gt3rs.webp";
+const PLATE_WHY = "/img/gtr.webp";
 
-/** The figures are authored as printed strings, so the arithmetic reads them back. */
-const amount = (s: string) => Number(s.replace(/[^0-9.]/g, ""));
-
-/*
-  A section of the document.
-
-  The scroll-snap that used to pin each of these to the viewport is gone. Snap
-  plus a record long enough to read is a fight: a hard flick carried you past
-  a chapter, and a chapter taller than the window could not be read at all
-  without the browser dragging you off it.
-*/
 function Section({
   children,
   className = "",
@@ -112,22 +52,22 @@ function Section({
   labelledBy?: string;
 }) {
   return (
-    <section
-      aria-labelledby={labelledBy}
-      className={`border-t border-separator ${className}`}
-    >
-      <div className="mx-auto w-full max-w-5xl px-5 sm:px-8 py-20 sm:py-28">{children}</div>
+    <section aria-labelledby={labelledBy} className={`border-t border-separator ${className}`}>
+      <div className="mx-auto w-full max-w-5xl px-5 sm:px-8 py-20 sm:py-24">{children}</div>
     </section>
   );
 }
 
 export default async function HomePage() {
-  const [stats, makes] = await Promise.all([getProofNumbers(), getMakes()]);
+  /*
+    Two queries, both used on screen.
 
-  const ex = COPY.proof.example;
-  const parts = amount(ex.parts);
-  const labour = amount(ex.labour);
-  const total = amount(ex.total);
+    There were three: the third asked the pricing API for a median that is zero
+    for every generation in the database, because nothing has been filed yet. A
+    call whose answer is known in advance is not a feature, and it ran on every
+    interaction with the hero.
+  */
+  const [stats, makes] = await Promise.all([getProofNumbers(), getMakes()]);
 
   const counts: [number, string][] = (
     [
@@ -140,152 +80,123 @@ export default async function HomePage() {
   return (
     <div className="home-root">
       {/*
-        One: the record, and it is theirs.
+        One: the thing the site does, and the control that does it.
 
-        No car photograph above the fold. The category ships a full-bleed hero
-        shot with a search field floating over it, and the whole argument of
-        this page is that a price is a document rather than a mood.
-
-        The record is live. Naming a car in its header re-prints it: with
-        filings the figures roll over to the real median and range, and with
-        none it stays a blank ruled form stamped VOID with their car already on
-        it. Shops are listed and prices are not, so asking a stranger to finish
-        a document about their own car is a far smaller request than asking
-        them to trust an empty database.
+        No worked example and no invented receipt. The old hero was a mock
+        repair order for a Mercedes nobody owns, with a $2,180 brake job nobody
+        paid, on a page arguing that you should trust real numbers. The hero
+        now asks the only question this product can answer today — which car do
+        you drive — and sends that answer to shops that work on it.
       */}
-      <section className="mx-auto w-full max-w-5xl px-5 sm:px-8 pt-10 pb-20 sm:pt-20 sm:pb-28">
-        <Reveal>
-          <h1 className="text-[2.4rem] leading-[1.08] sm:text-[3.25rem] sm:leading-[1.05] tracking-[-0.03em] text-balance">
-            {COPY.hero.heading}
-          </h1>
-          <p className="mt-5 max-w-xl text-body text-secondary text-pretty">{COPY.hero.body}</p>
-        </Reveal>
-
-        <Reveal delay={120} className="mt-10 sm:mt-14">
-          <LiveRecord
-            makes={makes}
-            example={{
-              service: ex.service,
-              vehicle: ex.vehicle,
-              generation: ex.generation,
-              parts,
-              labour,
-              total,
-              low: amount(ex.low),
-              high: amount(ex.high),
-              caption: ex.caption,
-              range: ex.range,
-            }}
-          />
-        </Reveal>
-      </section>
-
-      {/*
-        Three: what is covered.
-
-        A ruled run rather than three cards. These have no figures, so a table
-        would be a lie about their shape, and three equal cards side by side is
-        the arrangement every generated page reaches for.
-      */}
-      <Section labelledBy="record">
-        <div className="grid gap-12 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.62fr)] lg:gap-20">
+      <section className="mx-auto w-full max-w-5xl px-5 sm:px-8 pt-10 pb-16 sm:pt-16 sm:pb-24">
+        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)] lg:gap-16">
           <div>
             <Reveal>
-              <h2 id="record" className="text-title1 tracking-[-0.022em] max-w-md text-balance">
-                {COPY.record.heading}
-              </h2>
+              <h1 className="text-[2.4rem] leading-[1.08] sm:text-[3.25rem] sm:leading-[1.04] tracking-[-0.03em] text-balance">
+                {COPY.hero.heading}
+              </h1>
+              <p className="mt-5 max-w-lg text-body text-secondary text-pretty">{COPY.hero.body}</p>
             </Reveal>
-            <dl className="mt-10 border-t border-separator">
-              {COPY.record.trades.map((trade, i) => (
-                <Reveal key={trade.id} delay={140 + i * 80}>
-                  <div className="border-b border-separator py-7">
-                    <dt className="text-title3 font-semibold tracking-[-0.015em]">{trade.name}</dt>
-                    <dd className="mt-1.5 text-body text-secondary max-w-prose text-pretty">
-                      {trade.line}
-                    </dd>
-                  </div>
-                </Reveal>
-              ))}
-            </dl>
+
+            <Reveal delay={120} className="mt-9">
+              <GenerationPicker makes={makes} />
+            </Reveal>
           </div>
 
-          {hasImage(PLATE_TRADES) && (
-            <Reveal delay={200} className="hidden lg:block lg:self-end">
+          {hasImage(PLATE_HERO) && (
+            <Reveal delay={200} className="hidden lg:block">
               <Plate
-                src={PLATE_TRADES}
+                src={PLATE_HERO}
+                alt="A Porsche 911 GT3 RS parked on a road through open country."
+                width={2400}
+                height={1600}
+                sizes="(max-width: 1024px) 0px, 40rem"
+                priority
+              />
+            </Reveal>
+          )}
+        </div>
+      </section>
+
+      {/* Two: what counts as work here. */}
+      <Section labelledBy="trades">
+        <Reveal>
+          <h2 id="trades" className="text-title1 tracking-[-0.022em] max-w-md text-balance">
+            {COPY.trades.heading}
+          </h2>
+        </Reveal>
+        <dl className="mt-10 grid gap-x-12 gap-y-8 sm:grid-cols-3 border-t border-separator pt-8">
+          {COPY.trades.items.map((t, i) => (
+            <Reveal key={t.id} delay={120 + i * 80}>
+              <dt className="text-title3 font-semibold tracking-[-0.015em]">{t.name}</dt>
+              <dd className="mt-2 text-body text-secondary text-pretty">{t.line}</dd>
+            </Reveal>
+          ))}
+        </dl>
+      </Section>
+
+      {/*
+        Three: why a receipt matters.
+
+        The photograph belongs to this section rather than floating beside an
+        unrelated paragraph, and its caption names the car and its chassis code,
+        because "filed by generation, not by badge" is the argument and a
+        labelled specimen makes it without another sentence of copy.
+      */}
+      <Section labelledBy="why">
+        <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)] lg:gap-16 lg:items-center">
+          <Reveal>
+            <h2 id="why" className="text-title1 tracking-[-0.022em] text-balance">
+              {COPY.why.heading}
+            </h2>
+            <p className="mt-5 text-body text-secondary max-w-md text-pretty">{COPY.why.body}</p>
+            <Link href={COPY.cta.href} className={`${buttonStyles.secondaryAccent} mt-7 px-6`}>
+              {COPY.cta.label}
+            </Link>
+          </Reveal>
+
+          {hasImage(PLATE_WHY) && (
+            <Reveal delay={160}>
+              <Plate
+                src={PLATE_WHY}
                 alt="A Mercedes-AMG GT R photographed from the front three-quarter."
                 width={1500}
                 height={2250}
-                sizes="(max-width: 1024px) 0px, 28rem"
-                caption={COPY.plates.trades}
+                sizes="(max-width: 1024px) 88vw, 28rem"
+                caption={COPY.why.caption}
               />
             </Reveal>
           )}
         </div>
       </Section>
 
-      {/*
-        Four: what a report is.
-
-        Full width, not another two-column split. Sections two and three are
-        both a column of text beside a column of something else, and a third in
-        a row is where a page starts reading as a template rather than as a
-        composition. The plate runs the whole measure here and the argument
-        sits above it.
-      */}
-      <Section labelledBy="proof">
-        <Reveal>
-          <div className="grid gap-6 md:grid-cols-[minmax(0,0.9fr)_minmax(0,1fr)] md:gap-16 md:items-end">
-            <h2 id="proof" className="text-title1 tracking-[-0.022em] text-balance">
-              {COPY.proof.heading}
-            </h2>
-            <p className="text-body text-secondary text-pretty">{COPY.proof.body}</p>
-          </div>
-        </Reveal>
-
-        {hasImage(PLATE_PROOF) && (
-          <Reveal delay={160} className="mt-12">
-            <Plate
-              src={PLATE_PROOF}
-              alt="A Porsche 911 GT3 RS parked on a road through open country."
-              width={2400}
-              height={1600}
-              sizes="(max-width: 640px) 90vw, (max-width: 1024px) 92vw, 64rem"
-              caption={COPY.plates.proof}
-            />
-          </Reveal>
-        )}
-      </Section>
-
-      {/*
-        Five: the scale of it, and the ask.
-
-        Rendered only for figures that are actually above zero. Shops are
-        listed and prices are not yet, so printing three noughts would be an
-        admission dressed as a statistic.
-      */}
+      {/* Four: the honest state of it. */}
       {counts.length > 0 && (
         <Section labelledBy="scale">
-          <Reveal>
-            <h2 id="scale" className="text-title1 tracking-[-0.022em] max-w-md text-balance">
-              {COPY.scale.heading}
-            </h2>
-          </Reveal>
-          <dl className="mt-12 grid gap-10 sm:grid-cols-3 border-t border-separator pt-10">
-            {counts.map(([n, label], i) => (
-              <Reveal key={label} delay={140 + i * 80}>
-                {/*
-                  CountUp seeds itself with the real value rather than zero, so
-                  the server renders the true number and it is correct with no
-                  JavaScript at all. It only drops to zero at the instant it
-                  starts animating.
-                */}
-                <Figure value={<CountUp value={n} />} label={label} />
-              </Reveal>
-            ))}
-          </dl>
-          <Reveal delay={420}>
-            <div className="mt-16 flex justify-end border-t border-separator pt-8">
+          <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
+            <Reveal>
+              <h2 id="scale" className="text-title1 tracking-[-0.022em] text-balance">
+                {COPY.scale.heading}
+              </h2>
+              <p className="mt-4 text-body text-secondary max-w-md text-pretty">{COPY.scale.body}</p>
+            </Reveal>
+
+            <Reveal delay={140}>
+              <dl className="grid gap-6 sm:grid-cols-3 lg:grid-cols-1">
+                {counts.map(([n, label]) => (
+                  <div key={label} className="border-t border-separator pt-3">
+                    <dd className="tabular text-title1 font-semibold leading-none">
+                      <CountUp value={n} />
+                    </dd>
+                    <dt className="text-footnote text-secondary mt-2">{label}</dt>
+                  </div>
+                ))}
+              </dl>
+            </Reveal>
+          </div>
+
+          <Reveal delay={320}>
+            <div className="mt-14 flex justify-end border-t border-separator pt-8">
               <Link href={COPY.cta.href} className={`${buttonStyles.primary} px-8`}>
                 {COPY.cta.label}
               </Link>

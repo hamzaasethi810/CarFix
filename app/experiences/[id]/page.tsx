@@ -70,7 +70,7 @@ export default async function ExperiencePage({ params }: { params: Promise<{ id:
         {e.vehicle.year} {e.vehicle.make} {e.vehicle.model} · {miles(e.mileageAtService)}
       </p>
 
-      <Columns heads={["Amount"]} label="Charges" className="mt-8">
+      <Columns first="Operation" heads={["Amount"]} label="Charges" className="mt-8">
         {e.partsCost !== null && <OperationLine label="Parts" figures={[money(e.partsCost)]} />}
         {e.laborCost !== null && <OperationLine label="Labor" figures={[money(e.laborCost)]} />}
         <OperationLine label="Total" figures={[money(e.totalPrice)]} />

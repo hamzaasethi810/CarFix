@@ -99,7 +99,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
         />
       ) : (
         <>
-          <Columns heads={["Date", "Cost"]} label="Filed services">
+          <Columns first="Service" heads={["Date", "Cost"]} label="Filed services">
             {own.items.map((e) => (
               <OperationLine
                 key={e.id}
@@ -136,7 +136,7 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
       {otherGenerationExperiences.length === 0 ? (
         <BlankForm heads={["Reported"]} title={`No other ${vehicle.generation} experiences yet`} />
       ) : (
-        <Columns heads={["Reported"]} label={`Other ${vehicle.generation} experiences`}>
+        <Columns first="Service" heads={["Reported"]} label={`Other ${vehicle.generation} experiences`}>
           {otherGenerationExperiences.map((e) => (
             <OperationLine
               key={e.id}

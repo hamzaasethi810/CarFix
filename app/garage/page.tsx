@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { BlankForm, Columns, Figure, OperationLine, money, num } from "@/components/ui";
+import { BlankForm, Figure, money } from "@/components/ui";
+import { VehicleCard } from "@/components/vehicle-card";
 import { CountUp } from "@/components/landing/count-up";
 import { currentUser } from "@/lib/auth/guards";
 import { getGarage, getGarageTotals } from "@/lib/services/vehicles";
@@ -71,26 +72,28 @@ export default async function GaragePage() {
 
       {vehicles.length === 0 ? (
         <BlankForm
-          heads={["Services", "Spent"]}
           title="No cars yet"
           hint="Use Add a car above to put the first one in, then log what you have paid to keep it running."
         />
       ) : (
-        <Columns heads={["Services", "Spent"]} label="Your cars" className="mt-10">
-          {vehicles.map((v) => {
+        <div className="mt-10 grid gap-4 sm:grid-cols-2">
+          {vehicles.map((v, i) => {
             const t = totals.get(v.id);
+            const identity = `${v.year} ${v.make} ${v.model}${v.trim ? ` ${v.trim}` : ""}`;
             return (
-              <OperationLine
+              <VehicleCard
                 key={v.id}
-                label={v.nickname ?? `${v.year} ${v.make} ${v.model}${v.trim ? ` ${v.trim}` : ""}`}
-                code={v.generation}
-                note={v.nickname ? `${v.year} ${v.make} ${v.model}${v.trim ? ` ${v.trim}` : ""}` : undefined}
-                figures={[t?.services ? num(t.services) : null, t?.spent ? money(t.spent) : null]}
+                index={i}
                 href={`/vehicle/${v.id}`}
+                name={v.nickname ?? identity}
+                identity={v.nickname ? identity : undefined}
+                code={v.generation}
+                services={t?.services}
+                spent={t?.spent}
               />
             );
           })}
-        </Columns>
+        </div>
       )}
 
       {/*

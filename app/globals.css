@@ -1201,3 +1201,32 @@ body:has(.home-root) > main {
     animation: none;
   }
 }
+
+/*
+  A card arriving.
+
+  Used where a set of things renders above the fold on load, so a scroll
+  observer would never fire. Staggered by --enter-delay, set per card, because
+  a grid that appears all at once reads as a flash and one that arrives in
+  sequence reads as a list being dealt.
+
+  Kept short: 260ms and a 6px rise. Long entrances are the fastest way to make
+  a page someone visits daily feel slow.
+*/
+@media (prefers-reduced-motion: no-preference) {
+  .card-enter {
+    animation: card-in 260ms var(--ease-out) both;
+    animation-delay: var(--enter-delay, 0ms);
+  }
+}
+
+@keyframes card-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

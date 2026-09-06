@@ -173,7 +173,7 @@ export default async function MechanicPage({ params }: { params: Promise<{ id: s
           hint="This shop has not filed prices for any service."
         />
       ) : (
-        <Columns heads={["Typical", "Filed"]} label="The shop's published prices">
+        <Columns first="Service" heads={["Typical", "Filed"]} label="The shop's published prices">
           {published.map((p) => {
             // getPricingByService fills every requested serviceId, so this is
             // only a defensive fallback, never the real path.

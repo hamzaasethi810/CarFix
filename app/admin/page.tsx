@@ -31,7 +31,7 @@ export default async function AdminPage() {
         }
       />
 
-      <Columns heads={["Waiting"]} label="Queues" className="mt-8">
+      <Columns first="Queue" heads={["Waiting"]} label="Queues" className="mt-8">
         <OperationLine
           label="Verification queue"
           note={pending.length === 1 ? "Receipt awaiting review" : "Receipts awaiting review"}

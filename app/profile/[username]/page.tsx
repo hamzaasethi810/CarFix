@@ -34,7 +34,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
       {vehicles.length === 0 ? (
         <BlankForm heads={["Generation"]} title="No cars listed" />
       ) : (
-        <Columns heads={["Generation"]} label="Garage">
+        <Columns first="Car" heads={["Generation"]} label="Garage">
           {vehicles.map((v) => (
             <OperationLine
               key={v.id}
