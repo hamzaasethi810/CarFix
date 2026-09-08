@@ -7,6 +7,7 @@ import { buttonStyles } from "@/components/ui";
 
 type Option = { id: string; name: string };
 type Generation = { id: string; code: string; years: string };
+type Service = { id: string; name?: string; label?: string };
 
 /*
   Three steps to the thing this site is for.
@@ -23,13 +24,20 @@ type Generation = { id: string; code: string; years: string };
   real and there are thousands of them; prices are not, yet. So: name your car,
   and go to the shops that work on it.
 */
-export function GenerationPicker({ makes }: { makes: Option[] }) {
+export function GenerationPicker({
+  makes,
+  services,
+}: {
+  makes: Option[];
+  services: Service[];
+}) {
   const router = useRouter();
   const [makeId, setMakeId] = useState("");
   const [models, setModels] = useState<Option[]>([]);
   const [modelId, setModelId] = useState("");
   const [generations, setGenerations] = useState<Generation[]>([]);
   const [genId, setGenId] = useState("");
+  const [serviceId, setServiceId] = useState("");
   const [loading, setLoading] = useState<"models" | "generations" | null>(null);
 
   useEffect(() => {
@@ -67,6 +75,7 @@ export function GenerationPicker({ makes }: { makes: Option[] }) {
     if (makeId) params.set("makeId", makeId);
     if (modelId) params.set("modelId", modelId);
     if (genId) params.set("generationId", genId);
+    if (serviceId) params.set("serviceId", serviceId);
     router.push(`/search${params.size ? `?${params}` : ""}`);
   };
 
@@ -155,21 +164,40 @@ export function GenerationPicker({ makes }: { makes: Option[] }) {
           </select>
         </label>
         )}
+        {/*
+          Service comes last and is never gated on the car.
+
+          It narrows rather than identifies: somebody who knows they want a wrap
+          can pick that and go, without naming a car at all. Gating it behind
+          the three steps above would have made the quickest path the longest.
+        */}
+        <label className="block">
+          <span className="text-caption text-tertiary-label">Service</span>
+          <select
+            className={field}
+            value={serviceId}
+            onChange={(e) => setServiceId(e.target.value)}
+          >
+            <option value="">Any service</option>
+            {services.map((sv) => (
+              <option key={sv.id} value={sv.id}>
+                {sv.label ?? sv.name}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
 
       <button
         type="button"
         onClick={go}
-        disabled={!makeId}
+        disabled={!makeId && !serviceId}
         className={`${buttonStyles.primary} mt-5 w-full justify-center gap-2 text-body`}
       >
         {gen ? `Find shops for the ${gen.code}` : "Find shops"}
         <ArrowRight aria-hidden="true" strokeWidth={2} className="size-4" />
       </button>
 
-      <p className="mt-3 text-footnote text-tertiary-label">
-        Skip any of them to search wider.
-      </p>
     </div>
   );
 }

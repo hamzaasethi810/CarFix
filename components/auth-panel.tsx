@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Link from "next/link";
 import { hasImage } from "@/lib/design/assets";
 
 /*
@@ -16,30 +15,37 @@ import { hasImage } from "@/lib/design/assets";
   breakpoint rather than stacked. A phone gets the form and nothing between it
   and the keyboard.
 
-  The scrim exists because the caption sits on the image. It is the page's own
-  ink at high alpha rather than black, so the panel belongs to the same world
-  as everything else.
+  Nothing is written over it. Type on a photograph needs a scrim to stay
+  legible, the scrim then dims the photograph it was added to protect, and the
+  words themselves were saying something the form beside them already says. The
+  image is left to be an image.
+
+  The screen never scrolls. It is sized to the viewport below the header and
+  the form column scrolls inside itself if a browser's chrome leaves too little
+  room, so the page itself does not move.
 */
 export function AuthPanel({
   title,
   subtitle,
   children,
-  aside,
   footer,
 }: {
   title: string;
   subtitle?: string;
   children: React.ReactNode;
-  /** The line set over the photograph. Says why the account is worth having. */
-  aside: string;
   footer?: React.ReactNode;
 }) {
-  const image = "/img/gt3rs.webp";
+  /*
+    The AMG rather than the Porsche: the Porsche now sits behind the landing
+    hero, and the same car on both screens makes them look like one page that
+    failed to change.
+  */
+  const image = "/img/gtr.webp";
 
   return (
-    <div className="auth-root grid min-h-[calc(100dvh-4rem)] lg:grid-cols-2">
+    <div className="auth-root grid h-full min-h-0 overflow-hidden lg:grid-cols-2">
       {/* The form. Always first in the DOM, so it is first for a screen reader. */}
-      <div className="flex items-center justify-center px-5 py-14 sm:px-8">
+      <div className="flex items-center justify-center overflow-y-auto px-5 py-10 sm:px-8">
         <div className="w-full max-w-sm">
           <div className="auth-enter">
             <h1 className="text-title1 font-semibold tracking-tight text-balance">{title}</h1>
@@ -75,21 +81,6 @@ export function AuthPanel({
             className="object-cover"
             priority
           />
-          <div
-            aria-hidden="true"
-            className="absolute inset-0 bg-[linear-gradient(to_top,color-mix(in_srgb,var(--label)_88%,transparent),color-mix(in_srgb,var(--label)_20%,transparent)_55%,transparent)]"
-          />
-          <div className="absolute inset-x-0 bottom-0 p-10">
-            <Link
-              href="/"
-              className="text-title3 font-bold tracking-tight text-[var(--on-accent)]"
-            >
-              Gaari
-            </Link>
-            <p className="mt-3 max-w-sm text-body text-[color-mix(in_srgb,var(--on-accent)_82%,transparent)] text-pretty">
-              {aside}
-            </p>
-          </div>
         </div>
       )}
     </div>

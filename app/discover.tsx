@@ -102,6 +102,7 @@ export function Discover({
     modelId?: string;
     generationId?: string;
     platformId?: string;
+    serviceId?: string;
   };
 }) {
   const [makeId, setMakeId] = useState(initialFilters?.makeId ?? "");
@@ -115,7 +116,7 @@ export function Discover({
         ? `g:${initialFilters.generationId}`
         : "",
   );
-  const [serviceId, setServiceId] = useState("");
+  const [serviceId, setServiceId] = useState(initialFilters?.serviceId ?? "");
   const [verifiedOnly, setVerifiedOnly] = useState(false);
   const [subscribedOnly, setSubscribedOnly] = useState(false);
   const [sort, setSort] = useState<"relevant" | "price" | "rating" | "distance">("relevant");

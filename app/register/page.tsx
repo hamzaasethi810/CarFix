@@ -13,7 +13,6 @@ export default function RegisterPage() {
     <AuthPanel
       title="Create your account"
       subtitle="Then add your car and start logging work."
-      aside="Filed by generation, not by badge. A price for a W204 is a price for a W204."
       footer={
         <>
           <span className="block">

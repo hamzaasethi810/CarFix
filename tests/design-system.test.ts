@@ -237,9 +237,39 @@ describe("the chrome", () => {
 describe("the landing", () => {
   const page = () => stripComments(read("app/page.tsx"));
 
-  it("has no scroll-snap chapters", () => {
-    expect(page()).not.toMatch(/snap-|className="chapter"/);
-    expect(stripComments(read("app/globals.css"))).not.toMatch(/scroll-snap/);
+  it("shows one block at a time", () => {
+    /*
+      Inverted deliberately, and this records why so the old rule is not
+      restored from memory.
+
+      Snapping was removed earlier because it fought a very tall mock repair
+      order in the hero: a block taller than the window plus mandatory snapping
+      is a page that drags you off what you are reading. That record is gone,
+      every block now fits a viewport, and the snapping is proximity rather
+      than mandatory, so a block that outgrows a short window still scrolls
+      normally.
+    */
+    expect(page()).toMatch(/home-block/);
+    const css = stripComments(read("app/globals.css"));
+    expect(css).toMatch(/scroll-snap-stop: always/);
+
+    /*
+      Mandatory IS used, and this asserts the guard rather than forbidding it.
+
+      An earlier version of this test banned mandatory outright, because
+      mandatory snapping on a block taller than the window traps a reader
+      against content they cannot scroll to. That risk is real but it is a
+      function of window height, not of the setting: every block here is sized
+      to the viewport, and proximity turned out too weak to do the job — a
+      trackpad flick carries far enough that the nearest snap point is already
+      the next block.
+
+      So mandatory is allowed, and what is checked instead is that it is height
+      gated and that a shorter window still falls back.
+    */
+    expect(css).toMatch(/scroll-snap-type: y mandatory/);
+    expect(css).toMatch(/scroll-snap-type: y proximity/);
+    expect(css).toMatch(/@media \(min-height: 700px\)/);
   });
 
   it("shows no money figure that is not marked an example", () => {

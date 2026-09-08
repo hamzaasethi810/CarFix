@@ -42,7 +42,6 @@ export default async function LoginPage({
     <AuthPanel
       title="Welcome back"
       subtitle="Sign in to your garage."
-      aside="Every price on Gaari was filed by somebody who paid it, and checked against the receipt."
       /*
         No footer link here on purpose. LoginForm already ends with "No account?
         Create one", and two links to the same place with different wording is

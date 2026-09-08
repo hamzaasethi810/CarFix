@@ -2,12 +2,12 @@ import Link from "next/link";
 import { CountUp } from "@/components/landing/count-up";
 import { GenerationPicker } from "@/components/landing/generation-picker";
 import { Reveal } from "@/components/landing/reveal";
-import { Plate } from "@/components/plate";
+import Image from "next/image";
 import { ReceiptExample } from "@/components/landing/receipt-example";
 import { buttonStyles } from "@/components/ui";
 import { hasImage } from "@/lib/design/assets";
 import { getProofNumbers } from "@/lib/services/stats";
-import { getMakes } from "@/lib/services/taxonomy";
+import { getMakes, getServices } from "@/lib/services/taxonomy";
 
 export const revalidate = 300;
 
@@ -17,7 +17,7 @@ export const revalidate = 300;
 const COPY = {
   hero: {
     heading: "Find the shop that knows your car.",
-    body: "Thousands of garages, wrap shops and tuners, searchable by the generation you actually drive. Then tell the next owner what you paid.",
+    body: "Thousands of garages, wrap shops and tuners, with real reviews and verified pricing."
   },
   cta: { label: "File a price", href: "/register" },
   trades: {
@@ -30,19 +30,30 @@ const COPY = {
   },
   why: {
     heading: "Every price is checked against its receipt",
-    body: "Upload the receipt and it is read, matched against the shop and total you entered, then destroyed. Only the outcome is kept.",
-    verification:
-      "If the figures do not match what you uploaded, the price is marked unverified and labelled as such wherever it appears. Filing without a receipt is allowed and stays unverified too. Nobody is stopped from posting a number; nobody gets to pass an unchecked one off as confirmed.",
+    body: "After we verify your receipt, we delete it for your security.",
   },
   scale: {
-    heading: "Where it stands today",
-    body: "The shops are in. The prices are not, yet, and that is the honest state of it: every figure on this site has to be filed by somebody who paid it.",
+    heading: "Real Data",
+    body: "All shops and reviews will tell you if they are verified.",
     labels: { shops: "Garages listed", generations: "Vehicle generations", services: "Kinds of work" },
   },
 } as const;
 
-const PLATE_HERO = "/img/gt3rs.webp";
+const PLATE_HERO = "/img/gt2rs.webp";
 
+/*
+  One block on screen at a time.
+
+  Each section fills the viewport below the header and snaps to it, so the hero
+  is never sharing the screen with the section under it. min-h rather than a
+  fixed height: a block that outgrows a short window still scrolls normally
+  instead of being clipped, and proximity snapping rather than mandatory means
+  a long block can be read without the browser pulling you off it.
+
+  An earlier pass removed snapping from this page because it was fighting a
+  very tall record in the hero. That record is gone, so the objection went with
+  it.
+*/
 function Section({
   children,
   className = "",
@@ -53,8 +64,11 @@ function Section({
   labelledBy?: string;
 }) {
   return (
-    <section aria-labelledby={labelledBy} className={`border-t border-separator ${className}`}>
-      <div className="mx-auto w-full max-w-5xl px-5 sm:px-8 py-20 sm:py-24">{children}</div>
+    <section
+      aria-labelledby={labelledBy}
+      className={`home-block flex min-h-[calc(100dvh-4rem)] items-center border-t border-separator ${className}`}
+    >
+      <div className="mx-auto w-full max-w-5xl px-5 sm:px-8 py-16">{children}</div>
     </section>
   );
 }
@@ -68,7 +82,11 @@ export default async function HomePage() {
     call whose answer is known in advance is not a feature, and it ran on every
     interaction with the hero.
   */
-  const [stats, makes] = await Promise.all([getProofNumbers(), getMakes()]);
+  const [stats, makes, services] = await Promise.all([
+    getProofNumbers(),
+    getMakes(),
+    getServices(),
+  ]);
 
   const counts: [number, string][] = (
     [
@@ -89,9 +107,38 @@ export default async function HomePage() {
         now asks the only question this product can answer today — which car do
         you drive — and sends that answer to shops that work on it.
       */}
-      <section className="mx-auto w-full max-w-5xl px-5 sm:px-8 pt-10 pb-16 sm:pt-16 sm:pb-24">
-        <div className="grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)] lg:gap-16">
-          <div>
+      <section className="home-block relative flex min-h-[calc(100dvh-4rem)] items-center overflow-hidden">
+        {/*
+          The car sits behind the block rather than beside it.
+
+          Confined to the right 62 percent and faded into the page from its own
+          left edge, so it never runs under the headline or the controls. A
+          photograph at this opacity is atmosphere, and atmosphere competing
+          with a form for the same pixels only makes the form harder to read.
+
+          Desktop only. At narrow widths the text occupies the full width, so
+          there is no column for the image to sit behind — it would be directly
+          under the words rather than beside them. aria-hidden throughout: it
+          carries nothing.
+        */}
+        {hasImage(PLATE_HERO) && (
+          <div
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 right-0 hidden w-[62%] lg:block"
+          >
+            <Image
+              src={PLATE_HERO}
+              alt=""
+              fill
+              priority
+              sizes="62vw"
+              className="object-cover object-center opacity-[0.38] [mask-image:linear-gradient(to_right,transparent,black_38%)]"
+            />
+          </div>
+        )}
+
+        <div className="relative mx-auto w-full max-w-5xl px-5 sm:px-8 py-16">
+          <div className="max-w-xl">
             <Reveal>
               <h1 className="text-[2.4rem] leading-[1.08] sm:text-[3.25rem] sm:leading-[1.04] tracking-[-0.03em] text-balance">
                 {COPY.hero.heading}
@@ -100,22 +147,10 @@ export default async function HomePage() {
             </Reveal>
 
             <Reveal delay={120} className="mt-9">
-              <GenerationPicker makes={makes} />
+              <GenerationPicker makes={makes} services={services} />
             </Reveal>
           </div>
 
-          {hasImage(PLATE_HERO) && (
-            <Reveal delay={200} className="hidden lg:block">
-              <Plate
-                src={PLATE_HERO}
-                alt="A Porsche 911 GT3 RS parked on a road through open country."
-                width={2400}
-                height={1600}
-                sizes="(max-width: 1024px) 0px, 40rem"
-                priority
-              />
-            </Reveal>
-          )}
         </div>
       </section>
 
@@ -152,7 +187,6 @@ export default async function HomePage() {
             </h2>
             <p className="mt-5 text-body text-secondary max-w-md text-pretty">{COPY.why.body}</p>
             <p className="mt-4 text-subhead text-secondary max-w-md text-pretty">
-              {COPY.why.verification}
             </p>
             <Link href={COPY.cta.href} className={`${buttonStyles.secondaryAccent} mt-7 px-6`}>
               {COPY.cta.label}

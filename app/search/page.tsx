@@ -33,6 +33,7 @@ export default async function SearchPage({
         modelId: one("modelId"),
         generationId: one("generationId"),
         platformId: one("platformId"),
+        serviceId: one("serviceId"),
       }}
     />
   );

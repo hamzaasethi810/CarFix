@@ -44,9 +44,24 @@
   --label-tertiary: rgba(16, 27, 46, 0.58);
   --separator: rgba(16, 27, 46, 0.18);
 
-  --accent: #1B4FA6;
-  --accent-fill: #1B4FA6;
-  --accent-hover: #16407F;
+  /*
+    Green, at the blue's exact weight.
+
+    Chosen by measurement rather than by eye: the blue it replaces sat at
+    7.41:1 on stock and this sits at 7.43:1, so the swap changes hue and
+    nothing else. A green picked for looking right would almost certainly have
+    been lighter, and a lighter accent means a weaker call to action on every
+    button on the site.
+
+    It is also, near enough, where this project started. The palette before
+    this redesign was a forest green, and the blue was chosen partly to get
+    away from it. Coming back is the right call anyway: green is the colour
+    every driver already reads as "go", and this is a product whose whole job
+    is getting somebody to press a button.
+  */
+  --accent: #0F5F36;
+  --accent-fill: #0F5F36;
+  --accent-hover: #0B4C2B;
   --on-accent: #FFFFFF;
 
   /*
@@ -70,7 +85,7 @@
   --on-destructive: #FFFFFF;
 
   /* Confirmation is structural, so it is the same ink as the accent. */
-  --success: #1B4FA6;
+  --success: #0F5F36;
   --warning: #8A5A00;
 
   /*
@@ -1242,6 +1257,21 @@ body:has(.auth-root) > main {
   max-width: none;
   padding-inline: 0 !important;
   padding-block: 0 !important;
+  /* The panel fills whatever the header and footer leave, exactly. */
+  min-height: 0;
+}
+
+/*
+  The auth screens do not scroll.
+
+  The page is pinned to the viewport and the form column scrolls inside itself
+  if a browser's chrome leaves too little room. The footer stays: it carries
+  the terms and privacy links, which is precisely the page where somebody may
+  want them, so it is sized into the layout rather than hidden.
+*/
+body:has(.auth-root) {
+  height: 100dvh;
+  overflow: hidden;
 }
 
 /*
@@ -1266,5 +1296,86 @@ body:has(.auth-root) > main {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+/*
+  One block on screen at a time, on the landing only.
+
+  Mandatory rather than proximity above a comfortable window height. Proximity
+  was too weak to do the job asked of it: a trackpad flick carries far enough
+  that the nearest snap point is already the next block, so blocks were easy to
+  scroll straight past — which is the whole thing snapping was added to stop.
+
+  Mandatory is only safe because every block is sized to the viewport. Below
+  700px of window the same blocks can outgrow it, so that range falls back to
+  proximity, and below 560px snapping is off altogether. Mandatory snapping on
+  a block taller than the window traps a reader against content they cannot
+  reach, which is worse than no snapping at all.
+
+  scroll-margin-top clears the sticky header so a snapped block's first line is
+  not sitting underneath it.
+*/
+@media (min-height: 560px) {
+  body:has(.home-root) {
+    scroll-snap-type: y proximity;
+  }
+
+  .home-root .home-block {
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    scroll-margin-top: 4rem;
+  }
+}
+
+@media (min-height: 700px) {
+  body:has(.home-root) {
+    scroll-snap-type: y mandatory;
+  }
+}
+
+/*
+  Blocks blend rather than butt against each other.
+
+  Driven by the scroll position itself rather than by an observer, so the
+  movement tracks the finger or the trackpad exactly: a block lifts and fades
+  in as it enters and settles as it centres. An IntersectionObserver can only
+  fire once at a threshold, which produces a fixed-length animation that is
+  playing at some arbitrary speed relative to how fast you are actually
+  scrolling, and that mismatch is what reads as jerky.
+
+  Behind @supports because scroll-driven animation is not universal. Where it
+  is missing the blocks simply appear, which is the correct fallback: nothing
+  is hidden by default, so no browser loses content.
+*/
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .home-root .home-block > * {
+      animation: block-blend linear both;
+      animation-timeline: view();
+      /*
+        Enters over the last third of its approach and is fully settled by the
+        time the block is centred, so the middle of a read is never animating.
+      */
+      animation-range: entry 20% cover 38%;
+    }
+  }
+}
+
+@keyframes block-blend {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Snapping and reduced motion do not belong together. */
+@media (prefers-reduced-motion: reduce) {
+  body:has(.home-root) {
+    scroll-snap-type: none;
   }
 }
