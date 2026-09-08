@@ -39,7 +39,7 @@ const COPY = {
   },
 } as const;
 
-const PLATE_HERO = "/img/gt2rs.webp";
+const PLATE_HERO = "/img/gt3rs.webp";
 
 /*
   One block on screen at a time.
@@ -66,6 +66,15 @@ function Section({
   return (
     <section
       aria-labelledby={labelledBy}
+      /*
+        Alternating stock, set by the caller.
+
+        Every block sat on the same ground, so after the hero the page read as
+        one photograph followed by three pages of text. A tone change is the
+        cheapest thing that makes a block feel like its own panel, and it costs
+        nothing in load, motion or contrast — the second copy tone is already
+        in the palette and already contrast-checked against the ink.
+      */
       className={`home-block flex min-h-[calc(100dvh-4rem)] items-center border-t border-separator ${className}`}
     >
       <div className="mx-auto w-full max-w-5xl px-5 sm:px-8 py-16">{children}</div>
@@ -164,18 +173,37 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Two: what counts as work here. */}
-      <Section labelledBy="trades">
+      {/*
+        Two: what counts as work here.
+
+        A ruled editorial list rather than three equal columns of text. Three
+        identical columns is the text version of the three-identical-cards
+        pattern every generated page reaches for, and it gave each trade the
+        same weight as a footnote. Full measure, one per row, the name at title
+        scale: they are the three halves of what this site covers, so they are
+        allowed to take up room.
+      */}
+      <Section labelledBy="trades" className="bg-grouped">
         <Reveal>
           <h2 id="trades" className="text-title1 tracking-[-0.022em] max-w-md text-balance">
             {COPY.trades.heading}
           </h2>
         </Reveal>
-        <dl className="mt-10 grid gap-x-12 gap-y-8 sm:grid-cols-3 border-t border-separator pt-8">
+        <dl className="mt-12 border-t border-separator">
           {COPY.trades.items.map((t, i) => (
-            <Reveal key={t.id} delay={120 + i * 80}>
-              <dt className="text-title3 font-semibold tracking-[-0.015em]">{t.name}</dt>
-              <dd className="mt-2 text-body text-secondary text-pretty">{t.line}</dd>
+            <Reveal key={t.id} delay={120 + i * 90}>
+              <div
+                className={
+                  "group grid gap-2 border-b border-separator py-7 sm:grid-cols-[minmax(0,14rem)_minmax(0,1fr)] sm:gap-10 sm:py-9 " +
+                  "transition-[border-color] duration-200 " +
+                  "[@media(hover:hover)_and_(pointer:fine)]:hover:border-accent"
+                }
+              >
+                <dt className="text-title2 font-semibold tracking-[-0.02em]">{t.name}</dt>
+                <dd className="text-body text-secondary max-w-prose text-pretty self-center">
+                  {t.line}
+                </dd>
+              </div>
             </Reveal>
           ))}
         </dl>
@@ -212,30 +240,34 @@ export default async function HomePage() {
       {/* Four: the honest state of it. */}
       {counts.length > 0 && (
         <Section labelledBy="scale">
-          <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
-            <Reveal>
-              <h2 id="scale" className="text-title1 tracking-[-0.022em] text-balance">
-                {COPY.scale.heading}
-              </h2>
-              <p className="mt-4 text-body text-secondary max-w-md text-pretty">{COPY.scale.body}</p>
-            </Reveal>
+          <Reveal>
+            <h2 id="scale" className="text-title1 tracking-[-0.022em] text-balance">
+              {COPY.scale.heading}
+            </h2>
+            <p className="mt-4 text-body text-secondary max-w-md text-pretty">{COPY.scale.body}</p>
+          </Reveal>
 
-            <Reveal delay={140}>
-              <dl className="grid gap-6 sm:grid-cols-3 lg:grid-cols-1">
-                {counts.map(([n, label]) => (
-                  <div key={label} className="border-t border-separator pt-3">
-                    <dd className="tabular text-title1 font-semibold leading-none">
-                      <CountUp value={n} />
-                    </dd>
-                    <dt className="text-footnote text-secondary mt-2">{label}</dt>
-                  </div>
-                ))}
-              </dl>
-            </Reveal>
-          </div>
+          {/*
+            Set at display scale, because these are the only hard numbers on
+            the page and they were being whispered in a side column at the size
+            of a caption. Everything else here is a claim; this is the one
+            thing that is simply true, and it is the reason to believe the
+            rest. Tabular figures so the three sit on a common rhythm rather
+            than jostling as they count up.
+          */}
+          <dl className="mt-14 grid gap-10 border-t border-separator pt-10 sm:grid-cols-3">
+            {counts.map(([n, label], i) => (
+              <Reveal key={label} delay={140 + i * 90}>
+                <dd className="tabular text-[3rem] sm:text-[3.75rem] font-semibold leading-none tracking-[-0.03em]">
+                  <CountUp value={n} />
+                </dd>
+                <dt className="text-subhead text-secondary mt-3">{label}</dt>
+              </Reveal>
+            ))}
+          </dl>
 
-          <Reveal delay={320}>
-            <div className="mt-14 flex justify-end border-t border-separator pt-8">
+          <Reveal delay={440}>
+            <div className="mt-16 flex justify-end border-t border-separator pt-8">
               <Link href={COPY.cta.href} className={`${buttonStyles.primary} px-8`}>
                 {COPY.cta.label}
               </Link>
