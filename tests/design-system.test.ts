@@ -270,6 +270,19 @@ describe("the landing", () => {
     expect(css).toMatch(/scroll-snap-type: y mandatory/);
     expect(css).toMatch(/scroll-snap-type: y proximity/);
     expect(css).toMatch(/@media \(min-height: 700px\)/);
+
+    /*
+      The rule must sit on the ROOT element, which is what scrolls.
+
+      This shipped broken once. scroll-snap-type was set on body, where it
+      computes and inherits and looks perfectly correct in devtools, and does
+      nothing at all, because body is not the scroll container. The computed
+      style on body read "y mandatory" while the root element read "none", so
+      every check available agreed the feature was on while no block ever
+      snapped. Asserting the selector is the cheapest way to catch it.
+    */
+    expect(css).toMatch(/html:has\(\.home-root\)\s*\{[^}]*scroll-snap-type: y proximity/);
+    expect(css).not.toMatch(/body:has\(\.home-root\)\s*\{[^}]*scroll-snap-type/);
   });
 
   it("shows no money figure that is not marked an example", () => {

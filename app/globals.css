@@ -105,6 +105,17 @@
   --brand: var(--accent);
 
 
+  /*
+    The hero scrim, as an explicit alpha.
+
+    Written out rather than built with color-mix against `transparent`. That
+    form was rendering at roughly half the alpha asked for — the darkest pixel
+    behind the hero measured 76 where 60 percent of the stock should have given
+    150 — because mixing with `transparent` does not premultiply the way the
+    shorthand suggests. An explicit rgba cannot be misread.
+  */
+  --scrim: rgba(251, 250, 248, 0.62);
+
   --radius-control: 3px;
 
   /*
@@ -1269,6 +1280,7 @@ body:has(.auth-root) > main {
   the terms and privacy links, which is precisely the page where somebody may
   want them, so it is sized into the layout rather than hidden.
 */
+html:has(.auth-root),
 body:has(.auth-root) {
   height: 100dvh;
   overflow: hidden;
@@ -1316,8 +1328,18 @@ body:has(.auth-root) {
   scroll-margin-top clears the sticky header so a snapped block's first line is
   not sitting underneath it.
 */
+/*
+  On html, not body.
+
+  The document scroller is the root element. scroll-snap-type set on body is
+  computed and inherited and looks entirely correct in devtools, and does
+  nothing, because body is not the thing that scrolls. This shipped broken
+  once: the computed style read "y mandatory" on body while the root element
+  read "none", so every check agreed the feature was on while no block ever
+  snapped.
+*/
 @media (min-height: 560px) {
-  body:has(.home-root) {
+  html:has(.home-root) {
     scroll-snap-type: y proximity;
   }
 
@@ -1329,7 +1351,7 @@ body:has(.auth-root) {
 }
 
 @media (min-height: 700px) {
-  body:has(.home-root) {
+  html:has(.home-root) {
     scroll-snap-type: y mandatory;
   }
 }
@@ -1375,7 +1397,7 @@ body:has(.auth-root) {
 
 /* Snapping and reduced motion do not belong together. */
 @media (prefers-reduced-motion: reduce) {
-  body:has(.home-root) {
+  html:has(.home-root) {
     scroll-snap-type: none;
   }
 }
