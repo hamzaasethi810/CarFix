@@ -140,10 +140,47 @@ export async function enforceRateLimit(name: LimitName, identifier: string) {
   if (!success) throw rateLimited();
 }
 
-/** The caller's IP, or null when no proxy header carries one. */
+/**
+ * The caller's IP as attributed by trusted infrastructure — never a value the
+ * client can choose.
+ *
+ * X-Forwarded-For is a list each proxy appends to, so with N proxies of our own
+ * in front (env.TRUSTED_PROXY_HOPS) the real client address is the Nth entry
+ * from the right. Anything further left was put there by the client and is
+ * ignored: reading the leftmost value, as this once did, let an attacker send a
+ * different X-Forwarded-For on every request to land in a fresh rate-limit
+ * bucket each time — defeating login brute-force protection outright (proven in
+ * tests/rate-limit-ip.test.ts).
+ *
+ * Returns null — a shared "unknown" bucket, which fails toward limiting rather
+ * than away from it — when there is no trusted proxy configured, or when the
+ * header is shorter than the configured hop count (a stripped or forged header
+ * that cannot be trusted to carry a real client address in the expected slot).
+ */
 export function clientIp(req: Request): string | null {
-  const forwarded = req.headers.get("x-forwarded-for");
-  return forwarded?.split(",")[0]?.trim() || req.headers.get("x-real-ip") || null;
+  const hops = env.TRUSTED_PROXY_HOPS;
+
+  // No trusted proxy: X-Forwarded-For is entirely client-authored, so it is
+  // not evidence of anything. x-real-ip has the same problem when nothing
+  // trusted sets it, so it is not consulted here either.
+  if (hops <= 0) return null;
+
+  const chain = req.headers.get("x-forwarded-for");
+  if (chain) {
+    const parts = chain.split(",").map((p) => p.trim()).filter(Boolean);
+    // The last `hops` entries were written by our own proxies. The client's
+    // real address is the one the outermost trusted proxy recorded.
+    if (parts.length >= hops) return parts[parts.length - hops] || null;
+    // Fewer entries than trusted hops means the chain is not shaped the way
+    // this deployment claims — treat it as untrusted rather than reading a
+    // client-supplied slot.
+    return null;
+  }
+
+  // x-real-ip is trusted only because a proxy is in front to set it; a single
+  // trusted hop that uses this header instead of X-Forwarded-For is the common
+  // nginx case.
+  return req.headers.get("x-real-ip")?.trim() || null;
 }
 
 export function clientIdentifier(req: Request, userId?: string) {

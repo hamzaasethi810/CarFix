@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "next-auth/react";
 import { Field, SubmitButton, TextInput } from "@/components/form";
 import { Sheet, ErrorText } from "@/components/ui";
 
@@ -47,9 +46,15 @@ export function RegisterForm() {
       return setError(body?.error?.message ?? "We could not create your account.");
     }
 
-    await signIn("credentials", { email, password, redirect: false });
+    /*
+      No auto sign-in on purpose. Signing in here would succeed for a new
+      address and fail for one that already had an account, which is the same
+      existence oracle the server just went to lengths to close. The caller
+      goes to sign in instead, behind a notice that reads the same whether the
+      account was just created or already existed.
+    */
     setPending(false);
-    router.push("/garage");
+    router.push("/login?registered=1");
     router.refresh();
   }
 

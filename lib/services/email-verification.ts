@@ -77,6 +77,42 @@ export async function sendVerification(params: {
   });
 }
 
+/**
+ * Tells the real owner of an address that someone tried to register it again.
+ *
+ * This is what lets registration stop leaking whether an address is already in
+ * use. The form returns the same generic result either way; the difference —
+ * "you already have an account" — is delivered only to the inbox that owns the
+ * address, where it reaches the one person entitled to know and no one probing
+ * the form. Silent when mail is not configured, exactly like sendVerification,
+ * so behaviour does not fork on a known address.
+ */
+export async function sendAlreadyRegistered(params: {
+  email: string;
+  origin: string;
+}): Promise<void> {
+  if (!mailConfigured()) return;
+
+  const signIn = `${params.origin}/login`;
+  const reset = `${params.origin}/forgot-password`;
+  await sendEmail({
+    to: params.email,
+    subject: "You already have a Gaari account",
+    html:
+      `<p>Someone just tried to create a Gaari account with this email address, ` +
+      `but you already have one — so nothing was created and nothing changed.</p>` +
+      `<p>If that was you, just <a href="${signIn}">sign in</a>. ` +
+      `Forgotten your password? <a href="${reset}">Reset it</a>.</p>` +
+      `<p>If it was not you, you can safely ignore this message.</p>`,
+    text:
+      `Someone just tried to create a Gaari account with this email address, but ` +
+      `you already have one — nothing was created and nothing changed.\n\n` +
+      `If that was you, sign in: ${signIn}\n` +
+      `Forgotten your password? Reset it: ${reset}\n\n` +
+      `If it was not you, ignore this message.\n`,
+  });
+}
+
 /** Verify an address from a raw token. Throws on anything but a live token. */
 export async function completeVerification(token: string): Promise<void> {
   /*

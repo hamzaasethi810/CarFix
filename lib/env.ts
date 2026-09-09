@@ -58,6 +58,26 @@ const serverEnvSchema = z.object({
   MAPTILER_KEY: blankAsUndefined(z.string().min(1)),
 
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+
+  /*
+    How many reverse proxies your own infrastructure puts in front of the app.
+
+    Rate limiting keys unauthenticated requests on the caller's IP, and that IP
+    comes from X-Forwarded-For — a header the client can send. Each trusted
+    proxy APPENDS the address it saw, so the trustworthy client address is the
+    Nth value counting from the right, where N is the number of proxies you
+    control. Everything to the left of that is whatever the client typed and
+    must never be believed: taking the leftmost value let anyone rotate the
+    header to get a fresh rate-limit bucket per request and brute-force logins
+    unbounded.
+
+    1 matches the common single-proxy PaaS case (Vercel, Fly, Railway, a lone
+    nginx). Set it to the exact number of hops you run; set it to 0 only when
+    nothing proxies the app, in which case X-Forwarded-For is ignored entirely.
+    Too high is the dangerous direction — it reads back into client-controlled
+    territory — so the default is deliberately low rather than generous.
+  */
+  TRUSTED_PROXY_HOPS: z.coerce.number().int().min(0).max(10).default(1),
 });
 
 /*

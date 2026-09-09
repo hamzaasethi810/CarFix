@@ -29,6 +29,16 @@ const NOTICES: Record<string, string> = {
   "1": "Password changed. Sign in again with your new password.",
 };
 
+/*
+  Shown after registration, and worded to fit both cases the registration
+  endpoint deliberately cannot tell apart: a brand-new account, and an attempt
+  to re-register an address that already had one. "You can now sign in" is true
+  of both, so the notice reveals nothing that the form itself withholds. New
+  accounts also get a confirmation email; existing ones get a "you already have
+  an account" email — but that goes to the inbox, not onto this page.
+*/
+const REGISTERED_NOTICE = "Your account is ready. Sign in to continue.";
+
 export default async function LoginPage({
   searchParams,
 }: {
@@ -36,7 +46,11 @@ export default async function LoginPage({
 }) {
   const params = await searchParams;
   const changed = typeof params.changed === "string" ? params.changed : undefined;
-  const notice = changed ? NOTICES[changed] : undefined;
+  const notice = params.registered === "1"
+    ? REGISTERED_NOTICE
+    : changed
+      ? NOTICES[changed]
+      : undefined;
 
   return (
     <AuthPanel

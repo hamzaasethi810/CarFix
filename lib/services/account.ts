@@ -1,7 +1,7 @@
 import "server-only";
 import { hashPassword, verifyPassword } from "../auth/password";
 import { conflict, notFound, validation } from "../errors";
-import { sendVerification, verificationOrigin } from "./email-verification";
+import { sendAlreadyRegistered, sendVerification, verificationOrigin } from "./email-verification";
 import {
   createUserWithProfile,
   emailOrUsernameTaken,
@@ -15,6 +15,28 @@ import {
 import { listVehiclesForUsername } from "../repositories/vehicle";
 import { toPublicProfile, toVehicleSummary, type PublicProfile } from "./dto";
 
+/*
+  Registration is deliberately not an account-existence oracle.
+
+  Every other unauthenticated flow here — sign-in, password reset — is careful
+  never to reveal whether an address has an account. Registration used to give
+  it away outright: "An account with that email already exists." was a distinct
+  error, so the form was a way to test any address. This closes that, and the
+  cost is that a brand-new account is no longer signed in automatically — the
+  caller is sent to sign in — because a sign-in that succeeds for a new address
+  and fails for an existing one would be the same oracle one step later.
+
+  Two dimensions, treated differently on purpose:
+
+    - Username is public. It shows as @handle on every profile and beside every
+      report, so a collision is not a secret and the person must pick another
+      to continue. It is reported plainly.
+    - Email is private. Whether an address is registered is exactly what must
+      not leak, so both outcomes return the identical shape below, cost the
+      same (the password is hashed either way, so bcrypt's ~quarter-second does
+      not become a timing tell), and differ only in which email is sent — and
+      that difference reaches the address's real owner, never the form.
+*/
 export async function register(input: {
   email: string;
   password: string;
@@ -22,12 +44,23 @@ export async function register(input: {
   displayName: string;
   /** Recorded against the verification token, to make abuse investigable. */
   ip?: string | null;
-}) {
+}): Promise<{ ok: true }> {
   const taken = await emailOrUsernameTaken(input.email, input.username);
-  if (taken.email) throw conflict("An account with that email already exists.");
   if (taken.username) throw conflict("That username is taken.");
 
+  // Hashed on both branches, before they diverge, so the taken-email path is
+  // not measurably faster than a real sign-up. This mirrors the equalizing
+  // hash the sign-in path does for an address that has no account.
   const passwordHash = await hashPassword(input.password);
+  const origin = verificationOrigin();
+
+  if (taken.email) {
+    // No account is created, and the form is told nothing. Only the inbox that
+    // owns the address hears that someone tried.
+    void sendAlreadyRegistered({ email: input.email, origin }).catch(() => {});
+    return { ok: true };
+  }
+
   const user = await createUserWithProfile({
     email: input.email,
     passwordHash,
@@ -47,11 +80,11 @@ export async function register(input: {
   void sendVerification({
     userId: user.id,
     email: input.email,
-    origin: verificationOrigin(),
+    origin,
     ip: input.ip ?? null,
   }).catch(() => {});
 
-  return { id: user.id };
+  return { ok: true };
 }
 
 export async function getPublicProfile(username: string) {
