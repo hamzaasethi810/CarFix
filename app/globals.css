@@ -1372,7 +1372,12 @@ body:has(.auth-root) {
 */
 @supports (animation-timeline: view()) {
   @media (prefers-reduced-motion: no-preference) {
-    .home-root .home-block > * {
+    /*
+      Content children only. The hero's photograph is a direct child too, and
+      translating a full-bleed background up 28px opens a strip of bare
+      section along its top edge as it enters.
+    */
+    .home-root .home-block > *:not([data-no-blend]) {
       animation: block-blend linear both;
       animation-timeline: view();
       /*
@@ -1399,5 +1404,132 @@ body:has(.auth-root) {
 @media (prefers-reduced-motion: reduce) {
   html:has(.home-root) {
     scroll-snap-type: none;
+  }
+}
+
+/* ------------------------------------------------------------------------
+   THE HERO PHOTOGRAPH
+   ---------------------------------------------------------------------- */
+/*
+  Two layouts, one photograph, one <img>.
+
+  Narrow and short-and-wide screens get the car as a band above the words: at
+  those sizes there is no room beside it, and a full-bleed crop of a
+  centre-weighted studio shot shows a wheel arch and nothing else. Wide screens
+  lay it full bleed behind the section with the words in the empty ground to
+  its left.
+
+  The wide branch is gated on aspect as well as width, not width alone. The
+  photograph is anchored right, so on a tall window the cover scale grows until
+  the car is pushed off the left edge entirely — a 1280x1600 portrait monitor
+  put it fully out of frame. Below 13/10 the band layout is the correct one
+  regardless of how wide the window is.
+
+  There is no scrim, no veil and no fade to the block below. An earlier
+  photograph was a dark studio shot, which forced all three: the section had to
+  invert to white ink to be readable over it, and it then had to dissolve into
+  the light block underneath, which read as fog laid across the foot of the
+  frame. This one is shot on a near-white ground that is already the page's own
+  tone, so the type is the same ink as everywhere else, the picture runs at full
+  strength, and the join to the next block is two light tones meeting under the
+  ordinary hairline.
+*/
+/*
+  The ground the band sits on.
+
+  In the band layout the photograph stops partway down the section and the
+  words continue on the section's own background. The page stock is #FBFAF8 and
+  the photograph's floor arrives at #EFEBE7 — twelve levels apart, which is
+  faint but quite visible as a horizontal line straight across a phone. Painting
+  the section in the tone the picture ends on removes it, and the picture then
+  reads as dissolving into the page rather than stopping on it.
+
+  Sampled from the asset rather than chosen: the mean of the band crop's bottom
+  row, which varies by four levels across its width. tests/hero-scope.test.ts
+  re-measures the file and fails if a re-export drifts away from this value.
+
+  Invisible in the wide layout, where the photograph covers the section — but
+  it is still the right colour to be behind it while the image loads.
+*/
+.hero-ground {
+  background-color: #efebe7;
+}
+
+.hero-figure {
+  position: relative;
+  width: 100%;
+  flex: none;
+  aspect-ratio: 3 / 2;
+}
+
+@media (min-width: 640px) {
+  .hero-figure {
+    aspect-ratio: 2 / 1;
+  }
+}
+
+.hero-img-wide {
+  display: none;
+}
+
+/*
+  The copy column is narrow only where the car is beside it.
+
+  In the band layout there is nothing to the right of the words, so capping
+  them at the desktop measure left half a tablet empty and pushed the headline
+  to three lines for no reason. In the wide layout the cap is load-bearing: the
+  narrowest window this layout applies to is 1280x900, where the car's nose
+  lands at 472px and the column ends at 432. Every wider or shorter window puts
+  the car further right — 632px at 1440, 883px at 1920 — so that 40px is the
+  worst case, not the typical one.
+*/
+.hero-copy {
+  width: 100%;
+  max-width: 34rem;
+}
+
+@media (min-width: 1280px) and (min-aspect-ratio: 13 / 10) {
+  .hero-figure {
+    position: absolute;
+    inset: 0;
+    aspect-ratio: auto;
+  }
+
+  .hero-img-wide {
+    display: block;
+  }
+
+  .hero-img-band {
+    display: none;
+  }
+
+  .hero-copy {
+    max-width: 24rem;
+  }
+}
+
+@media (min-width: 1536px) and (min-aspect-ratio: 13 / 10) {
+  .hero-copy {
+    max-width: 28rem;
+  }
+}
+
+/*
+  Forced colours: the photograph goes.
+
+  In forced-colors mode the user agent overrides colour, background-color and
+  border-color with the user's system palette, but it does not touch an <img>.
+  Under a dark forced theme the heading is rendered in the user's white and
+  would land on a near-white photograph that the override never reached.
+  Nowhere else on the site sets type over an image, so this is the one block
+  that has to opt out.
+
+  The photograph is decoration and already aria-hidden, so removing it loses
+  nothing: the words fall back onto the forced Canvas and the section reads as
+  every other block does.
+*/
+@media (forced-colors: active) {
+  .hero-figure {
+    display: none;
   }
 }

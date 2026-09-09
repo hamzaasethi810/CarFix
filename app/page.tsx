@@ -39,7 +39,8 @@ const COPY = {
   },
 } as const;
 
-const PLATE_HERO = "/img/gt3rs.webp";
+const HERO_WIDE = "/img/hero-911.webp";
+const HERO_BAND = "/img/hero-911-band.webp";
 
 /*
   One block on screen at a time.
@@ -116,60 +117,62 @@ export default async function HomePage() {
         now asks the only question this product can answer today — which car do
         you drive — and sends that answer to shops that work on it.
       */}
-      <section className="home-block relative flex min-h-[calc(100dvh-4rem)] items-center overflow-hidden">
+      <section className="home-block hero-ground relative flex min-h-[calc(100dvh-4rem)] flex-col overflow-hidden">
         {/*
-          The car is the background of the block, full bleed.
+          The photograph, and nothing on top of it.
 
-          A scrim sits over it rather than a fade across it. The fade was doing
-          two jobs badly: hiding the photograph where the text was, and dimming
-          it everywhere else as the price.
+          It carries no information, so it is aria-hidden and it is not a
+          decorative frame around the words — on wide screens it is the section's
+          own ground, with the words standing in the empty studio floor to the
+          car's left. The layout switch lives in globals.css, where the wide
+          branch can be gated on aspect as well as width in one place.
 
-          The scrim is 62 percent of the page's own stock, and that number is
-          measured rather than chosen. The darkest pixel under the text region
-          is pure black, which gives the ink 1.22:1 against it — completely
-          unreadable. At 60 percent the worst case becomes 5.84:1, clear of the
-          4.5 floor with room to spare, and the photograph still comes through
-          at forty percent across the whole block rather than a strip of it.
-
-          aria-hidden because it carries no information.
+          No scrim over it. The photograph is shot on a near-white ground that
+          is already this page's own tone, so the type sits on it in the same
+          ink as every other block and the picture runs at full strength. The
+          asset is built by scripts/build-hero-image.mjs, which crops the
+          Porsche wordmark out of the source and grows the studio wall leftwards
+          so the car has somewhere to be that is not behind the headline.
         */}
-        {hasImage(PLATE_HERO) && (
-          <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+        {hasImage(HERO_WIDE) && hasImage(HERO_BAND) && (
+          <div data-no-blend aria-hidden="true" className="hero-figure pointer-events-none">
+            {/*
+              Art direction, not two copies of one picture. Only the framing the
+              current layout uses is ever fetched: the other is display:none, and
+              a lazy image with no box is never requested. That is also why
+              neither is marked priority — priority preloads unconditionally, so
+              a phone would pull the wide crop it will never show.
+            */}
             <Image
-              src={PLATE_HERO}
+              src={HERO_BAND}
               alt=""
               fill
-              priority
               sizes="100vw"
-              className="object-cover"
+              className="hero-img-band object-cover object-center"
             />
-            <div className="absolute inset-0 bg-[var(--scrim)]" />
+            <Image
+              src={HERO_WIDE}
+              alt=""
+              fill
+              sizes="100vw"
+              className="hero-img-wide object-cover object-right"
+            />
           </div>
         )}
 
-        <div className="relative mx-auto w-full max-w-5xl px-5 sm:px-8 py-16">
-          <div className="max-w-xl">
+        <div className="relative flex flex-1 items-center px-6 py-14 sm:px-10 xl:px-12 xl:py-0">
+          <div className="hero-copy">
             <Reveal>
               <h1 className="text-[2.4rem] leading-[1.08] sm:text-[3.25rem] sm:leading-[1.04] tracking-[-0.03em] text-balance">
                 {COPY.hero.heading}
               </h1>
-              {/*
-                Full ink, not the secondary grey used everywhere else.
-
-                Secondary is the ink at 72 percent, and measured against the
-                darkest pixel under this text it reaches only 4.07:1 even with a
-                heavy scrim — it would have forced the scrim up to 75 percent
-                and dimmed the photograph to buy back a contrast the grey itself
-                was spending. Hierarchy here comes from size and weight instead.
-              */}
-              <p className="mt-5 max-w-lg text-body text-label text-pretty">{COPY.hero.body}</p>
+              <p className="mt-5 text-body text-secondary text-pretty">{COPY.hero.body}</p>
             </Reveal>
 
             <Reveal delay={120} className="mt-9">
               <GenerationPicker makes={makes} services={services} />
             </Reveal>
           </div>
-
         </div>
       </section>
 
@@ -252,13 +255,21 @@ export default async function HomePage() {
             the page and they were being whispered in a side column at the size
             of a caption. Everything else here is a claim; this is the one
             thing that is simply true, and it is the reason to believe the
-            rest. Tabular figures so the three sit on a common rhythm rather
-            than jostling as they count up.
+            rest. In the accent, because the one true thing on the page should
+            be the thing wearing the brand's colour.
+
+            tabular-nums rather than the site's .tabular class. Both fix the
+            digit widths so the numbers do not jostle as they count up, but
+            .tabular also switches to Geist Mono, and in a monospace face the
+            comma takes a full character advance — at this size "3,737" set
+            itself as "3 , 737" with a gap either side. That is correct on the
+            receipt, which is a printed document and reads as one; these are
+            display type and belong in the same face as the heading above them.
           */}
           <dl className="mt-14 grid gap-10 border-t border-separator pt-10 sm:grid-cols-3">
             {counts.map(([n, label], i) => (
               <Reveal key={label} delay={140 + i * 90}>
-                <dd className="tabular text-[3rem] sm:text-[3.75rem] font-semibold leading-none tracking-[-0.03em]">
+                <dd className="tabular-nums text-[3rem] sm:text-[3.75rem] font-semibold leading-none tracking-[-0.03em] text-accent">
                   <CountUp value={n} />
                 </dd>
                 <dt className="text-subhead text-secondary mt-3">{label}</dt>

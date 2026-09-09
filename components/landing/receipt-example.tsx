@@ -36,9 +36,26 @@ const RECEIPT = {
 
 export function ReceiptExample() {
   return (
+    /*
+      It grows a little under the cursor.
+
+      Two percent on a card this size is about nine pixels — enough to register
+      as the thing responding to you, small enough that nothing beside it looks
+      displaced. transform only, so it composites and never reflows the column
+      it sits in.
+
+      Gated on a fine pointer because a touch device fires hover on tap and then
+      leaves the element hovered: on a phone this would be a card that swells
+      when you look at it and stays swollen. Gated on motion-safe for the same
+      reason every other movement here is.
+    */
     <figure
       data-example="true"
-      className="border border-separator bg-elevated rounded-control p-6 sm:p-7"
+      className={
+        "border border-separator bg-elevated rounded-control p-6 sm:p-7 " +
+        "transition-transform duration-200 ease-[var(--ease-out)] " +
+        "motion-safe:[@media(hover:hover)_and_(pointer:fine)]:hover:scale-[1.02]"
+      }
     >
       <div className="flex items-baseline justify-between gap-4 border-b border-separator pb-4">
         <div className="min-w-0">

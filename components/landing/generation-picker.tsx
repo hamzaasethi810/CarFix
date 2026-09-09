@@ -188,10 +188,19 @@ export function GenerationPicker({
         </label>
       </div>
 
+      {/*
+        Never disabled.
+
+        It used to require a make or a service before it would do anything,
+        which put the block's one call to action on screen dead — greyed out at
+        the moment of arrival, before the visitor has done anything wrong. The
+        empty case is not an error either: no filters means every shop, which is
+        a perfectly good answer to "find shops" and the fastest way into the
+        product for somebody who just wants to look.
+      */}
       <button
         type="button"
         onClick={go}
-        disabled={!makeId && !serviceId}
         className={`${buttonStyles.primary} mt-5 w-full justify-center gap-2 text-body`}
       >
         {gen ? `Find shops for the ${gen.code}` : "Find shops"}

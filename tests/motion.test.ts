@@ -94,6 +94,33 @@ describe("the motion grammar", () => {
     }
   });
 
+  it("transitions the property Tailwind actually writes", () => {
+    /*
+      Tailwind v4 compiles scale-*, translate-* and rotate-* to the standalone
+      CSS properties `scale`, `translate` and `rotate` — not to `transform`. So
+      `transition-[transform]` beside `active:scale-[0.98]` names a property
+      nothing writes to, and the element jumps between states with the duration
+      and easing silently applying to nothing.
+
+      It shipped that way on every button on the site: the press feedback was
+      instant rather than 140ms. The failure is invisible in review, because the
+      classes read correctly and the state change still happens.
+
+      transition-transform (the built-in) expands to
+      `transform, translate, scale, rotate` and covers all of them.
+    */
+    for (const [f, src] of code()) {
+      if (!/transition-\[transform\]/.test(src)) continue;
+      const writesSeparate = /(?:^|[\s"'`:])-?(?:translate|scale|rotate)-/.test(src);
+      expect(
+        writesSeparate,
+        `${f}: transition-[transform] only animates \`transform\`, but this file ` +
+          "sets scale/translate/rotate, which Tailwind v4 emits as their own " +
+          "properties. Use transition-transform.",
+      ).toBe(false);
+    }
+  });
+
   it("nothing enters from scale(0)", () => {
     /*
       Nothing in the physical world appears out of nothing. An element growing

@@ -510,8 +510,19 @@ const BUTTON_BASE =
   140ms because feedback under ~160ms reads as instant and anything slower
   reads as lag. transform and opacity only, so it never touches layout.
 */
+/*
+  transition-transform, not transition-[transform].
+
+  Tailwind v4 compiles scale-*, translate-* and rotate-* to the standalone
+  `scale`, `translate` and `rotate` properties rather than to `transform`. The
+  arbitrary form names exactly one property, `transform`, which none of them
+  write to — so the press below was jumping straight to its pressed state and
+  straight back, with the duration and easing here applying to nothing. The
+  built-in utility expands to `transform, translate, scale, rotate` and covers
+  all four. tests/motion.test.ts pins the pairing.
+*/
 const PRESS =
-  "transition-[transform] duration-[140ms] ease-[var(--ease-out)] " +
+  "transition-transform duration-[140ms] ease-[var(--ease-out)] " +
   "active:translate-y-px active:scale-[0.98] " +
   "motion-reduce:transition-none motion-reduce:active:translate-y-0 motion-reduce:active:scale-100";
 

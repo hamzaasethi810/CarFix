@@ -12,7 +12,14 @@ export default function RegisterPage() {
   return (
     <AuthPanel
       title="Create your account"
-      subtitle="Then add your car and start logging work."
+      /*
+        It read "Then add your car and start logging work." — which dangles.
+        "Then" is the second half of a sequence whose first half was never
+        written, so under a heading that says "Create your account" it lands as
+        a fragment. It was also off the site's voice: everywhere else you file a
+        price against a receipt, you do not log work.
+      */
+      subtitle="Add your car, then file what you paid."
       footer={
         <>
           <span className="block">

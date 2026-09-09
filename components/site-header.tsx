@@ -32,8 +32,23 @@ export function SiteHeader({
         */
         className="w-full max-w-none px-3 sm:px-6 h-12 [@media(min-height:481px)]:h-16 flex items-center gap-2 sm:gap-4"
       >
-        <Link href="/" className="inline-flex items-baseline min-h-11 pr-2 sm:pr-4">
-          <span className="text-title3 font-bold tracking-tight">Gaari</span>
+        {/*
+          The wordmark, in the brand's own green.
+
+          items-center rather than items-baseline: the baseline was fine while
+          the wordmark was the same size as the links beside it, but at 30px it
+          hangs the name low on the bar instead of seating it. The bar's height
+          is keyed on window height, so the size is too — 30px in 64px of header
+          has room to breathe, and the same 30px in the 48px bar a landscape
+          phone gets would leave 9px above and below.
+        */}
+        <Link
+          href="/"
+          className="inline-flex items-center min-h-11 pr-2 sm:pr-4 rounded-control"
+        >
+          <span className="text-title2 [@media(min-height:481px)]:text-title1 font-bold tracking-tight text-accent">
+            Gaari
+          </span>
         </Link>
 
         {isAuthed && (
