@@ -117,7 +117,7 @@ export default async function HomePage() {
         now asks the only question this product can answer today — which car do
         you drive — and sends that answer to shops that work on it.
       */}
-      <section className="home-block hero-ground relative flex min-h-[calc(100dvh-4rem)] flex-col overflow-hidden">
+      <section className="home-block hero-section hero-ground relative flex min-h-[calc(100dvh-4rem)] flex-col overflow-hidden">
         {/*
           The photograph, and nothing on top of it.
 
@@ -160,7 +160,7 @@ export default async function HomePage() {
           </div>
         )}
 
-        <div className="relative flex flex-1 items-center px-6 py-14 sm:px-10 xl:px-12 xl:py-0">
+        <div className="relative flex flex-1 items-start xl:items-center px-6 py-8 sm:px-10 sm:py-14 xl:px-12 xl:py-0">
           <div className="hero-copy">
             <Reveal>
               <h1 className="text-[2.4rem] leading-[1.08] sm:text-[3.25rem] sm:leading-[1.04] tracking-[-0.03em] text-balance">

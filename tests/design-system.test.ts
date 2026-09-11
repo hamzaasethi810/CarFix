@@ -237,39 +237,53 @@ describe("the chrome", () => {
 describe("the landing", () => {
   const page = () => stripComments(read("app/page.tsx"));
 
-  it("shows one block at a time", () => {
+  it("snaps blocks only in the wide layout, so the phone CTA stays reachable", () => {
     /*
-      Inverted deliberately, and this records why so the old rule is not
-      restored from memory.
+      Snapping is scoped to the wide (car-beside-text) layout on purpose, and
+      this records why so the old height-tiered version is not restored from
+      memory.
 
-      Snapping was removed earlier because it fought a very tall mock repair
-      order in the hero: a block taller than the window plus mandatory snapping
-      is a page that drags you off what you are reading. That record is gone,
-      every block now fits a viewport, and the snapping is proximity rather
-      than mandatory, so a block that outgrows a short window still scrolls
-      normally.
+      Below the wide breakpoint the hero uses the band layout, where the car
+      sits above the words and the make/model/generation/service filter can
+      grow taller than the screen. When it does, its submit button lands within
+      a few pixels of the next block's snap point, and ANY snapping — proximity
+      as much as mandatory — pulls that button out of view: the one control the
+      page exists for becomes unpressable. So band-layout screens (phones,
+      portrait tablets) scroll normally, and snapping engages only from 1280px
+      and a landscape-ish aspect, the one range where a fully answered filter
+      still fits a screen. Trackpad laptops are in that range and keep the
+      "stick" that snapping was added for.
     */
     expect(page()).toMatch(/home-block/);
     const css = stripComments(read("app/globals.css"));
+
+    // Both settings are used: proximity for the softer settle, mandatory once
+    // there is a screen of height to spend.
+    expect(css).toMatch(/scroll-snap-type: y proximity/);
+    expect(css).toMatch(/scroll-snap-type: y mandatory/);
     expect(css).toMatch(/scroll-snap-stop: always/);
 
     /*
-      Mandatory IS used, and this asserts the guard rather than forbidding it.
-
-      An earlier version of this test banned mandatory outright, because
-      mandatory snapping on a block taller than the window traps a reader
-      against content they cannot scroll to. That risk is real but it is a
-      function of window height, not of the setting: every block here is sized
-      to the viewport, and proximity turned out too weak to do the job — a
-      trackpad flick carries far enough that the nearest snap point is already
-      the next block.
-
-      So mandatory is allowed, and what is checked instead is that it is height
-      gated and that a shorter window still falls back.
+      Every snap-type declaration must sit inside a wide-layout media query —
+      min-width 1280 AND a landscape aspect. If snapping ever leaks to a
+      narrower or portrait screen, the band-layout CTA can be trapped again, so
+      this asserts the gate on each occurrence rather than merely that a wide
+      query exists somewhere.
     */
-    expect(css).toMatch(/scroll-snap-type: y mandatory/);
-    expect(css).toMatch(/scroll-snap-type: y proximity/);
-    expect(css).toMatch(/@media \(min-height: 700px\)/);
+    const enclosingMedia = (at: number) => {
+      const mq = css.lastIndexOf("@media", at);
+      return css.slice(mq, css.indexOf("{", mq));
+    };
+    const snapDecls = [...css.matchAll(/scroll-snap-type: y (?:proximity|mandatory)/g)];
+    expect(snapDecls.length).toBeGreaterThanOrEqual(2);
+    for (const d of snapDecls) {
+      const header = enclosingMedia(d.index!);
+      expect(header).toMatch(/min-width: 1280px/);
+      expect(header).toMatch(/min-aspect-ratio: 13 \/ 10/);
+    }
+    // Mandatory carries the extra height gate; proximity does not require it.
+    const mandatory = css.search(/scroll-snap-type: y mandatory/);
+    expect(enclosingMedia(mandatory)).toMatch(/min-height: 700px/);
 
     /*
       The rule must sit on the ROOT element, which is what scrolls.

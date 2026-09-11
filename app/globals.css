@@ -1312,33 +1312,32 @@ body:has(.auth-root) {
 }
 
 /*
-  One block on screen at a time, on the landing only.
-
-  Mandatory rather than proximity above a comfortable window height. Proximity
-  was too weak to do the job asked of it: a trackpad flick carries far enough
-  that the nearest snap point is already the next block, so blocks were easy to
-  scroll straight past — which is the whole thing snapping was added to stop.
-
-  Mandatory is only safe because every block is sized to the viewport. Below
-  700px of window the same blocks can outgrow it, so that range falls back to
-  proximity, and below 560px snapping is off altogether. Mandatory snapping on
-  a block taller than the window traps a reader against content they cannot
-  reach, which is worse than no snapping at all.
-
-  scroll-margin-top clears the sticky header so a snapped block's first line is
-  not sitting underneath it.
+  One block on screen at a time, on the landing — scoping and rationale below.
 */
 /*
-  On html, not body.
+  Scroll-snap is scoped to the wide layout, and only there.
 
-  The document scroller is the root element. scroll-snap-type set on body is
-  computed and inherited and looks entirely correct in devtools, and does
-  nothing, because body is not the thing that scrolls. This shipped broken
-  once: the computed style read "y mandatory" on body while the root element
-  read "none", so every check agreed the feature was on while no block ever
-  snapped.
+  It engages exactly where the hero uses its car-beside-text layout — from
+  1280px and a landscape-ish aspect. That is the one range where a fully
+  answered filter still fits a screen, so snapping the blocks never strands the
+  submit button. Every narrower or portrait screen uses the band layout, where
+  the car sits above the words and an expanded filter overflows the screen; its
+  button can then land within a few pixels of the next block's snap point, and
+  any snapping — mandatory OR proximity — pulls that button out of view and the
+  one control the page exists for cannot be pressed. So those screens scroll
+  normally and the button is always reachable. Trackpad-driven laptops, where
+  the "stick" was asked for, are in the wide range and keep it.
+
+  Proximity first, then mandatory once there is a screen's height to spend:
+  proximity settles near a block without trapping a mid position, mandatory
+  gives the firmer one-block-per-screen feel when the window is tall enough.
+
+  Set on html, not body: the document scroller is the root element.
+  scroll-snap-type on body is computed and inherited and looks entirely correct
+  in devtools while doing nothing, because body is not what scrolls — this
+  shipped broken once exactly that way.
 */
-@media (min-height: 560px) {
+@media (min-width: 1280px) and (min-aspect-ratio: 13 / 10) and (min-height: 560px) {
   html:has(.home-root) {
     scroll-snap-type: y proximity;
   }
@@ -1350,7 +1349,7 @@ body:has(.auth-root) {
   }
 }
 
-@media (min-height: 700px) {
+@media (min-width: 1280px) and (min-aspect-ratio: 13 / 10) and (min-height: 700px) {
   html:has(.home-root) {
     scroll-snap-type: y mandatory;
   }

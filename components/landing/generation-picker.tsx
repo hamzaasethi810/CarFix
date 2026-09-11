@@ -120,20 +120,38 @@ export function GenerationPicker({
           </select>
         </label>
 
-        {models.length > 0 && (
+        {/*
+          Shown the instant a make is chosen, not when its models arrive.
+
+          The models come from an API route whose first call after a page load
+          is a cold serverless function — a second or two — and gating the field
+          on `models.length > 0` meant the picker sat visibly frozen for that
+          whole time, with nothing to say a choice had registered. Mounting it
+          immediately in a disabled "Loading…" state gives that feedback at
+          once, and it means the block's height settles on the tap rather than
+          seconds later, which on a phone is what kept shoving the submit button
+          around underneath the visitor's thumb.
+        */}
+        {makeId && (
         <label className="block card-enter">
           <span className="text-caption text-tertiary-label">Model</span>
           <select
             className={field}
             value={modelId}
-            disabled={!models.length}
+            disabled={loading === "models" || models.length === 0}
             onChange={(e) => {
               setModelId(e.target.value);
               setGenerations([]);
               setGenId("");
             }}
           >
-            <option value="">{loading === "models" ? "Loading…" : "Choose a model"}</option>
+            <option value="">
+              {loading === "models"
+                ? "Loading…"
+                : models.length === 0
+                  ? "No models on record"
+                  : "Choose a model"}
+            </option>
             {models.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.name}
@@ -144,17 +162,21 @@ export function GenerationPicker({
 
         )}
 
-        {generations.length > 0 && (
+        {modelId && (
         <label className="block card-enter">
           <span className="text-caption text-tertiary-label">Generation</span>
           <select
             className={field}
             value={genId}
-            disabled={!generations.length}
+            disabled={loading === "generations" || generations.length === 0}
             onChange={(e) => setGenId(e.target.value)}
           >
             <option value="">
-              {loading === "generations" ? "Loading…" : "Choose a generation"}
+              {loading === "generations"
+                ? "Loading…"
+                : generations.length === 0
+                  ? "No generations on record"
+                  : "Choose a generation"}
             </option>
             {generations.map((g) => (
               <option key={g.id} value={g.id}>
