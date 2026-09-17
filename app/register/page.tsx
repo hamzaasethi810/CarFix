@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { RegisterForm } from "./register-form";
 import { AuthPanel } from "@/components/auth-panel";
+import { googleConfigured } from "@/lib/providers/google";
+import { appleConfigured } from "@/lib/providers/apple";
 
 /*
   Create an account.
@@ -38,7 +40,7 @@ export default function RegisterPage() {
         </>
       }
     >
-      <RegisterForm />
+      <RegisterForm googleEnabled={googleConfigured()} appleEnabled={appleConfigured()} />
     </AuthPanel>
   );
 }

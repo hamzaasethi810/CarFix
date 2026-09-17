@@ -2,9 +2,10 @@ import "server-only";
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
+import Apple from "next-auth/providers/apple";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/db";
-import { googleOAuth } from "@/lib/env";
+import { appleOAuth, googleOAuth } from "@/lib/env";
 import { ensureProfile, markEmailVerified } from "@/lib/repositories/user";
 import { SIGNIN_ERROR, credentialFields, credentialsSchema } from "./credentials";
 import { env, isProd } from "../env";
@@ -147,6 +148,17 @@ export const {
           }),
         ]
       : []),
+    ...(appleOAuth()
+      ? [
+          Apple({
+            clientId: appleOAuth()!.id,
+            clientSecret: appleOAuth()!.secret,
+            // Same reasoning as Google: never silently merge an Apple login
+            // into an existing password account by matching email.
+            allowDangerousEmailAccountLinking: false,
+          }),
+        ]
+      : []),
     Credentials({
       credentials: credentialFields,
       async authorize(raw, request) {
@@ -205,13 +217,17 @@ export const {
   /*
     Roles that must clear TOTP no matter how they signed in.
 
-    The credentials provider enforces MFA itself. Google does not know MFA
-    exists, so without this check a privileged account could sidestep the
-    entire requirement by clicking Continue with Google.
+    The credentials provider enforces MFA itself. A federated provider —
+    Google or Apple — knows nothing about it, so without this check a
+    privileged account could sidestep the entire requirement by signing in
+    with one.
   */
   callbacks: {
     async signIn({ account, user }) {
-      if (account?.provider !== "google") return true;
+      // Every federated provider goes through the same gate; only the
+      // credentials path (which enforces MFA itself) skips it.
+      const isOAuth = account?.provider === "google" || account?.provider === "apple";
+      if (!isOAuth) return true;
       if (!user.email) return false;
 
       const existing = await prisma.user.findUnique({

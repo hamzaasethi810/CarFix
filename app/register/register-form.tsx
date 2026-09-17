@@ -4,8 +4,15 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Field, SubmitButton, TextInput } from "@/components/form";
 import { Sheet, ErrorText } from "@/components/ui";
+import { SocialSignIn } from "@/components/auth-social";
 
-export function RegisterForm() {
+export function RegisterForm({
+  googleEnabled,
+  appleEnabled,
+}: {
+  googleEnabled: boolean;
+  appleEnabled: boolean;
+}) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -59,7 +66,16 @@ export function RegisterForm() {
   }
 
   return (
-    <form action={onSubmit} className="space-y-5">
+    <div className="space-y-5">
+      {/*
+        The same social options as the sign-in screen, and first: creating an
+        account with Google or Apple is one tap, versus a five-field form.
+        OAuth signs up and signs in through the same flow, so nothing here
+        needs a separate "sign up" variant.
+      */}
+      <SocialSignIn googleEnabled={googleEnabled} appleEnabled={appleEnabled} />
+
+      <form action={onSubmit} className="space-y-5">
       <Sheet className="p-5 space-y-4">
         <Field label="Display name">
           {({ id, describedBy }) => (
@@ -136,6 +152,7 @@ export function RegisterForm() {
       {error && <ErrorText>{error}</ErrorText>}
 
       <SubmitButton pending={pending}>Create account</SubmitButton>
-    </form>
+      </form>
+    </div>
   );
 }
