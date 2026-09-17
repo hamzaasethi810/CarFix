@@ -117,7 +117,16 @@ export const isProd = env.NODE_ENV === "production";
   fails on click is worse than no button.
 */
 export const googleOAuth = () => {
-  const id = process.env.GOOGLE_CLIENT_ID;
-  const secret = process.env.GOOGLE_CLIENT_SECRET;
+  /*
+    Trimmed, because credentials pasted into a dashboard routinely arrive with
+    a trailing space or newline, and Google rejects a client_id with one stray
+    character as invalid_client — "the OAuth client was not found" — which
+    looks like a broken app rather than a typo. A real client id or secret
+    never has meaningful surrounding whitespace, so trimming only ever helps.
+    An empty-after-trim value falls through to null, hiding the button rather
+    than showing one that cannot work.
+  */
+  const id = process.env.GOOGLE_CLIENT_ID?.trim();
+  const secret = process.env.GOOGLE_CLIENT_SECRET?.trim();
   return id && secret ? { id, secret } : null;
 };
