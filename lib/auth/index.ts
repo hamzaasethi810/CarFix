@@ -2,7 +2,7 @@ import "server-only";
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
-import { PrismaAdapter } from "@auth/prisma-adapter";
+import { authAdapter } from "./adapter";
 import { prisma } from "@/lib/db";
 import { googleOAuth } from "@/lib/env";
 import { ensureProfile, markEmailVerified } from "@/lib/repositories/user";
@@ -48,7 +48,6 @@ class MfaInvalid extends CredentialsSignin {
 class TooManyAttempts extends CredentialsSignin {
   code = SIGNIN_ERROR.rateLimited;
 }
-
 
 // The Credentials provider requires the JWT session strategy, so the token is
 // re-checked against the database on every request: a deleted account or a
@@ -130,7 +129,7 @@ export const {
     sessionsValidFrom remains the thing that actually revokes a session;
     the adapter only owns User and Account rows.
   */
-  adapter: PrismaAdapter(prisma),
+  adapter: authAdapter,
   providers: [
     ...(googleOAuth()
       ? [
