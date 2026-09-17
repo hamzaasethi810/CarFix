@@ -2,21 +2,17 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 
 /*
-  The federated handshakes (Google, Apple) cannot be exercised in a unit test,
-  so this asserts the wiring instead. Three mistakes would open real holes, and
-  each is cheap to detect: a missing role check on an OAuth path, an account
-  that arrives without a profile, and a session that outlives its window.
+  The Google handshake cannot be exercised in a unit test, so this asserts the
+  wiring instead. Three mistakes would open real holes, and each is cheap to
+  detect: a missing role check on the OAuth path, an account that arrives
+  without a profile, and a session that outlives its window.
 */
 const auth = readFileSync("lib/auth/index.ts", "utf8");
 const users = readFileSync("lib/repositories/user.ts", "utf8");
 
-describe("federated sign-in cannot bypass MFA", () => {
-  it("routes every OAuth provider through the role and TOTP check", () => {
-    // The gate must name each federated provider it covers, so adding a
-    // provider without adding it here is visible. Credentials is exempt (it
-    // enforces MFA in its own authorize()).
-    expect(auth).toMatch(/provider === "google"/);
-    expect(auth).toMatch(/provider === "apple"/);
+describe("google sign-in cannot bypass MFA", () => {
+  it("checks the role and TOTP state on the google path", () => {
+    expect(auth).toMatch(/provider !== "google"/);
     expect(auth).toMatch(/totpEnabledAt/);
     expect(auth).toMatch(/MFA_REQUIRED/);
   });
@@ -25,11 +21,8 @@ describe("federated sign-in cannot bypass MFA", () => {
     expect(auth).toMatch(/deletedAt/);
   });
 
-  it("does not silently link an oauth login onto an existing password account", () => {
-    // Both providers must set this — a single occurrence would mean one of
-    // them is missing the guard. Google and Apple = two.
-    const matches = auth.match(/allowDangerousEmailAccountLinking:\s*false/g) ?? [];
-    expect(matches.length).toBeGreaterThanOrEqual(2);
+  it("does not silently link a google login onto an existing password account", () => {
+    expect(auth).toMatch(/allowDangerousEmailAccountLinking:\s*false/);
   });
 });
 

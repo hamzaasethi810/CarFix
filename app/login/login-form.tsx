@@ -24,11 +24,9 @@ const REMEMBERED_EMAIL = "gaari.email";
 export function LoginForm({
   canResetPassword,
   googleEnabled,
-  appleEnabled,
 }: {
   canResetPassword: boolean;
   googleEnabled: boolean;
-  appleEnabled: boolean;
 }) {
   const router = useRouter();
   const [reveal, setReveal] = useState(false);
@@ -188,7 +186,7 @@ export function LoginForm({
         burying them under a form nobody wants to fill in helps no one. Shared
         with the join screen so the two never drift apart.
       */}
-      <SocialSignIn googleEnabled={googleEnabled} appleEnabled={appleEnabled} />
+      <SocialSignIn googleEnabled={googleEnabled} />
 
       <form action={onSubmit} className="space-y-4">
         <Field label="Email">

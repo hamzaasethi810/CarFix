@@ -1,6 +1,5 @@
 import "server-only";
 import { z } from "zod";
-import { buildAppleClientSecret } from "./providers/apple";
 
 const blankAsUndefined = <T extends z.ZodTypeAny>(schema: T) =>
   z.preprocess((v) => (v === "" ? undefined : v), schema.optional());
@@ -121,24 +120,4 @@ export const googleOAuth = () => {
   const id = process.env.GOOGLE_CLIENT_ID;
   const secret = process.env.GOOGLE_CLIENT_SECRET;
   return id && secret ? { id, secret } : null;
-};
-
-/*
-  Sign in with Apple, optional and inert until configured.
-
-  Unlike Google, Apple's client secret is a JWT the app signs itself; it is
-  minted in lib/providers/apple. A key that is present but unusable disables the
-  provider with a warning rather than crashing boot — a half-registered
-  provider that renders a button and then fails on click is worse than no
-  button, the same reasoning as googleOAuth's null return.
-*/
-export const appleOAuth = () => {
-  const id = process.env.APPLE_CLIENT_ID;
-  if (!id) return null;
-  try {
-    return { id, secret: buildAppleClientSecret() };
-  } catch (error) {
-    console.warn("[auth] Apple sign-in is half-configured, so it is disabled.", error);
-    return null;
-  }
 };

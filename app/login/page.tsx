@@ -1,6 +1,5 @@
 import { mailConfigured } from "@/lib/providers/email";
 import { googleConfigured } from "@/lib/providers/google";
-import { appleConfigured } from "@/lib/providers/apple";
 import { AuthPanel } from "@/components/auth-panel";
 import { LoginForm } from "./login-form";
 
@@ -76,11 +75,7 @@ export default async function LoginPage({
           {notice}
         </p>
       )}
-      <LoginForm
-        canResetPassword={mailConfigured()}
-        googleEnabled={googleConfigured()}
-        appleEnabled={appleConfigured()}
-      />
+      <LoginForm canResetPassword={mailConfigured()} googleEnabled={googleConfigured()} />
     </AuthPanel>
   );
 }
