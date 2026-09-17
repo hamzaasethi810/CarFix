@@ -124,6 +124,15 @@ export function Discover({
   const [results, setResults] = useState<Result[]>(initial);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  /*
+    Whether a search has ever come back. "No shops match" must never show
+    before the first result arrives: a location resolves a frame or two before
+    the fetch's loading flag flips, and in that gap the zero-result branch was
+    telling the visitor there was nothing here — immediately before the shops
+    appeared. This gates that branch, and holds the space with "Searching…"
+    until a real answer exists.
+  */
+  const [hasSearched, setHasSearched] = useState(false);
   const [panelOpen, setPanelOpen] = useState(false);
 
   /*
@@ -420,6 +429,7 @@ export function Discover({
       const res = await fetch(`/api/mechanics?${params.toString()}`);
       const body = await res.json().catch(() => null);
       setLoading(false);
+      setHasSearched(true);
       if (!res.ok) return;
       setResults(body.items ?? []);
       setSelectedId(null);
@@ -994,7 +1004,19 @@ export function Discover({
                 </li>
               )}
 
-              {results.length === 0 && !loading && center && ingesting && (
+              {/*
+                A search is running, or the first one for this area has not
+                returned yet. This holds the space so the zero-result message
+                below cannot flash before the shops arrive.
+              */}
+              {results.length === 0 && center && (loading || !hasSearched) && (
+                <li className="px-2 py-6 text-subhead text-secondary text-center">
+                  <p className="text-label font-medium">Searching…</p>
+                  <p className="mt-1 text-pretty">Finding shops in this area.</p>
+                </li>
+              )}
+
+              {results.length === 0 && !loading && hasSearched && center && ingesting && (
                 <li className="px-2 py-6 text-subhead text-secondary text-center">
                   <p className="text-label font-medium">Looking up this area…</p>
                   <p className="mt-1 text-pretty">
@@ -1007,9 +1029,10 @@ export function Discover({
               {/*
                 Nothing matched. Which filter is doing the excluding is knowable
                 here, so it says so rather than leaving somebody to guess which
-                of five controls to undo.
+                of five controls to undo. Gated on a search having returned, so
+                it never shows before the first results land.
               */}
-              {results.length === 0 && !loading && center && !ingesting && (
+              {results.length === 0 && !loading && hasSearched && center && !ingesting && (
                 <li className="px-2 py-6 text-subhead text-secondary text-center">
                   <p className="text-label font-medium">No shops match these filters</p>
                   <p className="mt-1 text-pretty">Try broadening your search:</p>

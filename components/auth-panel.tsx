@@ -45,22 +45,22 @@ export function AuthPanel({
   return (
     <div className="auth-root grid h-full min-h-0 overflow-hidden lg:grid-cols-2">
       {/* The form. Always first in the DOM, so it is first for a screen reader. */}
-      <div className="flex items-center justify-center overflow-y-auto px-5 py-10 sm:px-8">
+      <div className="flex items-center justify-center overflow-y-auto px-5 py-5 sm:px-8 sm:py-6">
         <div className="w-full max-w-sm">
           <div className="auth-enter">
-            <h1 className="text-title1 font-semibold tracking-tight text-balance">{title}</h1>
+            <h1 className="text-title2 font-semibold tracking-tight text-balance">{title}</h1>
             {subtitle && (
               <p className="text-subhead text-secondary mt-1.5 text-pretty">{subtitle}</p>
             )}
           </div>
 
-          <div className="auth-enter mt-8" style={{ ["--enter-delay" as string]: "80ms" }}>
+          <div className="auth-enter mt-5" style={{ ["--enter-delay" as string]: "80ms" }}>
             {children}
           </div>
 
           {footer && (
             <div
-              className="auth-enter mt-8 text-footnote text-secondary"
+              className="auth-enter mt-4 text-footnote text-secondary"
               style={{ ["--enter-delay" as string]: "160ms" }}
             >
               {footer}

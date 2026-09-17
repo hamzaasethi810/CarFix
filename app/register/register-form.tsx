@@ -2,31 +2,22 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 import { Field, SubmitButton, TextInput } from "@/components/form";
-import { Sheet, ErrorText } from "@/components/ui";
+import { ErrorText } from "@/components/ui";
 import { SocialSignIn } from "@/components/auth-social";
 
 export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [reveal, setReveal] = useState(false);
 
   async function onSubmit(formData: FormData) {
     setError(null);
 
     const email = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");
-
-    /*
-      Checked here and not on the server. The confirmation exists to catch a
-      typo in a field nobody can read back, which is a client concern; the
-      register endpoint takes one password and its schema is strict, so
-      sending a second field would be rejected outright.
-    */
-    if (password !== String(formData.get("confirmPassword") ?? "")) {
-      setError("Those two passwords do not match.");
-      return;
-    }
 
     setPending(true);
 
@@ -60,7 +51,7 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {/*
         The same social option as the sign-in screen, and first: creating an
         account with Google is one tap, versus a five-field form. OAuth signs
@@ -69,34 +60,40 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
       */}
       <SocialSignIn googleEnabled={googleEnabled} />
 
-      <form action={onSubmit} className="space-y-5">
-      <Sheet className="p-5 space-y-4">
-        <Field label="Display name">
-          {({ id, describedBy }) => (
-            <TextInput
-              id={id}
-              aria-describedby={describedBy}
-              name="displayName"
-              required
-              maxLength={60}
-              autoComplete="name"
-            />
-          )}
-        </Field>
+      <form action={onSubmit} className="space-y-4">
+        {/*
+          Name and username share a row once there is width for it, which saves
+          the join form a whole field-height on a laptop and keeps it on one
+          screen. They stack on a phone, where a single column is right anyway.
+        */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Display name">
+            {({ id, describedBy }) => (
+              <TextInput
+                id={id}
+                aria-describedby={describedBy}
+                name="displayName"
+                required
+                maxLength={60}
+                autoComplete="name"
+              />
+            )}
+          </Field>
 
-        <Field label="Username" hint="Lowercase letters, numbers, and underscores.">
-          {({ id, describedBy }) => (
-            <TextInput
-              id={id}
-              aria-describedby={describedBy}
-              name="username"
-              required
-              pattern="[a-z0-9_]{3,30}"
-              autoCapitalize="none"
-              autoComplete="username"
-            />
-          )}
-        </Field>
+          <Field label="Username" hint="Lowercase, numbers, underscores.">
+            {({ id, describedBy }) => (
+              <TextInput
+                id={id}
+                aria-describedby={describedBy}
+                name="username"
+                required
+                pattern="[a-z0-9_]{3,30}"
+                autoCapitalize="none"
+                autoComplete="username"
+              />
+            )}
+          </Field>
+        </div>
 
         <Field label="Email">
           {({ id, describedBy }) => (
@@ -113,35 +110,37 @@ export function RegisterForm({ googleEnabled }: { googleEnabled: boolean }) {
           )}
         </Field>
 
+        {/*
+          A show/hide toggle instead of a second "confirm" field. The confirm
+          box only ever existed to catch a typo in something you cannot read
+          back — but being able to read it back is exactly what this does, and
+          it does it in one field instead of two. It also keeps the whole form
+          on one screen.
+        */}
         <Field label="Password" hint="At least 12 characters.">
           {({ id, describedBy }) => (
-            <TextInput
-              id={id}
-              aria-describedby={describedBy}
-              name="password"
-              type="password"
-              required
-              minLength={12}
-              autoComplete="new-password"
-            />
+            <div className="relative">
+              <TextInput
+                id={id}
+                aria-describedby={describedBy}
+                name="password"
+                type={reveal ? "text" : "password"}
+                required
+                minLength={12}
+                autoComplete="new-password"
+                className="pr-12"
+              />
+              <button
+                type="button"
+                onClick={() => setReveal((r) => !r)}
+                aria-label={reveal ? "Hide password" : "Show password"}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 grid place-items-center h-9 w-9 rounded-control text-secondary transition-transform duration-150 ease-out active:scale-[0.97]"
+              >
+                {reveal ? <EyeOff className="h-[18px] w-[18px]" /> : <Eye className="h-[18px] w-[18px]" />}
+              </button>
+            </div>
           )}
         </Field>
-
-
-        <Field label="Confirm password">
-          {({ id, describedBy }) => (
-            <TextInput
-              id={id}
-              aria-describedby={describedBy}
-              name="confirmPassword"
-              type="password"
-              required
-              minLength={12}
-              autoComplete="new-password"
-            />
-          )}
-        </Field>
-      </Sheet>
 
       {error && <ErrorText>{error}</ErrorText>}
 

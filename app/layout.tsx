@@ -126,7 +126,9 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
             className="max-w-5xl mx-auto px-4 py-6 text-footnote text-secondary"
             style={{ paddingBottom: "max(1.5rem, env(safe-area-inset-bottom))" }}
           >
-            Prices are reported by owners, not quotes from shops.{" "}
+            <span className="footer-tagline">
+              Prices are reported by owners, not quotes from shops.{" "}
+            </span>
             <a href="/policies/terms" className={policyLink}>
               Terms and ground rules
             </a>

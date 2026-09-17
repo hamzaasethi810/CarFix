@@ -20,7 +20,7 @@ export function SocialSignIn({ googleEnabled }: { googleEnabled: boolean }) {
   if (!googleEnabled) return null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       <button
         type="button"
         onClick={() => signIn("google", { redirectTo: "/garage" })}

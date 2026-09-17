@@ -1287,6 +1287,25 @@ body:has(.auth-root) {
 }
 
 /*
+  On the auth screens the footer earns its keep only as the terms/privacy
+  links, so it is stripped to those: the owner-reported tagline is dropped and
+  the padding is halved. At full size the footer was wrapping to three lines on
+  a phone and eating well over a third of the column, which is what pushed the
+  join form off the bottom of the screen. The links stay because signup is
+  precisely where they matter.
+*/
+body:has(.auth-root) > footer {
+  margin-top: 0;
+}
+body:has(.auth-root) > footer > div {
+  padding-top: 0.6rem;
+  padding-bottom: max(0.6rem, env(safe-area-inset-bottom));
+}
+body:has(.auth-root) .footer-tagline {
+  display: none;
+}
+
+/*
   Entrance for the auth form.
 
   Above the fold on load, so a scroll observer would never fire. Short and
