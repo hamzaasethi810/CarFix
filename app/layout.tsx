@@ -38,7 +38,7 @@ const mono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Gaari",
+  title: "WrenchRates",
   description:
     "Find local mechanics who have worked on cars like yours, and see what owners actually paid.",
 };

@@ -68,12 +68,12 @@ export async function sendVerification(params: {
   const link = `${params.origin}/verify?token=${encodeURIComponent(raw)}`;
   await sendEmail({
     to: params.email,
-    subject: "Confirm your email for Gaari",
+    subject: "Confirm your email for WrenchRates",
     html:
-      `<p>Confirm this address to start posting on Gaari.</p>` +
+      `<p>Confirm this address to start posting on WrenchRates.</p>` +
       `<p><a href="${link}">Confirm my email</a></p>` +
       `<p>The link works once and expires in a day. If you did not sign up, ignore this.</p>`,
-    text: `Confirm this address to start posting on Gaari: ${link}`,
+    text: `Confirm this address to start posting on WrenchRates: ${link}`,
   });
 }
 
@@ -97,15 +97,15 @@ export async function sendAlreadyRegistered(params: {
   const reset = `${params.origin}/forgot-password`;
   await sendEmail({
     to: params.email,
-    subject: "You already have a Gaari account",
+    subject: "You already have a WrenchRates account",
     html:
-      `<p>Someone just tried to create a Gaari account with this email address, ` +
+      `<p>Someone just tried to create a WrenchRates account with this email address, ` +
       `but you already have one — so nothing was created and nothing changed.</p>` +
       `<p>If that was you, just <a href="${signIn}">sign in</a>. ` +
       `Forgotten your password? <a href="${reset}">Reset it</a>.</p>` +
       `<p>If it was not you, you can safely ignore this message.</p>`,
     text:
-      `Someone just tried to create a Gaari account with this email address, but ` +
+      `Someone just tried to create a WrenchRates account with this email address, but ` +
       `you already have one — nothing was created and nothing changed.\n\n` +
       `If that was you, sign in: ${signIn}\n` +
       `Forgotten your password? Reset it: ${reset}\n\n` +

@@ -17,7 +17,7 @@ export function WrenchMark({ className = "" }: { className?: string }) {
       className={className}
       /*
         Decorative. The wordmark beside it is real text and already names the
-        link; labelling this too would have a screen reader announce "Gaari"
+        link; labelling this too would have a screen reader announce "WrenchRates"
         twice for one destination.
       */
       aria-hidden="true"

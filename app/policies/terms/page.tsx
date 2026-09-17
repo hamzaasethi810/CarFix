@@ -5,7 +5,7 @@ import { Sheet, SheetHeader, SectionTitle } from "@/components/ui";
 export const metadata: Metadata = {
   title: "Terms and ground rules",
   description:
-    "What Gaari is, what it is not, and who is responsible for what people post.",
+    "What WrenchRates is, what it is not, and who is responsible for what people post.",
 };
 
 /*
@@ -24,10 +24,10 @@ export default function TermsPage() {
         meta="The short version: this is owners reporting their own experiences, and we do not vouch for any of it."
       />
 
-      <SectionTitle>What Gaari is</SectionTitle>
+      <SectionTitle>What WrenchRates is</SectionTitle>
       <Sheet className="p-5 space-y-3">
         <p className="text-subhead text-pretty">
-          Gaari collects what car owners say they paid, at which shop, on which
+          WrenchRates collects what car owners say they paid, at which shop, on which
           car. It exists so you can see what people with a car like yours were
           charged nearby, and how the work went.
         </p>
@@ -141,7 +141,7 @@ export default function TermsPage() {
       <SectionTitle>How this site is built, and what is automated</SectionTitle>
       <Sheet className="p-5 space-y-3">
         <p className="text-subhead text-pretty">
-          The software behind Gaari was written with substantial help from AI
+          The software behind WrenchRates was written with substantial help from AI
           coding tools. We are saying so plainly because you are trusting the
           site with money questions, and you should know how it was made.
         </p>

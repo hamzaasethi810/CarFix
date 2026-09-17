@@ -18,7 +18,7 @@ import * as OTPAuth from "otpauth";
   they enrol again — the codes themselves depend on the secret and the clock,
   not on this.
 */
-const ISSUER = "Gaari";
+const ISSUER = "WrenchRates";
 const DIGITS = 6;
 const PERIOD = 30;
 

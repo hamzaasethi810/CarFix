@@ -1,7 +1,7 @@
 /*
   A workshop job card.
 
-  Gaari's core record already IS a physical thing — vehicle, work done, who
+  WrenchRates's core record already IS a physical thing — vehicle, work done, who
   did it, what it cost — and a service docket has a century of visual
   language behind it. This used to carry that further into skeuomorphism: a
   raised card, a metal clip gripping it from above, one light source. That

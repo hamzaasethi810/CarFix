@@ -79,7 +79,7 @@ experience, filing a price, shop, claim.
 
 ## Brand Commitments
 
-Name: Gaari. The wordmark and the licence-plate logo are **not** binding and may
+Name: WrenchRates. The wordmark and the licence-plate logo are **not** binding and may
 be replaced. Copy voice is **not** binding and may be rewritten.
 
 Binding: the accessibility guarantees, and the URL structure.

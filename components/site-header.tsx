@@ -46,8 +46,15 @@ export function SiteHeader({
           href="/"
           className="inline-flex items-center min-h-11 pr-2 sm:pr-4 rounded-control"
         >
-          <span className="text-title2 [@media(min-height:481px)]:text-title1 font-bold tracking-tight text-accent">
-            Gaari
+          {/*
+            Sized to the space, not just the window height. "WrenchRates" is a
+            long wordmark; at 30px it crowds the nav on a 360px phone and pushes
+            "Sign in" onto two lines. So the large size needs width AND height
+            to spend — narrow phones (and short landscape bars) keep the 22px
+            size, everything from 380px up gets the full 30px.
+          */}
+          <span className="text-title2 [@media(min-width:380px)_and_(min-height:481px)]:text-title1 font-bold tracking-tight text-accent">
+            WrenchRates
           </span>
         </Link>
 

@@ -4,7 +4,7 @@ import { Sheet, SheetHeader, SectionTitle } from "@/components/ui";
 
 export const metadata: Metadata = {
   title: "Privacy",
-  description: "What Gaari stores about you, why, and how to get rid of it.",
+  description: "What WrenchRates stores about you, why, and how to get rid of it.",
 };
 
 /*
