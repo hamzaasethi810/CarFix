@@ -12,10 +12,12 @@ export function SiteHeader({
   isAuthed,
   isAdmin,
   isReviewer,
+  displayName,
 }: {
   isAuthed: boolean;
   isAdmin: boolean;
   isReviewer: boolean;
+  displayName?: string | null;
 }) {
   return (
     /*
@@ -77,16 +79,25 @@ export function SiteHeader({
         </Link>
 
         {/*
-          Only the discovery action stays inline signed in — Garage, Log a
-          service, Settings and Sign out all live in the account menu on the
-          right. Five text links plus a long wordmark overflowed a phone by
-          over 100px; this keeps the one thing people come to do in reach and
-          folds the "your account" things into one control.
+          The signed-in nav. Find shops stays inline at every width; Garage and
+          Log a service join it from the small breakpoint up, where there is
+          room. On a phone those two would push the account menu off the edge —
+          a long wordmark plus three links plus the menu does not fit 360px — so
+          they hide there rather than wrap. The account menu (settings, signing
+          out) sits on the right regardless.
         */}
         {isAuthed && (
-          <Link href="/search" className={navLink}>
-            Find shops
-          </Link>
+          <>
+            <Link href="/search" className={navLink}>
+              Find shops
+            </Link>
+            <Link href="/garage" className={`${navLink} max-sm:hidden`}>
+              Garage
+            </Link>
+            <Link href="/experiences/new" className={`${navLink} max-sm:hidden`}>
+              Log a service
+            </Link>
+          </>
         )}
 
         {/* Only shown to those who hold the role; the page itself 404s otherwise. */}
@@ -106,7 +117,7 @@ export function SiteHeader({
 
         <div className="flex items-center gap-2 sm:gap-3">
           {isAuthed ? (
-            <AccountMenu />
+            <AccountMenu displayName={displayName} />
           ) : (
             <>
               <Link href="/login" className={navLink}>

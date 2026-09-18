@@ -6,6 +6,7 @@ import { BotIdClient } from "botid/client";
 import { SessionGuard } from "@/components/session-guard";
 import { SiteHeader } from "@/components/site-header";
 import { currentUser, isPrivileged } from "@/lib/auth/guards";
+import { findProfileByUserId } from "@/lib/repositories/user";
 
 /*
   Self-hosted at build time by next/font/google: no runtime request to a font
@@ -75,6 +76,10 @@ const policyLink =
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
   const user = await currentUser();
+  // The account menu greets people by name. A small keyed read, only when
+  // signed in; a fresh Google account that has not finished onboarding still
+  // has the display name the profile was seeded with.
+  const displayName = user ? (await findProfileByUserId(user.id))?.displayName ?? null : null;
 
   return (
     <html lang="en" className={`h-full ${sans.variable} ${mono.variable}`}>
@@ -108,6 +113,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
           isAuthed={Boolean(user)}
           isAdmin={user?.role === "ADMIN"}
           isReviewer={Boolean(user && isPrivileged(user.role))}
+          displayName={displayName}
         />
 
         <main

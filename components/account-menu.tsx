@@ -7,19 +7,18 @@ import { ChevronDown, User } from "lucide-react";
 import { popoverSurface } from "@/components/ui";
 
 /*
-  The account actions, folded into one control.
+  The account control: the person's name, and behind it their settings and a
+  way out.
 
-  Signed in, the header had five text links racing the wordmark for room —
-  fine on a desktop, 113px past the edge on a phone. Find shops and Garage stay
-  inline because they are where people are going; the account things (settings,
-  signing out) collapse here, which is both the standard place to look for them
-  and the room the phone needed. On a phone it is an icon; from the small
-  breakpoint up it carries its label too.
+  The nav proper (find shops, garage, log a service) lives inline in the
+  header; this holds only the account things. The button greets by name rather
+  than saying "Account" — the name truncates so a long one cannot push the menu
+  off the edge, and a person icon stands in until the name is known.
 
   A plain menu: click to open, click-away or Escape to close, and it closes
   itself when a link inside it is followed.
 */
-export function AccountMenu() {
+export function AccountMenu({ displayName }: { displayName?: string | null }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -50,17 +49,24 @@ export function AccountMenu() {
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Account menu"
+        aria-label={displayName ? `Account: ${displayName}` : "Account menu"}
         className={
           "inline-flex items-center gap-1.5 min-h-11 px-2 sm:px-3 -mx-1 rounded-control " +
-          "text-subhead text-secondary transition-[color,background-color] duration-150 " +
+          "text-subhead font-medium text-secondary transition-[color,background-color] duration-150 " +
           "[@media(hover:hover)_and_(pointer:fine)]:hover:text-label " +
           "[@media(hover:hover)_and_(pointer:fine)]:hover:bg-fill"
         }
       >
-        <User aria-hidden="true" strokeWidth={2} className="size-5" />
-        <span className="max-sm:sr-only">Account</span>
-        <ChevronDown aria-hidden="true" strokeWidth={2} className="size-4 max-sm:hidden" />
+        <User aria-hidden="true" strokeWidth={2} className="size-5 shrink-0" />
+        {/*
+          The name takes the place "Account" held — shown from the small
+          breakpoint up, where the label always was, and truncated so a long
+          one cannot push the menu off the edge. A phone stays icon-only, which
+          is what keeps the signed-in bar (wordmark, find shops, this) inside
+          360px.
+        */}
+        <span className="max-sm:sr-only truncate max-w-[16ch]">{displayName || "Account"}</span>
+        <ChevronDown aria-hidden="true" strokeWidth={2} className="size-4 shrink-0 max-sm:hidden" />
       </button>
 
       {open && (
@@ -68,12 +74,6 @@ export function AccountMenu() {
           role="menu"
           className={`absolute right-0 mt-1.5 min-w-44 rounded-control p-1 z-50 ${popoverSurface}`}
         >
-          <Link role="menuitem" href="/garage" className={item} onClick={() => setOpen(false)}>
-            Garage
-          </Link>
-          <Link role="menuitem" href="/experiences/new" className={item} onClick={() => setOpen(false)}>
-            Log a service
-          </Link>
           <Link role="menuitem" href="/settings/account" className={item} onClick={() => setOpen(false)}>
             Settings
           </Link>
