@@ -8,10 +8,11 @@ import Link from "next/link";
 */
 const TABS = [
   { key: "account", label: "Account", href: "/settings/account" },
+  { key: "shops", label: "Shops", href: "/settings/shops" },
   { key: "security", label: "Security", href: "/settings/security" },
 ] as const;
 
-export function SettingsNav({ active }: { active: "account" | "security" }) {
+export function SettingsNav({ active }: { active: "account" | "shops" | "security" }) {
   return (
     <nav aria-label="Settings" className="flex gap-1 border-b border-separator">
       {TABS.map((tab) => {
