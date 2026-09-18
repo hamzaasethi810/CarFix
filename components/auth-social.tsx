@@ -23,7 +23,7 @@ export function SocialSignIn({ googleEnabled }: { googleEnabled: boolean }) {
     <div className="space-y-4">
       <button
         type="button"
-        onClick={() => signIn("google", { redirectTo: "/garage" })}
+        onClick={() => signIn("google", { redirectTo: "/welcome" })}
         className="w-full min-h-11 flex items-center justify-center gap-2.5 rounded-control border border-separator bg-elevated text-subhead font-medium transition-transform duration-150 ease-out active:scale-[0.97] [@media(hover:hover)_and_(pointer:fine)]:hover:bg-tertiary"
       >
         <GoogleMark />

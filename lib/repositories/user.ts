@@ -8,6 +8,10 @@ export const findUserByEmail = (email: string) =>
     select: { id: true, email: true, passwordHash: true, role: true },
   });
 
+/** When the account was created — used to greet a brand-new Google sign-in. */
+export const findUserJoinTime = (id: string) =>
+  prisma.user.findUnique({ where: { id }, select: { createdAt: true } });
+
 export const findActiveUserById = (id: string) =>
   prisma.user.findFirst({
     where: { id, deletedAt: null },
@@ -68,6 +72,14 @@ export const findProfileByUserId = (userId: string) =>
     },
   });
 
+const profileView = {
+  username: true,
+  displayName: true,
+  bio: true,
+  photoKey: true,
+  generalLocation: true,
+} as const;
+
 export const updateProfile = (
   userId: string,
   data: { displayName?: string; bio?: string | null; generalLocation?: string | null; photoKey?: string },
@@ -75,13 +87,23 @@ export const updateProfile = (
   prisma.profile.update({
     where: { userId },
     data,
-    select: {
-      username: true,
-      displayName: true,
-      bio: true,
-      photoKey: true,
-      generalLocation: true,
-    },
+    select: profileView,
+  });
+
+/** True when the handle belongs to someone other than this account. */
+export const usernameTakenByOther = async (username: string, exceptUserId: string) =>
+  Boolean(
+    await prisma.profile.findFirst({
+      where: { username, NOT: { userId: exceptUserId } },
+      select: { id: true },
+    }),
+  );
+
+export const updateUsername = (userId: string, username: string) =>
+  prisma.profile.update({
+    where: { userId },
+    data: { username },
+    select: profileView,
   });
 
 /*

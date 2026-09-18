@@ -22,7 +22,8 @@ export type LimitName =
   | "accountDelete"
   | "workPhoto"
   | "shopSubmit"
-  | "passwordReset";
+  | "passwordReset"
+  | "usernameChange";
 
 const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m" | "h"}` }> = {
   login: { tokens: 8, window: "5 m" },
@@ -53,6 +54,9 @@ const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m
   shopSubmit: { tokens: 8, window: "1 h" },
   // Tight: this endpoint sends mail and is reachable without signing in.
   passwordReset: { tokens: 6, window: "1 h" },
+  // A handle is public and points at a person; changing it should be rare, so
+  // this is deliberately small to stop squatting churn and impersonation games.
+  usernameChange: { tokens: 4, window: "24 h" },
 };
 
 const redis =

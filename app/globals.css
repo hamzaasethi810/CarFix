@@ -1366,11 +1366,21 @@ body:has(.auth-root) .footer-tagline {
     scroll-snap-stop: always;
     scroll-margin-top: 4rem;
   }
-}
 
-@media (min-width: 1280px) and (min-aspect-ratio: 13 / 10) and (min-height: 700px) {
-  html:has(.home-root) {
-    scroll-snap-type: y mandatory;
+  /*
+    The last block does not snap, so the footer under it can be reached.
+
+    Snapping was mandatory here, and mandatory on the final block was a trap:
+    it locked to that block's top and refused the last stretch of scroll, so
+    the footer — terms, privacy, receipts — could not be reached at all.
+    Proximity alone still risked pulling back from a footer only a little below
+    the snap point, so the last block opts out of snapping entirely: blocks
+    above it still stick, and the run from it down to the footer scrolls
+    freely.
+  */
+  .home-root .home-block:last-child {
+    scroll-snap-align: none;
+    scroll-snap-stop: normal;
   }
 }
 

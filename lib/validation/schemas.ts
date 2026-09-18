@@ -115,6 +115,26 @@ export const loginSchema = z
   .object({ email: z.string().email().max(254), password: z.string().min(1).max(200) })
   .strict();
 
+/*
+  Changing the @handle after the fact.
+
+  Identical rules to registration's username — same character set, same length,
+  the same moderation screen — because a handle is a handle whenever it is
+  chosen. Kept apart from the display-name update because it is a different
+  thing on the wire: it is unique across everyone, so it can fail as "taken",
+  and it is rate limited far more tightly to stop handle-squatting churn.
+*/
+export const changeUsernameSchema = z
+  .object({
+    username: z
+      .string()
+      .min(3)
+      .max(30)
+      .regex(/^[a-z0-9_]+$/, "Use lowercase letters, numbers, and underscores only.")
+      .pipe(moderatedLabel(30, 3)),
+  })
+  .strict();
+
 export const updateProfileSchema = z
   .object({
     displayName: moderatedLabel(60, 1).optional(),

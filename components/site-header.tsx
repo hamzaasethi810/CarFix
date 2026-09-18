@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { buttonStyles } from "@/components/ui";
-import { signOut } from "@/lib/auth";
+import { AccountMenu } from "@/components/account-menu";
 
 const navLink =
   "inline-flex items-center min-h-11 px-3 -mx-1 rounded-control text-subhead text-secondary " +
@@ -18,7 +18,25 @@ export function SiteHeader({
   isReviewer: boolean;
 }) {
   return (
-    <header className="sticky top-0 z-50 border-b border-separator bg-elevated">
+    /*
+      The safe-area inset is padded here, not ignored.
+
+      The layout renders viewport-fit: cover so the page runs under a phone's
+      notch and rounded corners, but a sticky header with no top inset then puts
+      the wordmark and nav up underneath the status bar — the "smushed at the
+      top" a notched phone shows. Padding the header by the inset drops its
+      contents below the status bar, and the elevated background fills the strip
+      behind it so the bar still reads as one solid header. The horizontal
+      insets keep the same content clear of the rounded corners in landscape.
+    */
+    <header
+      className="sticky top-0 z-50 border-b border-separator bg-elevated"
+      style={{
+        paddingTop: "env(safe-area-inset-top)",
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
+      }}
+    >
       <nav
         aria-label="Primary"
         /*
@@ -58,25 +76,17 @@ export function SiteHeader({
           </span>
         </Link>
 
+        {/*
+          Only the discovery action stays inline signed in — Garage, Log a
+          service, Settings and Sign out all live in the account menu on the
+          right. Five text links plus a long wordmark overflowed a phone by
+          over 100px; this keeps the one thing people come to do in reach and
+          folds the "your account" things into one control.
+        */}
         {isAuthed && (
-          <>
-            <Link href="/search" className={navLink}>
-              Find shops
-            </Link>
-            <Link href="/garage" className={navLink}>
-              Garage
-            </Link>
-            {/*
-              max-sm:hidden rather than "hidden sm:inline-flex": navLink already
-              sets inline-flex unconditionally, and Tailwind emits .inline-flex
-              after .hidden, so the plain .hidden lost the cascade and this link
-              never actually hid — it wrapped the header onto two lines on a
-              360px screen. A media-query variant wins regardless of order.
-            */}
-            <Link href="/experiences/new" className={`${navLink} max-sm:hidden`}>
-              Log a service
-            </Link>
-          </>
+          <Link href="/search" className={navLink}>
+            Find shops
+          </Link>
         )}
 
         {/* Only shown to those who hold the role; the page itself 404s otherwise. */}
@@ -96,16 +106,7 @@ export function SiteHeader({
 
         <div className="flex items-center gap-2 sm:gap-3">
           {isAuthed ? (
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/" });
-              }}
-            >
-              <button type="submit" className={navLink}>
-                Sign out
-              </button>
-            </form>
+            <AccountMenu />
           ) : (
             <>
               <Link href="/login" className={navLink}>

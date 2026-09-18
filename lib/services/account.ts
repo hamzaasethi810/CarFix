@@ -11,6 +11,8 @@ import {
   findProfileByUsername,
   softDeleteUser,
   updateProfile,
+  updateUsername,
+  usernameTakenByOther,
 } from "../repositories/user";
 import { listVehiclesForUsername } from "../repositories/vehicle";
 import { toPublicProfile, toVehicleSummary, type PublicProfile } from "./dto";
@@ -110,6 +112,35 @@ export async function editProfile(
 ) {
   const updated = await updateProfile(userId, data);
   return toPublicProfile(updated);
+}
+
+/*
+  Changing the @handle.
+
+  Unique across everyone, so it can fail as "taken". The check runs first for a
+  clean message, and the unique index behind it is the real guarantee: two
+  people racing for the same free handle both pass the check, and the second
+  write hits the constraint (P2002), which is caught and reported the same way
+  rather than surfacing as a 500. Re-saving your own current handle is a no-op,
+  not a conflict, because the check excludes this account.
+*/
+export async function changeUsername(userId: string, username: string) {
+  if (await usernameTakenByOther(username, userId)) throw conflict("That username is taken.");
+
+  try {
+    const updated = await updateUsername(userId, username);
+    return toPublicProfile(updated);
+  } catch (error) {
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code?: string }).code === "P2002"
+    ) {
+      throw conflict("That username is taken.");
+    }
+    throw error;
+  }
 }
 
 export async function deleteAccount(userId: string) {

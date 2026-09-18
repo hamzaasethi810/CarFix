@@ -257,11 +257,20 @@ describe("the landing", () => {
     expect(page()).toMatch(/home-block/);
     const css = stripComments(read("app/globals.css"));
 
-    // Both settings are used: proximity for the softer settle, mandatory once
-    // there is a screen of height to spend.
+    /*
+      Proximity, never mandatory. Mandatory trapped the footer: it locked onto
+      the last block's top and refused the final stretch of scroll, so terms /
+      privacy / receipts could not be reached at all. Proximity settles near a
+      block without imprisoning a position between one and the page's end.
+    */
     expect(css).toMatch(/scroll-snap-type: y proximity/);
-    expect(css).toMatch(/scroll-snap-type: y mandatory/);
+    expect(css).not.toMatch(/scroll-snap-type: y mandatory/);
     expect(css).toMatch(/scroll-snap-stop: always/);
+
+    /*
+      The last block opts out of snapping, so the footer below it is reachable.
+    */
+    expect(css).toMatch(/\.home-block:last-child\s*\{[^}]*scroll-snap-align: none/);
 
     /*
       Every snap-type declaration must sit inside a wide-layout media query —
@@ -274,16 +283,13 @@ describe("the landing", () => {
       const mq = css.lastIndexOf("@media", at);
       return css.slice(mq, css.indexOf("{", mq));
     };
-    const snapDecls = [...css.matchAll(/scroll-snap-type: y (?:proximity|mandatory)/g)];
-    expect(snapDecls.length).toBeGreaterThanOrEqual(2);
+    const snapDecls = [...css.matchAll(/scroll-snap-type: y proximity/g)];
+    expect(snapDecls.length).toBeGreaterThanOrEqual(1);
     for (const d of snapDecls) {
       const header = enclosingMedia(d.index!);
       expect(header).toMatch(/min-width: 1280px/);
       expect(header).toMatch(/min-aspect-ratio: 13 \/ 10/);
     }
-    // Mandatory carries the extra height gate; proximity does not require it.
-    const mandatory = css.search(/scroll-snap-type: y mandatory/);
-    expect(enclosingMedia(mandatory)).toMatch(/min-height: 700px/);
 
     /*
       The rule must sit on the ROOT element, which is what scrolls.
