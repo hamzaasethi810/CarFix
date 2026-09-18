@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { ChevronDown, User } from "lucide-react";
-import { popoverSurface } from "@/components/ui";
+import { buttonStyles, popoverSurface } from "@/components/ui";
 
 /*
   The account control: the person's name, and behind it their settings and a
@@ -20,6 +20,8 @@ import { popoverSurface } from "@/components/ui";
 */
 export function AccountMenu({ displayName }: { displayName?: string | null }) {
   const [open, setOpen] = useState(false);
+  const [confirmingSignOut, setConfirmingSignOut] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -38,8 +40,24 @@ export function AccountMenu({ displayName }: { displayName?: string | null }) {
     };
   }, [open]);
 
+  // Escape closes the confirm dialog too.
+  useEffect(() => {
+    if (!confirmingSignOut) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setConfirmingSignOut(false);
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [confirmingSignOut]);
+
+  /*
+    No text colour in the base. Two colour utilities on one element let the
+    cascade decide the winner, not the class order — which is how "Sign out"
+    stayed ink-coloured with text-destructive appended. The colour is set per
+    item instead so the destructive red actually lands.
+  */
   const item =
-    "flex items-center w-full min-h-11 px-3 rounded-control text-subhead text-label text-left " +
+    "flex items-center w-full min-h-11 px-3 rounded-control text-subhead text-left " +
     "[@media(hover:hover)_and_(pointer:fine)]:hover:bg-fill transition-[background-color] duration-150";
 
   return (
@@ -74,20 +92,70 @@ export function AccountMenu({ displayName }: { displayName?: string | null }) {
           role="menu"
           className={`absolute right-0 mt-1.5 min-w-44 rounded-control p-1 z-50 ${popoverSurface}`}
         >
-          <Link role="menuitem" href="/settings/account" className={item} onClick={() => setOpen(false)}>
+          <Link role="menuitem" href="/settings/account" className={`${item} text-label`} onClick={() => setOpen(false)}>
             Settings
           </Link>
+          {/*
+            Red, and asks first. Signing out is the one action here that undoes
+            itself only by signing back in, so it reads in the destructive
+            colour and opens a confirmation rather than firing on the tap.
+          */}
           <button
             type="button"
             role="menuitem"
-            className={item}
+            className={`${item} text-destructive font-medium`}
             onClick={() => {
               setOpen(false);
-              void signOut({ redirectTo: "/" });
+              setConfirmingSignOut(true);
             }}
           >
             Sign out
           </button>
+        </div>
+      )}
+
+      {confirmingSignOut && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="signout-title"
+          className="fixed inset-0 z-[100] grid place-items-center p-4"
+        >
+          <button
+            type="button"
+            aria-label="Cancel"
+            onClick={() => setConfirmingSignOut(false)}
+            className="fixed inset-0 bg-[color-mix(in_srgb,var(--label)_45%,transparent)]"
+          />
+          <div className={`relative w-full max-w-sm rounded-control p-6 ${popoverSurface}`}>
+            <h2 id="signout-title" className="text-headline font-semibold">
+              Sign out?
+            </h2>
+            <p className="mt-2 text-subhead text-secondary text-pretty">
+              You&rsquo;ll need to sign in again to get back to your garage.
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmingSignOut(false)}
+                className={`${buttonStyles.secondary} px-4`}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                autoFocus
+                disabled={signingOut}
+                onClick={() => {
+                  setSigningOut(true);
+                  void signOut({ redirectTo: "/" });
+                }}
+                className={`${buttonStyles.destructive} px-4`}
+              >
+                {signingOut ? "Signing out…" : "Sign out"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
