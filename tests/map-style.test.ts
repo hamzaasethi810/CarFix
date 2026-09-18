@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { fallbackStyleUrl, isQuotaFailure, mapStyleUrl } from "../lib/map/style";
+import { fallbackStyleUrl, isFatalTileFailure, mapStyleUrl } from "../lib/map/style";
 
 describe("mapStyleUrl", () => {
   it("falls back to a keyless source when no MapTiler key is set", () => {
@@ -12,13 +12,16 @@ describe("mapStyleUrl", () => {
     expect(url).toContain("abc123");
   });
 
-  it("only treats payment and rate-limit failures as quota exhaustion", () => {
-    // A 404 or a one-off network blip must not discard a working paid source
-    // for the rest of the session.
-    expect(isQuotaFailure(402)).toBe(true);
-    expect(isQuotaFailure(429)).toBe(true);
+  it("falls back on permanent failures: quota spent AND key refused", () => {
+    // 402/429 = quota spent; 401/403 = key refused. A domain-restricted key
+    // returns 403 from an un-allowed origin — the exact way the map went blank
+    // when the site moved to its own domain — so 403 must fall back.
+    for (const status of [401, 402, 403, 429]) {
+      expect(isFatalTileFailure(status), String(status)).toBe(true);
+    }
+    // A 404 or a one-off network blip must not discard a working paid source.
     for (const status of [200, 404, 500, 503]) {
-      expect(isQuotaFailure(status), String(status)).toBe(false);
+      expect(isFatalTileFailure(status), String(status)).toBe(false);
     }
   });
 

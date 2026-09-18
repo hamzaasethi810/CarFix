@@ -66,11 +66,19 @@ export function fallbackStyleUrl(): string {
 }
 
 /*
-  Whether a tile failure means "MapTiler is out" rather than "one tile
-  glitched". 402 is payment required and 429 is rate limited; both mean the
-  quota is spent and every subsequent request will fail the same way. A 404 or
-  a network blip is not that, and must not throw away a working paid source.
+  Whether a tile failure is permanent — MapTiler will never serve this key on
+  this origin, so fall back to the keyless basemap rather than show a blank map.
+
+  Four statuses qualify, and they split into two kinds that behave identically
+  from here: the quota is spent (402 payment required, 429 rate limited), or the
+  key itself is refused (401 unauthorized, 403 forbidden). A 403 is what a
+  domain-restricted key returns when the site is served from an origin the
+  MapTiler dashboard has not allowed — which is exactly how a working map goes
+  blank the moment the site moves to a new domain. Every subsequent request
+  fails the same way, so switching once is correct. A 404 or a dropped request
+  is a one-off and deliberately excluded, so a glitch never discards a working
+  paid source.
 */
-export function isQuotaFailure(status: number): boolean {
-  return status === 402 || status === 429;
+export function isFatalTileFailure(status: number): boolean {
+  return status === 401 || status === 402 || status === 403 || status === 429;
 }

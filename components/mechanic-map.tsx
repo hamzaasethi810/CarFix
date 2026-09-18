@@ -10,7 +10,7 @@ import {
 import type { GeoJSONSource, Map as MapLibreMap, MapGeoJSONFeature, Marker } from "maplibre-gl";
 import type { FeatureCollection, Point } from "geojson";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { FALLBACK_ATTRIBUTION, fallbackStyleUrl, isQuotaFailure } from "@/lib/map/style";
+import { FALLBACK_ATTRIBUTION, fallbackStyleUrl, isFatalTileFailure } from "@/lib/map/style";
 
 /*
   MapLibre locates its own worker script from `import.meta.url` at run time,
@@ -222,14 +222,17 @@ export function MechanicMap({
     map.on("click", () => onSelectRef.current(null));
 
     /*
-      Quota fallback (Step 5). 402/429 mean the paid source is spent for the
-      rest of this billing period; anything else (404, a dropped request) is
-      a one-off and must not throw away a working paid source. The fallback
-      source is keyless, so this only ever fires for MapTiler requests.
+      Fall back to the keyless basemap on a permanent MapTiler failure — the
+      quota being spent (402/429) or the key being refused (401/403). A
+      domain-restricted key returns 403 from an origin the MapTiler dashboard
+      has not allowed, which is how the map went blank the moment the site
+      moved to its own domain; without this it stayed blank rather than
+      dropping to OpenFreeMap. A 404 or a dropped request is a one-off and does
+      not qualify, so a glitch never discards a working paid source.
     */
     map.on("error", (e) => {
       const status = (e.error as { status?: number } | undefined)?.status;
-      if (status === undefined || !isQuotaFailure(status)) return;
+      if (status === undefined || !isFatalTileFailure(status)) return;
       if (fallbackAppliedRef.current) return; // switch once
       fallbackAppliedRef.current = true;
       try {
