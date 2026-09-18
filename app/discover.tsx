@@ -869,7 +869,16 @@ export function Discover({
           className="flex-1 min-h-0 flex flex-col sm:flex-row sm:items-stretch relative z-10 map-enter-panel"
         >
           <div
-            className={`pointer-events-auto px-3 pb-3 sm:px-4 sm:pb-4 w-full sm:w-96 mt-auto sm:mt-0 flex flex-col min-h-0 motion-safe:transition-transform motion-safe:duration-300 ${
+            /*
+              No pointer-events here — they belong on the sheet inside, which is
+              the element that actually translates down when the panel is stowed.
+              This container keeps its full 45vh box at the bottom of the screen
+              even when the sheet is visually slid away, so capturing here meant
+              the lower half of the map ignored every touch until the panel was
+              opened. Moving capture to the sheet lets its hit area slide off the
+              map with it, so the map pans freely while the panel is closed.
+            */
+            className={`px-3 pb-3 sm:px-4 sm:pb-4 w-full sm:w-96 mt-auto sm:mt-0 flex flex-col min-h-0 motion-safe:transition-transform motion-safe:duration-300 ${
               panelStowed ? "-translate-x-[calc(100%+1rem)]" : "translate-x-0"
             }`}
             style={dragOffset !== null ? { transform: `translateX(${dragOffset}px)`, transition: "none" } : undefined}
@@ -891,7 +900,7 @@ export function Discover({
               wrapper's transform is already claimed twice over, by the stow
               translate and by the inline drag offset.
             */
-            className={`relative bg-elevated border border-separator shadow-raised rounded-control overflow-hidden flex flex-col h-[45vh] sm:h-auto sm:flex-1 motion-safe:transition-transform motion-safe:duration-300 ${
+            className={`pointer-events-auto relative bg-elevated border border-separator shadow-raised rounded-control overflow-hidden flex flex-col h-[45vh] sm:h-auto sm:flex-1 motion-safe:transition-transform motion-safe:duration-300 ${
               panelOpen ? "translate-y-0" : "translate-y-[calc(45vh-4rem)]"
             } sm:translate-y-0`}
           >
