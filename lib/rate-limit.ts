@@ -40,7 +40,12 @@ const WINDOWS: Record<LimitName, { tokens: number; window: `${number} ${"s" | "m
   // Nominatim asks for no more than one request a second; this stays well under.
   geocode: { tokens: 20, window: "5 m" },
   billing: { tokens: 10, window: "10 m" },
-  shopClaim: { tokens: 5, window: "1 h" },
+  // Raised from 5: a claim uploads a document, and a failed upload (a rejected
+  // file, or a storage hiccup) still spends a token, so five was too few to
+  // iterate a form through. Abuse is bounded elsewhere anyway — submitClaim
+  // refuses a fourth pending claim (MAX_PENDING_CLAIMS), so this is a second
+  // fence, not the only one.
+  shopClaim: { tokens: 15, window: "1 h" },
   // A six-digit code has a million possibilities; this makes guessing hopeless.
   mfa: { tokens: 10, window: "15 m" },
   // Generous, but enough to stop wholesale scraping of public endpoints.
