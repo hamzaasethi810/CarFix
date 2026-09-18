@@ -21,7 +21,14 @@ export const countGenerations = () => prisma.generation.count();
 export async function garageTotals(ownerId: string) {
   const rows = await prisma.mechanicExperience.groupBy({
     by: ["vehicleId"],
-    where: { vehicle: { ownerId } },
+    /*
+      deletedAt: null is the fix, not decoration. Deleting a logged service
+      soft-deletes it (sets deletedAt); without this filter the count and the
+      total here still included the deleted rows, so a service you removed kept
+      being counted in the garage. The vehicle is scoped to its owner and to
+      not-deleted for the same reason.
+    */
+    where: { deletedAt: null, vehicle: { ownerId, deletedAt: null } },
     _count: { _all: true },
     _sum: { totalPrice: true },
   });

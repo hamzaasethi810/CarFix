@@ -45,7 +45,18 @@ export function AuthPanel({
   return (
     <div className="auth-root grid h-full min-h-0 overflow-hidden lg:grid-cols-2">
       {/* The form. Always first in the DOM, so it is first for a screen reader. */}
-      <div className="flex items-center justify-center overflow-y-auto px-5 py-5 sm:px-8 sm:py-6">
+      {/*
+        Safe centring, not plain centring.
+
+        items-center vertically centres the form, which is right when it fits —
+        but when it does not (a short or notched phone, where the header's
+        safe-area inset eats into the height), plain centring pushes the top of
+        the form up under the header and clips the title, and the scroll needed
+        to see it starts already cut off. `safe center` centres only while there
+        is room and falls back to top-alignment when there is not, so the title
+        is always reachable and nothing is clipped.
+      */}
+      <div className="flex [align-items:safe_center] justify-center overflow-y-auto px-5 py-4 sm:px-8 sm:py-6">
         <div className="w-full max-w-sm">
           <div className="auth-enter">
             <h1 className="text-title2 font-semibold tracking-tight text-balance">{title}</h1>
