@@ -71,6 +71,25 @@ export const listClaims = (status: ShopClaimStatus, limit: number, offset: numbe
     skip: offset,
   });
 
+/*
+  Every claim this person has submitted, newest first — scoped to their own
+  userId so it can only ever return their own. Used by the Shops settings page
+  to show a claim awaiting review or one that was turned down.
+*/
+export const listClaimsForUser = (userId: string) =>
+  prisma.shopClaim.findMany({
+    where: { userId },
+    select: {
+      id: true,
+      status: true,
+      businessName: true,
+      submittedAt: true,
+      decidedAt: true,
+      mechanic: { select: { id: true, name: true, city: true, state: true } },
+    },
+    orderBy: { submittedAt: "desc" },
+  });
+
 export const countPendingClaimsForUser = (userId: string) =>
   prisma.shopClaim.count({ where: { userId, status: "PENDING" } });
 

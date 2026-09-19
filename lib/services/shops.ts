@@ -11,6 +11,7 @@ import {
   findClaimById,
   listClaims,
   listShopPrices,
+  listClaimsForUser,
   listShopsForOwner,
   shopClaimedBy,
   updateShopLocation,
@@ -133,6 +134,32 @@ export async function decideShopClaim(params: {
 }
 
 // ---------- Shop management ----------
+
+/*
+  The claims this person has submitted, shaped for the Shops settings page.
+
+  Scoped to their own id in the query, so it can only return their own claims.
+  APPROVED claims are dropped here because the shop then appears in getMyShops
+  as one they manage; what is useful to surface is a claim still in review or
+  one that was turned down (which they can submit again).
+*/
+export async function getMyClaims(userId: string) {
+  const claims = await listClaimsForUser(userId);
+  return claims
+    .filter((c) => c.status !== "APPROVED")
+    .map((c) => ({
+      id: c.id,
+      status: c.status as "PENDING" | "REJECTED",
+      businessName: c.businessName,
+      shop: {
+        id: c.mechanic.id,
+        name: c.mechanic.name,
+        place: [c.mechanic.city, c.mechanic.state].filter((p) => p && p.trim()).join(", "),
+      },
+      submittedAt: c.submittedAt.toISOString(),
+      decidedAt: c.decidedAt?.toISOString() ?? null,
+    }));
+}
 
 export async function getMyShops(userId: string) {
   const shops = await listShopsForOwner(userId);
