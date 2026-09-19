@@ -124,30 +124,39 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
         </>
       )}
 
-      <SectionTitle
-        hint={`${generationPricing.label}${
-          generationPricing.median !== null
-            ? ` · median ${money(generationPricing.median)}`
-            : ""
-        }`}
-      >
-        {vehicle.generation} data
-      </SectionTitle>
+      {/*
+        Other owners of the same generation, for price comparison — shown only
+        when there is something to compare against. The heading's figure counts
+        every report for the generation, the owner's own included; below it the
+        list excludes their own, so when they are the only reporter the heading
+        would claim data the empty list denies. Rather than print a confusing
+        "no other experiences yet" under a section that says there is a median,
+        the whole section stays hidden until another owner has reported.
+      */}
+      {otherGenerationExperiences.length > 0 && (
+        <>
+          <SectionTitle
+            hint={`${generationPricing.label}${
+              generationPricing.median !== null
+                ? ` · median ${money(generationPricing.median)}`
+                : ""
+            }`}
+          >
+            {vehicle.generation} data
+          </SectionTitle>
 
-      {otherGenerationExperiences.length === 0 ? (
-        <BlankForm heads={["Reported"]} title={`No other ${vehicle.generation} experiences yet`} />
-      ) : (
-        <Columns first="Service" heads={["Reported"]} label={`Other ${vehicle.generation} experiences`}>
-          {otherGenerationExperiences.map((e) => (
-            <OperationLine
-              key={e.id}
-              label={`${e.vehicle.year} ${e.vehicle.make} ${e.vehicle.model}`}
-              code={e.mechanic.name}
-              figures={[money(e.totalPrice)]}
-              href={`/experiences/${e.id}`}
-            />
-          ))}
-        </Columns>
+          <Columns first="Service" heads={["Reported"]} label={`Other ${vehicle.generation} experiences`}>
+            {otherGenerationExperiences.map((e) => (
+              <OperationLine
+                key={e.id}
+                label={`${e.vehicle.year} ${e.vehicle.make} ${e.vehicle.model}`}
+                code={e.mechanic.name}
+                figures={[money(e.totalPrice)]}
+                href={`/experiences/${e.id}`}
+              />
+            ))}
+          </Columns>
+        </>
       )}
 
       {vehicle.isOwn && (

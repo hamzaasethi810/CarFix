@@ -538,6 +538,14 @@ export const buttonStyles = {
     override silently lost.
   */
   secondaryAccent: `${BUTTON_BASE} ${PRESS} bg-elevated text-accent font-medium border border-separator hover:bg-grouped`,
+  /*
+    A bordered button that speaks in the destructive red — for the trigger of
+    a destructive action, where a solid red slab would be too loud for a
+    control that only opens a confirmation. Its own variant for the same
+    reason secondaryAccent is: text-colour utilities would otherwise fight the
+    text-label in `secondary` on stylesheet order, not className order.
+  */
+  secondaryDestructive: `${BUTTON_BASE} ${PRESS} bg-elevated text-destructive font-medium border border-separator hover:bg-grouped`,
   destructive: `${BUTTON_BASE} ${PRESS} bg-destructive-fill text-on-destructive font-semibold hover:brightness-110`,
   // Text button: no material — a slab behind a link would misread as a control.
   plain: `${BUTTON_BASE} ${PRESS} text-accent hover:bg-fill`,

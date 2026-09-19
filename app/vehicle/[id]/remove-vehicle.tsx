@@ -68,9 +68,9 @@ export function RemoveVehicle({ vehicleId, vehicleName }: { vehicleId: string; v
           setError(null);
           setConfirming(true);
         }}
-        className="text-footnote text-destructive font-medium underline-offset-4 [@media(hover:hover)_and_(pointer:fine)]:hover:underline"
+        className={buttonStyles.secondaryDestructive}
       >
-        Remove this car from your garage
+        Remove this car
       </button>
 
       {confirming && (
