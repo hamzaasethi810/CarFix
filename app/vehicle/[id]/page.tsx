@@ -10,6 +10,7 @@ import {
   money,
 } from "@/components/ui";
 import { Reconciliation } from "@/components/reconciliation";
+import { RemoveVehicle } from "./remove-vehicle";
 import { currentUser } from "@/lib/auth/guards";
 import { getVehicle } from "@/lib/services/vehicles";
 import { browseExperiences, getPricing } from "@/lib/services/experiences";
@@ -147,6 +148,13 @@ export default async function VehiclePage({ params }: { params: Promise<{ id: st
             />
           ))}
         </Columns>
+      )}
+
+      {vehicle.isOwn && (
+        <RemoveVehicle
+          vehicleId={vehicle.id}
+          vehicleName={vehicle.nickname ?? `${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+        />
       )}
     </>
   );

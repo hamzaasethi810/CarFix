@@ -84,7 +84,13 @@ export function AccountMenu({ displayName }: { displayName?: string | null }) {
           360px.
         */}
         <span className="max-sm:sr-only truncate max-w-[16ch]">{displayName || "Account"}</span>
-        <ChevronDown aria-hidden="true" strokeWidth={2} className="size-4 shrink-0 max-sm:hidden" />
+        {/*
+          The chevron shows at every width now. On a phone the primary nav
+          (garage, log a service) lives inside this menu because it does not
+          fit inline, so the icon has to read as something that opens — a bare
+          avatar with no affordance did not.
+        */}
+        <ChevronDown aria-hidden="true" strokeWidth={2} className="size-4 shrink-0" />
       </button>
 
       {open && (
@@ -92,6 +98,22 @@ export function AccountMenu({ displayName }: { displayName?: string | null }) {
           role="menu"
           className={`absolute right-0 mt-1.5 min-w-44 rounded-control p-1 z-50 ${popoverSurface}`}
         >
+          {/*
+            The primary nav, but only on a phone. Garage and Log a service are
+            inline in the header from the small breakpoint up; below it they do
+            not fit beside a long wordmark, so they fold into this menu instead
+            of vanishing. Hidden from the small breakpoint up so they are not
+            listed twice.
+          */}
+          <div className="sm:hidden">
+            <Link role="menuitem" href="/garage" className={`${item} text-label`} onClick={() => setOpen(false)}>
+              Garage
+            </Link>
+            <Link role="menuitem" href="/experiences/new" className={`${item} text-label`} onClick={() => setOpen(false)}>
+              Log a service
+            </Link>
+            <div className="my-1 border-t border-separator" role="separator" />
+          </div>
           <Link role="menuitem" href="/settings/account" className={`${item} text-label`} onClick={() => setOpen(false)}>
             Settings
           </Link>

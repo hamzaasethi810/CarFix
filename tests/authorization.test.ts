@@ -1,6 +1,6 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { AppError } from "../lib/errors";
-import { addVehicle, editVehicle, removeVehicle } from "../lib/services/vehicles";
+import { addVehicle, editVehicle, getGarage, removeVehicle } from "../lib/services/vehicles";
 import {
   editExperience,
   removeExperience,
@@ -55,6 +55,17 @@ describe("cross-user authorization", () => {
 
   it("User A cannot delete User B's vehicle", async () => {
     expect(await codeOf(() => removeVehicle(vehicleId, bob.id))).toBe("NOT_FOUND");
+  });
+
+  it("An owner removes their own vehicle and it leaves their garage", async () => {
+    const car = await addVehicle(bob.id, {
+      makeId: fx.make.id,
+      modelId: fx.model.id,
+      year: 2025,
+    });
+    expect((await getGarage(bob.id)).some((v) => v.id === car.id)).toBe(true);
+    await removeVehicle(car.id, bob.id);
+    expect((await getGarage(bob.id)).some((v) => v.id === car.id)).toBe(false);
   });
 
 

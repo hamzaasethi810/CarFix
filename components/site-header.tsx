@@ -3,7 +3,7 @@ import { buttonStyles } from "@/components/ui";
 import { AccountMenu } from "@/components/account-menu";
 
 const navLink =
-  "inline-flex items-center min-h-11 px-3 -mx-1 rounded-control text-subhead text-secondary " +
+  "inline-flex items-center min-h-11 px-3 -mx-1 rounded-control text-subhead text-secondary whitespace-nowrap " +
   "[@media(hover:hover)_and_(pointer:fine)]:hover:text-label " +
   "[@media(hover:hover)_and_(pointer:fine)]:hover:bg-fill " +
   "transition-[color,background-color] duration-150";
@@ -83,8 +83,10 @@ export function SiteHeader({
           Log a service join it from the small breakpoint up, where there is
           room. On a phone those two would push the account menu off the edge —
           a long wordmark plus three links plus the menu does not fit 360px — so
-          they hide there rather than wrap. The account menu (settings, signing
-          out) sits on the right regardless.
+          inline they hide there and fold into the account menu instead (its
+          own sm:hidden block lists them), which keeps every option reachable
+          from the top bar without wrapping. The account menu sits on the right
+          regardless.
         */}
         {isAuthed && (
           <>
